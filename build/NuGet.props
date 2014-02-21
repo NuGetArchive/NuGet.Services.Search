@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- This file should always be at the root of the repository -->
+  <PropertyGroup>
+    <Platform>Any CPU</Platform> <!-- All NuGet Services are pure MSIL -->
+    <TargetProfile>Local</TargetProfile> <!-- Used by ccproj (Azure Cloud Projects) -->
+    <Branch Condition="'$(Branch)' == ''">nobranch</Branch>
+    <Commit Condition="'$(Commit)' == ''">HEAD</Commit>
+    <BuildDateUtc>$([System.DateTime]::UtcNow)</BuildDateUtc>
+    <VersionStartYear>2013</VersionStartYear>
+    <BuildYear>$([MSBuild]::Subtract($([System.DateTime]::UtcNow.Year), $(VersionStartYear)))</BuildYear>
+
+    <BuildUser Condition="'$(BuildUser)' == ''">$([System.Environment]::UserName)</BuildUser>
+    <BuildMachine Condition="'$(BuildMachine)' == ''">$([System.Environment]::MachineName)</BuildMachine>
+
+    <SimpleVersion Condition="'$(SimpleVersion)' == ''">3.0.0</SimpleVersion>
+    <SemanticVersion Condition="'$(SemanticVersion)' == ''">$(SimpleVersion)-local-$(Branch)-$(Commit)</SemanticVersion>
+    
+    <!-- Directories -->
+    <BuildToolsDirectory>$(RootDirectory)\build</BuildToolsDirectory>
+    <SourceDirectory>$(RootDirectory)\src</SourceDirectory>
+    <CommonSourceDirectory>$(SourceDirectory)\Common</CommonSourceDirectory>
+  </PropertyGroup>
+
+  <Target Name="CheckForMultipleSolutions">
+    <Error Text="Multiple solutions exist in $(RootDirectory)!" Condition="'@(SolutionFile->Count())' &gt; 1" />
+  </Target>
+</Project>

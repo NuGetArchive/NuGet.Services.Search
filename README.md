@@ -1,4 +1,6 @@
-NuGet.Services.Search
-=====================
+NuGet.Services.Work
+===================
 
-NuGet's Search Service
+Worker that executes queued jobs for the various NuGet Services
+
+Got bugs? File them here: https://github.com/NuGet/NuGetGallery/issues
