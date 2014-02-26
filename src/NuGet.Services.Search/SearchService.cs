@@ -13,12 +13,16 @@ namespace NuGet.Services.Search
     {
         public override PathString BasePath
         {
-            get { return new PathString("search"); }
+            get { return new PathString("/search"); }
         }
+
+        public SearchService(ServiceName name, ServiceHost host) : base(name, host) {}
 
         protected override Task OnRun()
         {
             // TODO: Indexer!
+            var tcs = new TaskCompletionSource<object>();
+            return tcs.Task; // Never complete the task
         }
     }
 }

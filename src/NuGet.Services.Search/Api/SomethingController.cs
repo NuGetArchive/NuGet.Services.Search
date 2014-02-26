@@ -11,7 +11,7 @@ namespace NuGet.Services.Search.Api
     public class SomethingController : NuGetApiController
     {
         [Route("test")]
-        public string Test()
+        public string Get()
         {
             return "Search is up!";
         }
