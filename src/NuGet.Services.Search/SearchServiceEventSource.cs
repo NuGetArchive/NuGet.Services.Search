@@ -10,7 +10,7 @@ namespace NuGet.Services.Search
     [EventSource(Name = "Outercurve-NuGet-Search-Service")]
     public class SearchServiceEventSource : EventSource
     {
-        public static readonly SearchServiceEventSource Log = new WorkServiceEventSource();
+        public static readonly SearchServiceEventSource Log = new SearchServiceEventSource();
         private SearchServiceEventSource() { }
 
         [Event(
