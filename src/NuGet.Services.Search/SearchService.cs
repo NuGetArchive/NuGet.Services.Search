@@ -17,47 +17,21 @@ namespace NuGet.Services.Search
             get { return new PathString("/search"); }
         }
 
-        public SearchEngine Engine { get; private set; }
-
         public SearchService(ServiceName name, ServiceHost host) : base(name, host) {}
 
         protected override Task<bool> OnStart()
         {
-            // Synchronous, there's no task stuff going on in here :).
-            try
-            {
-                // Resolve the index
-                Engine = Container.Resolve<SearchEngine>();
-
-                // Load the index
-                Engine.Load();
-            }
-            catch (Exception ex)
-            {
-                SearchServiceEventSource.Log.StartupError(ex);
-                return Task.FromResult(false);
-            }
-            return Task.FromResult(true);
+            throw new NotImplementedException();
         }
 
         protected override async Task OnRun()
         {
-            // Update the index at a regular interval
-            while (!Host.ShutdownToken.IsCancellationRequested)
-            {
-                await Engine.Update();
-                await Task.Delay(Engine.Config.IndexInterval);
-            }
+            throw new NotImplementedException();
         }
 
         public override void RegisterComponents(ContainerBuilder builder)
         {
             base.RegisterComponents(builder);
-
-            builder
-                .RegisterType<SearchEngine>()
-                .AsSelf()
-                .SingleInstance();
         }
     }
 }
