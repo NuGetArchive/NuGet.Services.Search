@@ -68,5 +68,14 @@ namespace NuGet.Indexing {
                 return ResourceManager.GetString("PackageIndex_IndexHasNoCommits", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Index session has not been opened..
+        /// </summary>
+        internal static string PackageIndexSession_NotOpened {
+            get {
+                return ResourceManager.GetString("PackageIndexSession_NotOpened", resourceCulture);
+            }
+        }
     }
 }

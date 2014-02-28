@@ -7,6 +7,7 @@ using Lucene.Net.Documents;
 using Lucene.Net.Index;
 using Lucene.Net.Store;
 using NuGet.Indexing.Analysis;
+using NuGet.Indexing.Model;
 using Xunit;
 
 namespace NuGet.Indexing.Facts
@@ -57,11 +58,7 @@ namespace NuGet.Indexing.Facts
                 using (var writer = new IndexWriter(dir, new NuGetAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED))
                 {
                     writer.AddDocument(new Document());
-                    writer.Commit(new CommitMetadata("Created")
-                    {
-                        DocumentCount = 42,
-                        TimestampUtc = now
-                    });
+                    writer.Commit(new CommitMetadata("Created", now));
                 }
 
                 var index = new PackageIndex(dir);
@@ -71,9 +68,46 @@ namespace NuGet.Indexing.Facts
 
                 // Assert
                 Assert.NotNull(index.LatestCommit);
-                Assert.Equal("Created", index.LatestCommit.Description);
-                Assert.Equal(42, index.LatestCommit.DocumentCount);
+                Assert.Equal("Created", index.LatestCommit.Message);
                 Assert.Equal(now, index.LatestCommit.TimestampUtc);
+            }
+        }
+
+        public class TheCommitDocumentsMethod
+        {
+            [Fact]
+            public void GivenPackageDocuments_ItAddsDocumentsToTheIndex()
+            {
+                // Arrange
+                var dir = new RAMDirectory();
+                var index = new PackageIndex(dir);
+
+                // Act
+                var packages = new[] { 
+                    new PackageDocument() { Id = "Package.One", Version = "1.0.0", Title = "The first package" },
+                    new PackageDocument() { Id = "Package.Two", Version = "2.0.0", Title = "The second package" },
+                    new PackageDocument() { Id = "Package.Three", Version = "3.0.0", Title = "The third package" }
+                };
+                index.CommitDocuments(packages, "Test Commit");
+
+                // Assert
+                var expectedIds = new HashSet<string>(packages.Select(p => p.Id), StringComparer.OrdinalIgnoreCase);
+                using (var reader = IndexReader.Open(dir, readOnly: true))
+                {
+                    Assert.Equal(3, reader.NumDocs());
+
+                    var actualIds = Enumerable
+                        .Range(0, reader.NumDocs())
+                        .Select(i => reader.Document(i))
+                        .Select(d => d.Get("Id"));
+
+                    foreach (var id in actualIds)
+                    {
+                        Assert.True(expectedIds.Contains(id));
+                        expectedIds.Remove(id);
+                    }
+                    Assert.Empty(expectedIds);
+                }
             }
         }
     }
