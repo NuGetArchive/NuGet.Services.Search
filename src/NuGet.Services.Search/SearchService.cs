@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Autofac;
 using Microsoft.Owin;
 using NuGet.Services.Http;
 using NuGet.Services.ServiceModel;
@@ -18,11 +19,19 @@ namespace NuGet.Services.Search
 
         public SearchService(ServiceName name, ServiceHost host) : base(name, host) {}
 
-        protected override Task OnRun()
+        protected override Task<bool> OnStart()
         {
-            // TODO: Indexer!
-            var tcs = new TaskCompletionSource<object>();
-            return tcs.Task; // Never complete the task
+            throw new NotImplementedException();
+        }
+
+        protected override async Task OnRun()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void RegisterComponents(ContainerBuilder builder)
+        {
+            base.RegisterComponents(builder);
         }
     }
 }
