@@ -14,21 +14,23 @@ namespace NuGet.Indexing
     {
         public DateTime TimestampUtc { get; private set; }
         public string Message { get; private set; }
+        public int HighestPackageKey { get; private set; }
         
         private CommitMetadata()
         {
 
         }
 
-        public CommitMetadata(string message, DateTime timestampUtc)
+        public CommitMetadata(string message, int highestPackageKey, DateTime timestampUtc)
             : this()
         {
             Message = message;
             TimestampUtc = timestampUtc;
+            HighestPackageKey = highestPackageKey;
         }
 
-        public CommitMetadata(string message)
-            : this(message, DateTime.UtcNow)
+        public CommitMetadata(string message, int highestPackageKey)
+            : this(message, highestPackageKey, DateTime.UtcNow)
         {
         }
 
@@ -37,14 +39,16 @@ namespace NuGet.Indexing
             return new Dictionary<string, string>() {
                 {"TimestampUtc", TimestampUtc.ToString("O")},
                 {"Message", Message ?? String.Empty},
+                {"HighestPackageKey", HighestPackageKey.ToString()}
             };
         }
 
         public static CommitMetadata FromDictionary(IDictionary<string, string> dict)
         {
             var meta = new CommitMetadata();
-            meta.TimestampUtc = GetOrDefault<DateTime>(dict, "TimestampUtc", s => DateTime.Parse(s, CultureInfo.CurrentCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal));
+            meta.TimestampUtc = GetOrDefault(dict, "TimestampUtc", s => DateTime.Parse(s, CultureInfo.CurrentCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal));
             meta.Message = GetOrDefault(dict, "Message");
+            meta.HighestPackageKey = GetOrDefault(dict, "HighestPackageKey", Int32.Parse);
             return meta;
         }
 

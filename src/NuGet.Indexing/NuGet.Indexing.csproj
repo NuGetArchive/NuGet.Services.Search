@@ -126,6 +126,9 @@
     <Compile Include="Analysis\NuGetAnalyzer.cs" />
     <Compile Include="BoostFactors.cs" />
     <Compile Include="CommitMetadata.cs" />
+    <Compile Include="Data\PackageDataSource.cs" />
+    <Compile Include="Data\SqlPackageDataSource.cs" />
+    <Compile Include="IndexingEventSource.cs" />
     <Compile Include="LuceneExtensions.cs" />
     <Compile Include="Model\LuceneDocumentConverter.cs" />
     <Compile Include="Model\PackageDocument.cs" />
