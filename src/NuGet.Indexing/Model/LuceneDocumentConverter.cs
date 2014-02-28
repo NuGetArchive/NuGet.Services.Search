@@ -8,8 +8,17 @@ using Newtonsoft.Json;
 
 namespace NuGet.Indexing.Model
 {
+    /// <summary>
+    /// Handles storing and retrieving data in Lucene Documents
+    /// </summary>
     public static class LuceneDocumentConverter
     {
+        /// <summary>
+        /// Convert the strongly-typed PackageDocument object into a Lucene Document for storage
+        /// </summary>
+        /// <param name="package">The document to store</param>
+        /// <param name="boosts">The boosts to apply to the fields</param>
+        /// <returns>A Lucene document</returns>
         public static Document ToLuceneDocument(PackageDocument package, BoostFactors boosts)
         {
             var doc = new Document();
@@ -66,7 +75,12 @@ namespace NuGet.Indexing.Model
             return doc;
         }
 
-        public static PackageData LoadData(Document doc)
+        /// <summary>
+        /// Load the payload (i.e. the part returned to users) from a Lucene Document
+        /// </summary>
+        /// <param name="doc">The Lucene document to load from</param>
+        /// <returns>The package data stored in the payload</returns>
+        public static PackageData LoadPayload(Document doc)
         {
             string json = doc.Get("Payload");
             if (String.IsNullOrEmpty(json))
