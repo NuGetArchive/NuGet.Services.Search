@@ -22,7 +22,7 @@ namespace NuGet.Indexing.Facts.Model
                 doc.Add("Payload", "{Id:'DataId'}", Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
 
                 // Act
-                var data = LuceneDocumentConverter.LoadData(doc);
+                var data = LuceneDocumentConverter.LoadPayload(doc);
 
                 // Assert
                 Assert.NotNull(data);

@@ -18,7 +18,7 @@ namespace NuGet.Indexing.Facts
                 var boost = new BoostFactors();
 
                 // Act
-                Assert.Equal(boost["flarg"], BoostFactors.DefaultBoost, precision: 1);
+                Assert.Equal(boost["flarg"], BoostFactors.DefaultDefaultBoost, precision: 1);
             }
 
             [Fact]

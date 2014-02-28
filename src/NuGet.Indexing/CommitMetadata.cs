@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace NuGet.Indexing
 {
+    /// <summary>
+    /// Metadata stored every time a batch of documents are committed to the index.
+    /// </summary>
     public class CommitMetadata
     {
         public DateTime TimestampUtc { get; private set; }
