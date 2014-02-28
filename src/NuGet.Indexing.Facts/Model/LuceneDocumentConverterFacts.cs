@@ -103,7 +103,7 @@ namespace NuGet.Indexing.Facts.Model
                 var doc = LuceneDocumentConverter.ToLuceneDocument(TestPackage, new BoostFactors());
 
                 // Assert
-                var field = doc.fields_ForNUnit.FirstOrDefault(f => String.Equals(f.Name, "Data"));
+                var field = doc.fields_ForNUnit.FirstOrDefault(f => String.Equals(f.Name, "Payload"));
                 Assert.NotNull(field);
                 var data = JsonConvert.DeserializeObject<PackageData>(field.StringValue);
                 Assert.Equal("DataId", data.Id);
