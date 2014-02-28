@@ -61,6 +61,24 @@ namespace NuGet.Indexing {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to  - Batch Commit Part {0}.
+        /// </summary>
+        internal static string PackageIndex_BatchCommitMessageSuffix {
+            get {
+                return ResourceManager.GetString("PackageIndex_BatchCommitMessageSuffix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data is out of order! Document Key {0} is lower than current highest document key {1}.
+        /// </summary>
+        internal static string PackageIndex_DataOutOfOrder {
+            get {
+                return ResourceManager.GetString("PackageIndex_DataOutOfOrder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Lucene index is invalid. No commits have been made..
         /// </summary>
         internal static string PackageIndex_IndexHasNoCommits {

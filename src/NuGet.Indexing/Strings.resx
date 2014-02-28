@@ -120,6 +120,12 @@
   <data name="PackageIndexSession_NotOpened" xml:space="preserve">
     <value>Index session has not been opened.</value>
   </data>
+  <data name="PackageIndex_BatchCommitMessageSuffix" xml:space="preserve">
+    <value> - Batch Commit Part {0}</value>
+  </data>
+  <data name="PackageIndex_DataOutOfOrder" xml:space="preserve">
+    <value>Data is out of order! Document Key {0} is lower than current highest document key {1}</value>
+  </data>
   <data name="PackageIndex_IndexHasNoCommits" xml:space="preserve">
     <value>Lucene index is invalid. No commits have been made.</value>
   </data>
