@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NuGetGallery;
 
 namespace NuGet.Indexing
 {
@@ -236,9 +237,9 @@ namespace NuGet.Indexing
             Add(doc, "Description", package.Description, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
             Add(doc, "Authors", package.FlattenedAuthors, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
 
-            foreach (string owner in package.PackageRegistration.Owners)
+            foreach (User owner in package.PackageRegistration.Owners)
             {
-                Add(doc, "Owners", owner, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
+                Add(doc, "Owners", owner.Username, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
             }
 
             //  Sorting:
@@ -267,9 +268,9 @@ namespace NuGet.Indexing
                 }
             }
 
-            foreach (string packageFramework in package.SupportedFrameworks)
+            foreach (PackageFramework packageFramework in package.SupportedFrameworks)
             {
-                Add(doc, "SupportedFramework", packageFramework, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
+                Add(doc, "SupportedFramework", packageFramework.TargetFramework, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
             }
 
             //  Add Package Key so we can quickly retrieve ranges of packages (in order to support the synchronization with the gallery)
