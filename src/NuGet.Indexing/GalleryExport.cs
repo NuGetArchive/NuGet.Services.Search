@@ -4,8 +4,9 @@ using System.Data.Entity;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
+using NuGetGallery;
 
-namespace NuGetGallery
+namespace NuGet.Indexing
 {
     public static class GalleryExport
     {
