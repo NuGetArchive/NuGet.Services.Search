@@ -42,5 +42,25 @@ namespace NuGet.Indexing
 
             return directory;
         }
+
+        protected PackageSearcherManager GetSearcherManager()
+        {
+            if (!string.IsNullOrEmpty(Container))
+            {
+                return new PackageSearcherManager(
+                    GetDirectory(),
+                    new StorageRankings(StorageAccount));
+            }
+            else if (!string.IsNullOrEmpty(Folder))
+            {
+                return new PackageSearcherManager(
+                    GetDirectory(),
+                    new FolderRankings(Folder));
+            }
+            else
+            {
+                throw new Exception("You must specify either a folder or container");
+            }
+        }
     }
 }

@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 
 namespace NuGet.Indexing
 {
-    public class IndexAddsTask : IndexTask
+    /// <summary>
+    /// Rebuilds the index from scratch.
+    /// </summary>
+    public class FullBuildTask : IndexTask
     {
         public bool Force { get; set; }
-        public bool Clear { get; set; }
-
+        
         public override void Execute()
         {
             DateTime before = DateTime.Now;
@@ -22,11 +24,9 @@ namespace NuGet.Indexing
 
             Lucene.Net.Store.Directory directory = GetDirectory();
 
-            if (Clear)
-            {
-                PackageIndexing.CreateNewEmptyIndex(directory);
-            }
-
+            // Recreate the index
+            PackageIndexing.CreateNewEmptyIndex(directory);
+            
             PackageIndexing.BuildIndex(SqlConnectionString, directory);
 
             DateTime after = DateTime.Now;

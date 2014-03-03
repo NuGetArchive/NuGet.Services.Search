@@ -13,6 +13,7 @@
     <AssemblyName>NuGet.Services.Search.Cloud</AssemblyName>
     <StartDevelopmentStorage>True</StartDevelopmentStorage>
     <Name>NuGet.Services.Search.Cloud</Name>
+    <TargetProfile>Local</TargetProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

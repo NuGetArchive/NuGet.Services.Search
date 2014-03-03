@@ -21,13 +21,7 @@ namespace NuGet.Indexing
             if (response.IsSuccessStatusCode)
             {
                 string content = response.Content.ReadAsStringAsync().Result;
-                IDictionary<int, int> result = new Dictionary<int, int>();
-                JObject obj = JObject.Parse(content);
-                foreach (KeyValuePair<string, JToken> property in obj)
-                {
-                    result.Add(int.Parse(property.Key), property.Value.Value<int>());
-                }
-                return result;
+                return ParseRangeResult(content);
             }
             else
             {
@@ -84,6 +78,17 @@ namespace NuGet.Indexing
                 catch (Exception) { }
                 throw new Exception(string.Format("HTTP status = {0} content = {1}", response.StatusCode, content));
             }
+        }
+
+        public static IDictionary<int, int> ParseRangeResult(string content)
+        {
+            IDictionary<int, int> result = new Dictionary<int, int>();
+            JObject obj = JObject.Parse(content);
+            foreach (KeyValuePair<string, JToken> property in obj)
+            {
+                result.Add(int.Parse(property.Key), property.Value.Value<int>());
+            }
+            return result;
         }
     }
 }

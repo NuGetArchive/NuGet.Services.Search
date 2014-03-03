@@ -11,20 +11,29 @@ namespace NuGet.Indexing
 {
     public class StorageRankings : Rankings
     {
-        string _connectionString;
+        CloudBlockBlob _blob;
 
-        public StorageRankings(string connectionString)
+        public StorageRankings(string connectionString) : this(CloudStorageAccount.Parse(connectionString))
         {
-            _connectionString = connectionString;
+        }
+
+        public StorageRankings(CloudStorageAccount storageAccount) : this(
+            storageAccount.CreateCloudBlobClient().GetContainerReference("ng-search"))
+        {
+        }
+
+        public StorageRankings(CloudBlobContainer container) : this(container.GetBlockBlobReference(@"data\rankings.v1.json"))
+        {
+        }
+
+        public StorageRankings(CloudBlockBlob blob)
+        {
+            _blob = blob;
         }
 
         protected override JObject LoadJson()
         {
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_connectionString);
-            CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
-            CloudBlobContainer container = blobClient.GetContainerReference("ranking");
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference("all.json");
-            string json = blockBlob.DownloadText();
+            string json = _blob.DownloadText();
             JObject obj = JObject.Parse(json);
             return obj;
         }
