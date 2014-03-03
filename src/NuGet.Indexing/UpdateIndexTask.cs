@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace NuGet.Indexing
 {
-    public class IndexUpdatesTask : IndexTask
+    /// <summary>
+    /// Updates the index incrementally.
+    /// </summary>
+    public class UpdateIndexTask : IndexTask
     {
-        public string Host { get; set; }
-
         public override void Execute()
         {
             IDictionary<int, int> database = GalleryExport.FetchGalleryChecksums(SqlConnectionString);
@@ -20,7 +21,10 @@ namespace NuGet.Indexing
 
             Log.WriteLine("min = {0}, max = {1}", minMax.Item1, minMax.Item2);
 
-            IDictionary<int, int> index = SearchServiceClient.GetRangeFromIndex(minMax.Item1, minMax.Item2, Host);
+            // For now, use the in-memory Searcher client. But eventually this will use the original Search Service call below
+            IDictionary<int, int> index = SearchServiceClient.ParseRangeResult(
+                Searcher.KeyRangeQuery(GetSearcherManager(), minMax.Item1, minMax.Item2));
+            //IDictionary<int, int> index = SearchServiceClient.GetRangeFromIndex(minMax.Item1, minMax.Item2, Host);
 
             Log.WriteLine("fetched {0} keys from index", index.Count);
 

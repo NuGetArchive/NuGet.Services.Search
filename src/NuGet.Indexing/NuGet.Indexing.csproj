@@ -13,6 +13,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <BuildPackage>true</BuildPackage>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -132,10 +133,10 @@
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="GalleryExport.cs" />
-    <Compile Include="IndexAddsTask.cs" />
+    <Compile Include="FullBuildTask.cs" />
     <Compile Include="IndexDocumentData.cs" />
     <Compile Include="IndexTask.cs" />
-    <Compile Include="IndexUpdatesTask.cs" />
+    <Compile Include="UpdateIndexTask.cs" />
     <Compile Include="PackageJson.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AzureDirectoryManagement.cs" />
@@ -172,6 +173,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="NuGet.Indexing.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
