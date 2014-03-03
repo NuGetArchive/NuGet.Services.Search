@@ -6,7 +6,7 @@ using PowerArgs;
 
 namespace IndexMaintainance
 {
-    public class IndexAddsArgs : IndexArgs
+    public class IndexAddsArgs : IndexWriteArgs
     {
         [ArgShortcut("-f")]
         [ArgDescription("When using blob storage force unlock the index for write")]

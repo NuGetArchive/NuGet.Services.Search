@@ -19,7 +19,10 @@ namespace IndexMaintainance
         [ArgShortcut("-dir")]
         [ArgDescription("The file system folder")]
         public string Folder { get; set; }
+    }
 
+    public abstract class IndexWriteArgs : IndexArgs
+    {
         [ArgShortcut("-db")]
         [ArgDescription("Connection string to the relevant database server")]
         public string ConnectionString { get; set; }
