@@ -22,7 +22,7 @@ namespace NuGet.Indexing
         protected override JObject LoadJson()
         {
             string json;
-            using (TextReader reader = new StreamReader(_folder.Trim('\\') + "\\all.json"))
+            using (TextReader reader = new StreamReader(_folder.Trim('\\') + "\\data\\rankings.v1.json"))
             {
                 json = reader.ReadToEnd();
             }
