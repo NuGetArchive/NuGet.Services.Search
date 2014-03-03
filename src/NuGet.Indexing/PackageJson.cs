@@ -1,8 +1,11 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using NuGetGallery;
 
-namespace NuGetGallery
+using GalleryPackageDependency = NuGetGallery.PackageDependency;
+
+namespace NuGet.Indexing
 {
     public static class PackageJson
     {
@@ -80,10 +83,10 @@ namespace NuGetGallery
             return array;
         }
 
-        private static JArray ToJson_PackageDependencies(ICollection<PackageDependency> dependencies)
+        private static JArray ToJson_PackageDependencies(ICollection<GalleryPackageDependency> dependencies)
         {
             JArray array = new JArray();
-            foreach (PackageDependency packageDependency in dependencies)
+            foreach (GalleryPackageDependency packageDependency in dependencies)
             {
                 JObject obj = new JObject();
                 obj.Add("Id", packageDependency.Id);
@@ -155,12 +158,12 @@ namespace NuGetGallery
             return package;
         }
 
-        private static ICollection<PackageDependency> FromJson_PackageDependencies(JArray array)
+        private static ICollection<GalleryPackageDependency> FromJson_PackageDependencies(JArray array)
         {
-            List<PackageDependency> packageDependencies = new List<PackageDependency>();
+            List<GalleryPackageDependency> packageDependencies = new List<GalleryPackageDependency>();
             foreach (JObject obj in array)
             {
-                PackageDependency packageDependency = new PackageDependency();
+                GalleryPackageDependency packageDependency = new GalleryPackageDependency();
                 packageDependency.Id = obj["Id"].ToString();
                 packageDependency.VersionSpec = obj["VersionSpec"].ToString();
                 packageDependency.TargetFramework = obj["TargetFramework"].ToString();
