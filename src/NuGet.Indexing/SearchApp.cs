@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace NuGet.Indexing
 {
-    // Depends on System.Web. Doesn't build right now, probably going to be "replaced" (with all it's code copied out :))
+    // Depends on System.Web. Doesn't build right now, will be porting over to pure Owin and put in Search Service project
 
     //public class SearchApp
     //{
