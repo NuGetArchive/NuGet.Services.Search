@@ -14,11 +14,14 @@ namespace NuGet.Services.Search
     {
         public DiagMiddleware(OwinMiddleware next, string path, SearchMiddlewareConfiguration config) : base(next, path, config) { }
 
-        protected override Task Execute(IOwinContext context)
+        protected override async Task Execute(IOwinContext context)
         {
-            Trace.TraceInformation("Diag");
+            if (await IsAdmin(context))
+            {
+                Trace.TraceInformation("Diag");
 
-            return WriteResponse(context, IndexAnalyzer.Analyze(GetSearcherManager()));
+                await WriteResponse(context, IndexAnalyzer.Analyze(GetSearcherManager()));
+            }
         }
     }
 }

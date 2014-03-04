@@ -89,10 +89,13 @@ namespace NuGet.Services.Search
                     JObject resources = new JObject();
                     response.Add("resources", resources);
 
-                    resources.Add("diagnostics", MakeUri(context, "/diag"));
-                    resources.Add("fields", MakeUri(context, "/fields"));
-                    resources.Add("range", MakeUri(context, "/range"));
-                    resources.Add("config", MakeUri(context, "/config"));
+                    if (await SearchMiddleware.IsAdmin(context, challenge: false)) 
+                    {
+                        resources.Add("diagnostics", MakeUri(context, "/diag"));
+                        resources.Add("fields", MakeUri(context, "/fields"));
+                        resources.Add("range", MakeUri(context, "/range"));
+                        resources.Add("config", MakeUri(context, "/config"));
+                    }
                     resources.Add("query", MakeUri(context, "/query"));
 
                     SearchMiddleware.WriteResponse(context, response.ToString());
