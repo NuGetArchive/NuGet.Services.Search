@@ -14,25 +14,28 @@ namespace NuGet.Services.Search
     {
         public RangeMiddleware(OwinMiddleware next, string path, SearchMiddlewareConfiguration config) : base(next, path, config) { }
 
-        protected override Task Execute(IOwinContext context)
+        protected override async Task Execute(IOwinContext context)
         {
-            Trace.TraceInformation("Range: {0}", context.Request.QueryString);
-
-            string min = context.Request.Query["min"];
-            string max = context.Request.Query["max"];
-
-            string content = "[]";
-
-            int minKey;
-            int maxKey;
-            if (min != null && max != null && int.TryParse(min, out minKey) && int.TryParse(max, out maxKey))
+            if (await IsAdmin(context))
             {
-                Trace.TraceInformation("Searcher.KeyRangeQuery(..., {0}, {1})", minKey, maxKey);
+                Trace.TraceInformation("Range: {0}", context.Request.QueryString);
 
-                content = Searcher.KeyRangeQuery(GetSearcherManager(), minKey, maxKey);
+                string min = context.Request.Query["min"];
+                string max = context.Request.Query["max"];
+
+                string content = "[]";
+
+                int minKey;
+                int maxKey;
+                if (min != null && max != null && int.TryParse(min, out minKey) && int.TryParse(max, out maxKey))
+                {
+                    Trace.TraceInformation("Searcher.KeyRangeQuery(..., {0}, {1})", minKey, maxKey);
+
+                    content = Searcher.KeyRangeQuery(GetSearcherManager(), minKey, maxKey);
+                }
+
+                await WriteResponse(context, content);
             }
-
-            return WriteResponse(context, content);
         }
     }
 }
