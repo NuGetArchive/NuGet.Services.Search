@@ -10,13 +10,14 @@ namespace NuGet.Indexing
 {
     public static class GalleryExport
     {
-        public static TextWriter TraceWriter = Console.Out;
-        public static bool Verbose = false;
-
+        public static TextWriter DefaultTraceWriter = Console.Out;
+        
         public static int ChunkSize = 4000;
 
-        public static List<Package> GetPublishedPackagesSince(string sqlConnectionString, int highestPackageKey)
+        public static List<Package> GetPublishedPackagesSince(string sqlConnectionString, int highestPackageKey, TextWriter log = null, bool verbose = false)
         {
+            log = log ?? DefaultTraceWriter;
+
             EntitiesContext context = new EntitiesContext(sqlConnectionString, readOnly: true);
             IEntityRepository<Package> packageRepository = new EntityRepository<Package>(context);
 
@@ -43,11 +44,13 @@ namespace NuGet.Indexing
                 .Include(p => p.SupportedFrameworks)
                 .Include(p => p.Dependencies);
 
-            return ExecuteQuery(set);
+            return ExecuteQuery(set, log, verbose);
         }
 
-        public static List<Package> GetEditedPackagesSince(string sqlConnectionString, int highestPackageKey, DateTime lastEditsIndexTime)
+        public static List<Package> GetEditedPackagesSince(string sqlConnectionString, int highestPackageKey, DateTime lastEditsIndexTime, TextWriter log = null, bool verbose = false)
         {
+            log = log ?? DefaultTraceWriter;
+
             EntitiesContext context = new EntitiesContext(sqlConnectionString, readOnly: true);
             IEntityRepository<Package> packageRepository = new EntityRepository<Package>(context);
 
@@ -71,14 +74,14 @@ namespace NuGet.Indexing
                 .Include(p => p.SupportedFrameworks)
                 .Include(p => p.Dependencies);
 
-            return ExecuteQuery(set);
+            return ExecuteQuery(set, log, verbose);
         }
 
-        public static List<Package> ExecuteQuery(IQueryable<Package> query)
+        public static List<Package> ExecuteQuery(IQueryable<Package> query, TextWriter log, bool verbose)
         {
-            if (Verbose)
+            if (verbose)
             {
-                TraceWriter.WriteLine(query.ToString());
+                log.WriteLine(query.ToString());
             }
 
             DateTime before = DateTime.Now;
@@ -87,13 +90,15 @@ namespace NuGet.Indexing
 
             DateTime after = DateTime.Now;
 
-            TraceWriter.WriteLine("Packages: {0} rows returned, duration {1} seconds", list.Count, (after - before).TotalSeconds);
+            log.WriteLine("Packages: {0} rows returned, duration {1} seconds", list.Count, (after - before).TotalSeconds);
 
             return list;
         }
 
-        public static IDictionary<int, IEnumerable<string>>  GetFeedsByPackageRegistration(string sqlConnectionString)
+        public static IDictionary<int, IEnumerable<string>>  GetFeedsByPackageRegistration(string sqlConnectionString, TextWriter log, bool verbose)
         {
+            log = log ?? DefaultTraceWriter;
+
             EntitiesContext context = new EntitiesContext(sqlConnectionString, readOnly: true);
             IEntityRepository<CuratedPackage> curatedPackageRepository = new EntityRepository<CuratedPackage>(context);
 
@@ -102,9 +107,9 @@ namespace NuGet.Indexing
                 .Select(cp => new { PackageRegistrationKey = cp.PackageRegistrationKey, FeedName = cp.CuratedFeed.Name })
                 .GroupBy(x => x.PackageRegistrationKey);
 
-            if (Verbose)
+            if (verbose)
             {
-                TraceWriter.WriteLine(curatedFeedsPerPackageRegistrationGrouping.ToString());
+                log.WriteLine(curatedFeedsPerPackageRegistrationGrouping.ToString());
             }
 
             //  database call
@@ -116,7 +121,7 @@ namespace NuGet.Indexing
 
             DateTime after = DateTime.Now;
 
-            TraceWriter.WriteLine("Feeds: {0} rows returned, duration {1} seconds", feeds.Count, (after - before).TotalSeconds);
+            log.WriteLine("Feeds: {0} rows returned, duration {1} seconds", feeds.Count, (after - before).TotalSeconds);
 
             return feeds;
         }
@@ -287,8 +292,10 @@ namespace NuGet.Indexing
             return checksums;
         }
 
-        public static List<Package> GetPackages(string sqlConnectionString, List<int> packageKeys)
+        public static List<Package> GetPackages(string sqlConnectionString, List<int> packageKeys, TextWriter log = null, bool verbose = false)
         {
+            log = log ?? DefaultTraceWriter;
+
             EntitiesContext context = new EntitiesContext(sqlConnectionString, readOnly: true);
             IEntityRepository<Package> packageRepository = new EntityRepository<Package>(context);
 
@@ -304,7 +311,7 @@ namespace NuGet.Indexing
                 .Include(p => p.SupportedFrameworks)
                 .Include(p => p.Dependencies);
 
-            return ExecuteQuery(set);
+            return ExecuteQuery(set, log, verbose);
         }
 
         public static Tuple<int, int> FindMinMaxKey(IDictionary<int, int> d)

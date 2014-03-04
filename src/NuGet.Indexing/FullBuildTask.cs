@@ -27,7 +27,7 @@ namespace NuGet.Indexing
             // Recreate the index
             PackageIndexing.CreateNewEmptyIndex(directory);
             
-            PackageIndexing.BuildIndex(SqlConnectionString, directory);
+            PackageIndexing.BuildIndex(SqlConnectionString, directory, Log);
 
             DateTime after = DateTime.Now;
             Log.WriteLine("duration = {0} seconds", (after - before).TotalSeconds);
