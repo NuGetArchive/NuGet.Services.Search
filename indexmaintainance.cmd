@@ -1,0 +1,1 @@
+@%~dp0src\IndexMaintainance\bin\Debug\IndexMaintainance.exe %*
