@@ -97,5 +97,31 @@ namespace NuGet.Indexing
                 searcherManager.Release(searcher);
             }
         }
+
+        // Doesn't return JSON because consumers will want to make monitoring decisions based on this data as well as saving it/returning it from APIs
+        public static IndexConsistencyReport GetIndexConsistency(PackageSearcherManager searcherManager, int databasePackageCount)
+        {
+            if ((DateTime.UtcNow - searcherManager.WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
+            {
+                searcherManager.MaybeReopen();
+            }
+
+            IndexSearcher searcher = searcherManager.Get();
+
+            try
+            {
+                IndexReader indexReader = searcher.IndexReader;
+                
+                // Get the number of documents
+                int numDocs = indexReader.NumDocs();
+
+                // Build the report
+                return new IndexConsistencyReport(numDocs, databasePackageCount);
+            }
+            finally
+            {
+                searcherManager.Release(searcher);
+            }
+        }
     }
 }

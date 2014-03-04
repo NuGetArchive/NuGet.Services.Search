@@ -158,6 +158,34 @@ namespace NuGet.Indexing
             }
         }
 
+        /// <summary>
+        /// Fetches the total count of packages in the gallery, for use in consistency report generation
+        /// </summary>
+        /// <param name="sqlConnectionString">The Gallery Connection String</param>
+        /// <returns>The number of packages in the gallery</returns>
+        public static int GetPackageCount(string sqlConnectionString)
+        {
+            string sql = @"
+                SELECT COUNT([Key])
+                FROM Packages
+            ";
+
+            using (SqlConnection connection = new SqlConnection(sqlConnectionString))
+            {
+                connection.Open();
+
+                SqlCommand command = new SqlCommand(sql, connection);
+
+                SqlDataReader reader = command.ExecuteReader();
+
+                if (!reader.Read())
+                {
+                    throw new Exception("Expected results from Package Count query!");
+                }
+                return reader.GetInt32(0);
+            }
+        }
+
         public static Tuple<int, int, HashSet<int>> GetNextBlockOfPackageIds(string sqlConnectionString, int lastHighestPackageKey, int chunkSize)
         {
             string sql = @"
