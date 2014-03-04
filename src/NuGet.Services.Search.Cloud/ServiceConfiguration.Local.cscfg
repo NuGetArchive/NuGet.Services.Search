@@ -17,7 +17,8 @@
             <Setting name="Http.BasePath" value="" />
             <Setting name="Http.AdminKey" value="password" />
 
-            <Setting name="Search.IndexInterval" value="00:10:00" />
+            <!-- Set this to the location of a local file-system-based search index. -->
+            <Setting name="Search.IndexPath" value="C:\Tmep\Lucene" />
 
             <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="" />
             <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="" />

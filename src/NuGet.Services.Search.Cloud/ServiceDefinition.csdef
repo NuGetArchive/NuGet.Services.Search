@@ -24,7 +24,7 @@
             <Setting name="Http.BasePath" />
             <Setting name="Http.AdminKey" />
 
-            <Setting name="Search.IndexInterval" />
+            <Setting name="Search.IndexPath" />
         </ConfigurationSettings>
         <Certificates>
             <Certificate name="SSL" permissionLevel="limitedOrElevated" storeLocation="LocalMachine" storeName="My" />
