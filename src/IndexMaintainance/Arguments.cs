@@ -101,7 +101,7 @@ namespace IndexMaintainance
                 args.ProjectType ?? String.Empty, 
                 args.IncludePrerelease, 
                 args.Feed ?? "none", 
-                args.SortBy ?? String.Empty, 
+                String.Empty,  // No longer used
                 args.Skip, 
                 args.Take, 
                 args.IncludeExplanation, 

@@ -32,10 +32,6 @@ namespace IndexMaintainance
         [ArgDescription("Filter by curated feed")]
         public string Feed { get; set; }
 
-        [ArgShortcut("-s")]
-        [ArgDescription("Sort by a specific field")]
-        public string SortBy { get; set; }
-        
         [ArgShortcut("-sk")]
         [ArgDescription("Skips the specified number of records")]
         public int Skip { get; set; }
