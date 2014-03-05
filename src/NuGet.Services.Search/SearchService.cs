@@ -98,7 +98,7 @@ namespace NuGet.Services.Search
                     }
                     resources.Add("query", MakeUri(context, "/query"));
 
-                    SearchMiddleware.WriteResponse(context, response.ToString());
+                    await SearchMiddleware.WriteResponse(context, response.ToString());
                 }
             });
         }
