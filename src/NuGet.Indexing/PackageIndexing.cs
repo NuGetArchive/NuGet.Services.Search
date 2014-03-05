@@ -63,10 +63,8 @@ namespace NuGet.Indexing
             log.WriteLine("all done");
         }
 
-        private static void AddPackagesToIndex(List<IndexDocumentData> indexDocumentData, Lucene.Net.Store.Directory directory, TextWriter log = null)
+        private static void AddPackagesToIndex(List<IndexDocumentData> indexDocumentData, Lucene.Net.Store.Directory directory, TextWriter log)
         {
-            log = log ?? DefaultTraceWriter;
-
             log.WriteLine("About to add {0} packages", indexDocumentData.Count);
 
             for (int index = 0; index < indexDocumentData.Count; index += MaxDocumentsPerCommit)
