@@ -47,7 +47,7 @@ namespace NuGet.Indexing
                 log.WriteLine("indexTime = {0} mostRecentPublished = {1}", indexTime, highestPackageKey);
 
                 log.WriteLine("get packages from gallery where the Package.Key > {0}", highestPackageKey);
-                List<Package> packages = GalleryExport.GetPublishedPackagesSince(sqlConnectionString, highestPackageKey);
+                List<Package> packages = GalleryExport.GetPublishedPackagesSince(sqlConnectionString, highestPackageKey, log, verbose: false);
 
                 if (packages.Count == 0)
                 {
@@ -57,7 +57,7 @@ namespace NuGet.Indexing
                 log.WriteLine("associate the feeds and checksum data with each packages");
                 List<IndexDocumentData> indexDocumentData = MakeIndexDocumentData(packages, feeds, checksums);
 
-                AddPackagesToIndex(indexDocumentData, directory);
+                AddPackagesToIndex(indexDocumentData, directory, log);
             }
 
             log.WriteLine("all done");
