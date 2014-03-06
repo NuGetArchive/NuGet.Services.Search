@@ -100,8 +100,7 @@ namespace IndexMaintainance
                 args.CountOnly, 
                 args.ProjectType ?? String.Empty, 
                 args.IncludePrerelease, 
-                args.Feed ?? "none", 
-                String.Empty,  // No longer used
+                args.Feed ?? "none",
                 args.Skip, 
                 args.Take, 
                 args.IncludeExplanation, 
