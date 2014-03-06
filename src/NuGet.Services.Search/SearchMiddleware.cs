@@ -73,28 +73,6 @@ namespace NuGet.Services.Search
             return new PackageSearcherManager(directory, rankings);
         }
 
-        public static Task<bool> IsAdmin(IOwinContext context)
-        {
-            return IsAdmin(context, challenge: true);
-        }
-
-        public static async Task<bool> IsAdmin(IOwinContext context, bool challenge)
-        {
-            await context.Authentication.AuthenticateAsync("AdminKey");
-            if (context.Request.User != null && context.Request.User.IsInRole(Roles.Admin))
-            {
-                return true;
-            }
-            else
-            {
-                if (challenge)
-                {
-                    context.Authentication.Challenge("AdminKey");
-                }
-                return false;
-            }
-        }
-
         private Lucene.Net.Store.Directory GetDirectory()
         {
             if (Config.UseStorage)

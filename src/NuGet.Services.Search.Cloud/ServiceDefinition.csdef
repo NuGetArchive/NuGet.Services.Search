@@ -11,15 +11,9 @@
         <ConfigurationSettings>
             <!-- The full name of the service host (i.e. nuget-int-0-work, nuget-prod-1-search, etc.) -->
             <Setting name="Host.Name" />
+
             <!-- The name of the service host -->
             <Setting name="Storage.Primary" />
-            <Setting name="Storage.Legacy" />
-            <Setting name="Storage.Backup" />
-
-            <!-- SQL Connections -->
-            <Setting name="Sql.Primary" />
-            <Setting name="Sql.Legacy" />
-            <Setting name="Sql.Warehouse" />
 
             <Setting name="Http.BasePath" />
             <Setting name="Http.AdminKey" />

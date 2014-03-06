@@ -16,12 +16,9 @@ namespace NuGet.Services.Search
 
         protected override async Task Execute(IOwinContext context)
         {
-            if (await IsAdmin(context))
-            {
-                Trace.TraceInformation("Diag");
+            Trace.TraceInformation("Diag");
 
-                await WriteResponse(context, IndexAnalyzer.Analyze(GetSearcherManager()));
-            }
+            await WriteResponse(context, IndexAnalyzer.Analyze(GetSearcherManager()));
         }
     }
 }

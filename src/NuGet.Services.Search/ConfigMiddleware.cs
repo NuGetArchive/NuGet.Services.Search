@@ -16,31 +16,28 @@ namespace NuGet.Services.Search
 
         protected override async Task Execute(IOwinContext context)
         {
-            if (await IsAdmin(context))
+            Trace.TraceInformation("Where");
+
+            JObject response = new JObject();
+
+            if (Config.UseStorage)
             {
-                Trace.TraceInformation("Where");
+                string accountName = Config.StorageAccount.Credentials.AccountName;
+                response.Add("AccountName", accountName);
+                response.Add("StorageContainer", Config.StorageContainer);
 
-                JObject response = new JObject();
+                CloudBlobClient client = Config.StorageAccount.CreateCloudBlobClient();
+                CloudBlobContainer container = client.GetContainerReference(Config.StorageContainer);
+                CloudBlockBlob blob = container.GetBlockBlobReference("segments.gen");
 
-                if (Config.UseStorage)
-                {
-                    string accountName = Config.StorageAccount.Credentials.AccountName;
-                    response.Add("AccountName", accountName);
-                    response.Add("StorageContainer", Config.StorageContainer);
-
-                    CloudBlobClient client = Config.StorageAccount.CreateCloudBlobClient();
-                    CloudBlobContainer container = client.GetContainerReference(Config.StorageContainer);
-                    CloudBlockBlob blob = container.GetBlockBlobReference("segments.gen");
-
-                    response.Add("IndexExists", blob.Exists());
-                }
-                else
-                {
-                    response.Add("LocalIndexPath", Config.LocalIndexPath);
-                }
-
-                await WriteResponse(context, response.ToString());
+                response.Add("IndexExists", blob.Exists());
             }
+            else
+            {
+                response.Add("LocalIndexPath", Config.LocalIndexPath);
+            }
+
+            await WriteResponse(context, response.ToString());
         }
     }
 }
