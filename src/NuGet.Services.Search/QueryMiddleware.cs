@@ -14,7 +14,7 @@ namespace NuGet.Services.Search
     {
         public QueryMiddleware(OwinMiddleware next, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, path, searcherManagerThunk) { }
 
-        protected override Task Execute(IOwinContext context)
+        protected override async Task Execute(IOwinContext context)
         {
             Trace.TraceInformation("Search: {0}", context.Request.QueryString);
 
@@ -58,8 +58,8 @@ namespace NuGet.Services.Search
 
             // Ignore explanation field if not an admin
             // It's not really secret, but it's internal for now at least
-            bool includeExplanation;
-            if (!SearchService.IsAdmin(context, challenge: false) &&
+            bool includeExplanation = false;
+            if (!(await SearchService.IsAdmin(context, challenge: false)) &&
                 !bool.TryParse(context.Request.Query["explanation"], out includeExplanation))
             {
                 includeExplanation = false;
@@ -81,7 +81,7 @@ namespace NuGet.Services.Search
 
             string content = Searcher.Search(SearcherManager, q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
 
-            return WriteResponse(context, content);
+            await WriteResponse(context, content);
         }
     }
 }
