@@ -15,14 +15,18 @@ namespace NuGet.Services.Search
 {
     public abstract class SearchMiddleware : OwinMiddleware
     {
-        public SearchMiddlewareConfiguration Config { get; private set; }
+        private Func<PackageSearcherManager> _searcherManagerThunk;
+
+        public PackageSearcherManager SearcherManager { get { return _searcherManagerThunk(); } }
+
         public PathString BasePath { get; private set; }
 
-        protected SearchMiddleware(OwinMiddleware next, string basePath, SearchMiddlewareConfiguration config)
+        protected SearchMiddleware(OwinMiddleware next, string basePath, Func<PackageSearcherManager> searcherManagerThunk)
             : base(next)
         {
-            Config = config;
             BasePath = new PathString(basePath);
+
+            _searcherManagerThunk = searcherManagerThunk;
         }
 
         public sealed override Task Invoke(IOwinContext context)
@@ -58,58 +62,6 @@ namespace NuGet.Services.Search
             if (e.InnerException != null)
             {
                 TraceException(e.InnerException);
-            }
-        }
-
-        // Doing this every request in order to allow config changes to be live without restarting the site.
-        // If this becomes a perf issue, we can use a straightforward caching technique to handle it using the RoleEnvironment.Changing event:
-        //  http://msdn.microsoft.com/en-us/library/microsoft.windowsazure.serviceruntime.roleenvironment.changing.aspx
-        protected PackageSearcherManager GetSearcherManager()
-        {
-            Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
-
-            Lucene.Net.Store.Directory directory = GetDirectory();
-            Rankings rankings = GetRankings();
-            return new PackageSearcherManager(directory, rankings);
-        }
-
-        private Lucene.Net.Store.Directory GetDirectory()
-        {
-            if (Config.UseStorage)
-            {
-                CloudStorageAccount storageAccount = Config.StorageAccount;
-
-                Trace.TraceInformation("GetDirectory using storage. Container: {0}", Config.StorageContainer);
-
-                return new AzureDirectory(storageAccount, Config.StorageContainer, new RAMDirectory());
-            }
-            else
-            {
-                string fileSystemPath = Config.LocalIndexPath;
-
-                Trace.TraceInformation("GetDirectory using filesystem. Folder: {0}", fileSystemPath);
-
-                return new SimpleFSDirectory(new DirectoryInfo(fileSystemPath));
-            }
-        }
-
-        private Rankings GetRankings()
-        {
-            if (Config.UseStorage)
-            {
-                CloudStorageAccount storageAccount = Config.StorageAccount;
-
-                Trace.TraceInformation("Rankings from storage.");
-
-                return new StorageRankings(storageAccount);
-            }
-            else
-            {
-                string folder = Config.LocalIndexPath;
-
-                Trace.TraceInformation("Rankings from folder.");
-
-                return new FolderRankings(folder);
             }
         }
     }

@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>NuGet Search Console - Segments</title>
+    <link rel="stylesheet" type="text/css" href="Master.css" />
+    <link rel="stylesheet" type="text/css" href="Json2HtmlStyle.css" />
+</head>
+<body>
+    <h2>Segments</h2>
+
+    <div id="result"></div>
+
+    <script src="d3.v3.js"></script>
+    <script src="jquery-1.8.2.js"></script>
+    <script src="Json2Html.js"></script>
+    <script>
+
+        function bytesToSize(bytes) {
+            var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            if (bytes == 0) return '0 Bytes';
+            var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+            return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+        };
+
+        var load = function () {
+
+            $('#result').html('<p>Loading...</p>');
+
+            $.get('/search/diag', function (data, status) {
+
+                if (status === 'success') {
+
+                    var numberFormat = d3.format(',');
+
+                    var html = '';
+
+                    html += '<p>Total Memory:&nbsp;<span id="totalMemory">' + bytesToSize(data.TotalMemory) + '</span></p>';
+                    html += '<p>Searcher Manager Identity:&nbsp;<span id="searcherManagerId">' + data.SearcherManagerIdentity + '</span></p>';
+                    html += '<p>Total Documents:&nbsp;<span id="totalDocuments">' + numberFormat(data.NumDocs) + '</span></p>';
+
+                    if (data.CommitUserData !== undefined) {
+
+                        html += '<p>CommitUserData:</p>';
+
+                        html += '<table>';
+                        for (var prop in data.CommitUserData) {
+
+                            html += '<tr><td><b>' + prop + '</b></td><td><b>' + data.CommitUserData[prop] + '</b></td></tr>';
+                        }
+                        html += '</table>';
+                    }
+
+                    $('#result').html(html);
+                }
+                else {
+                    var html = '';
+
+                    html = 'ERROR';
+
+                    $('#result').html(html);
+                }
+            });
+        }
+
+        $(document).ready(function () {
+
+            load();
+            setInterval(load, 30000);
+        });
+
+    </script>
+</body>
+</html>

@@ -12,7 +12,7 @@ namespace NuGet.Services.Search
 {
     public class RangeMiddleware : SearchMiddleware
     {
-        public RangeMiddleware(OwinMiddleware next, string path, SearchMiddlewareConfiguration config) : base(next, path, config) { }
+        public RangeMiddleware(OwinMiddleware next, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, path, searcherManagerThunk) { }
 
         protected override async Task Execute(IOwinContext context)
         {
@@ -29,7 +29,7 @@ namespace NuGet.Services.Search
             {
                 Trace.TraceInformation("Searcher.KeyRangeQuery(..., {0}, {1})", minKey, maxKey);
 
-                content = Searcher.KeyRangeQuery(GetSearcherManager(), minKey, maxKey);
+                content = Searcher.KeyRangeQuery(SearcherManager, minKey, maxKey);
             }
 
             await WriteResponse(context, content);

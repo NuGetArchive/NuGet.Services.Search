@@ -12,7 +12,7 @@ namespace NuGet.Services.Search
 {
     public class QueryMiddleware : SearchMiddleware
     {
-        public QueryMiddleware(OwinMiddleware next, string path, SearchMiddlewareConfiguration config) : base(next, path, config) { }
+        public QueryMiddleware(OwinMiddleware next, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, path, searcherManagerThunk) { }
 
         protected override Task Execute(IOwinContext context)
         {
@@ -76,7 +76,7 @@ namespace NuGet.Services.Search
                 q = LuceneQueryCreator.Parse(q);
             }
 
-            string content = Searcher.Search(GetSearcherManager(), q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
+            string content = Searcher.Search(SearcherManager, q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
 
             return WriteResponse(context, content);
         }

@@ -10,11 +10,15 @@ namespace NuGet.Indexing
         DateTime _rankingsTimeStampUtc;
         Rankings _rankings;
 
+        public Guid Id { get; private set; }
+
         public PackageSearcherManager(Lucene.Net.Store.Directory directory, Rankings rankings)
             : base(directory)
         {
             _rankings = rankings;
             WarmTimeStampUtc = DateTime.UtcNow;
+
+            Id = Guid.NewGuid(); // Used for identifying changes to the searcher manager at runtime.
         }
 
         protected override void Warm(IndexSearcher searcher)

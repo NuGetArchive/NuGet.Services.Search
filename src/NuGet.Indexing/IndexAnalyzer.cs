@@ -4,6 +4,7 @@ using Lucene.Net.Search;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace NuGet.Indexing
 {
@@ -25,8 +26,8 @@ namespace NuGet.Indexing
                 JObject report = new JObject();
 
                 report.Add("TotalMemory", GC.GetTotalMemory(false));
-
                 report.Add("NumDocs", indexReader.NumDocs());
+                report.Add("SearcherManagerIdentity", searcherManager.Id.ToString());
 
                 if (indexReader.CommitUserData != null)
                 {
@@ -38,6 +39,29 @@ namespace NuGet.Indexing
                     report.Add("CommitUserData", commitUserdata);
                 }
 
+                // Moved segments to their own command since they can take a while to calculate in Azure
+
+                return report.ToString();
+            }
+            finally
+            {
+                searcherManager.Release(searcher);
+            }
+        }
+
+        public static string GetSegments(PackageSearcherManager searcherManager)
+        {
+            if ((DateTime.UtcNow - searcherManager.WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
+            {
+                searcherManager.MaybeReopen();
+            }
+
+            IndexSearcher searcher = searcherManager.Get();
+
+            try
+            {
+                IndexReader indexReader = searcher.IndexReader;
+
                 JArray segments = new JArray();
                 foreach (ReadOnlySegmentReader segmentReader in indexReader.GetSequentialSubReaders())
                 {
@@ -46,9 +70,7 @@ namespace NuGet.Indexing
                     segmentInfo.Add("documents", segmentReader.NumDocs());
                     segments.Add(segmentInfo);
                 }
-                report.Add("Segments", segments);
-
-                return report.ToString();
+                return segments.ToString();
             }
             finally
             {

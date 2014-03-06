@@ -191,6 +191,7 @@
     <Compile Include="$(CommonSourceDirectory)\CommonAssemblyInfo.cs">
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="SegmentsMiddleware.cs" />
     <Compile Include="DiagMiddleware.cs" />
     <Compile Include="FieldsMiddleware.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -202,7 +203,6 @@
     <Compile Include="SearchService.cs" />
     <Compile Include="SearchServiceEventSource.cs" />
     <Compile Include="SearchWorkerRole.cs" />
-    <Compile Include="ConfigMiddleware.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -230,6 +230,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Console\StoredFields.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Console\Status.html" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(BuildToolsDirectory)\NuGet.targets" />

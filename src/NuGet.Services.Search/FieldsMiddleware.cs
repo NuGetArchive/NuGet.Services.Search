@@ -11,13 +11,13 @@ namespace NuGet.Services.Search
 {
     public class FieldsMiddleware : SearchMiddleware
     {
-        public FieldsMiddleware(OwinMiddleware next, string path, SearchMiddlewareConfiguration config) : base(next, path, config) { }
+        public FieldsMiddleware(OwinMiddleware next, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, path, searcherManagerThunk) { }
 
         protected override async Task Execute(IOwinContext context)
         {
             Trace.TraceInformation("Fields");
 
-            await WriteResponse(context, IndexAnalyzer.GetDistinctStoredFieldNames(GetSearcherManager()));
+            await WriteResponse(context, IndexAnalyzer.GetDistinctStoredFieldNames(SearcherManager));
         }
     }
 }

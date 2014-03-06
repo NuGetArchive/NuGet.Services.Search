@@ -80,30 +80,13 @@
 
             $('#result').html('<p>Loading...</p>');
 
-            $.get('/search/diag', function (data, status) {
+            $.get('/search/segments', function (data, status) {
 
                 if (status === 'success') {
 
                     var numberFormat = d3.format(',');
 
                     var html = '';
-
-                    html += '<p>Total Memory:&nbsp;<span id="totalMemory">' + numberFormat(data.TotalMemory) + ' bytes</span></p>';
-                    html += '<p>Total Documents:&nbsp;<span id="totalDocuments">' + numberFormat(data.NumDocs) + '</span></p>';
-
-                    if (data.CommitUserData !== undefined) {
-
-                        html += '<p>CommitUserData:</p>';
-
-                        html += '<table>';
-                        for (var prop in data.CommitUserData) {
-
-                            html += '<tr><td><b>' + prop + '</b></td><td><b>' + data.CommitUserData[prop] + '</b></td></tr>';
-                        }
-                        html += '</table>';
-                    }
-
-                    $('#result').html(html);
 
                     showGraph(data.Segments);
                 }

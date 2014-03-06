@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Lucene.Net.Store;
@@ -24,27 +25,36 @@ namespace NuGet.Services.Search
 {
     public class SearchService : NuGetHttpService
     {
-        private SearchMiddlewareConfiguration _config;
+        private PackageSearcherManager _searcherManager;
 
         public override PathString BasePath
         {
             get { return new PathString("/search"); }
         }
 
+        public PackageSearcherManager SearcherManager
+        {
+            get { return _searcherManager; }
+        }
+
         public SearchService(ServiceName name, ServiceHost host)
             : base(name, host)
         {
+        }
+
+        protected override Task<bool> OnStart()
+        {
+            // Load the index
+            ReloadIndex();
+
+            // Set up reloading
             try
             {
                 if (RoleEnvironment.IsAvailable)
                 {
-                    // In azure, set up config reloading
                     RoleEnvironment.Changing += (_, __) =>
                     {
-                        if (_config != null)
-                        {
-                            _config.Reload();
-                        }
+                        ReloadIndex();
                     };
                 }
             }
@@ -52,6 +62,8 @@ namespace NuGet.Services.Search
             {
                 // Ignore failures, they will only occur outside of Azure
             }
+
+            return base.OnStart();
         }
 
         protected override Task OnRun()
@@ -73,14 +85,11 @@ namespace NuGet.Services.Search
             new PathString("/diag"),
             new PathString("/fields"),
             new PathString("/range"),
-            new PathString("/config"),
-            new PathString("/console")
+            new PathString("/console"),
+            new PathString("/segments")
         };
         protected override void Configure(IAppBuilder app)
         {
-            // Load middleware configuration
-            _config = new SearchMiddlewareConfiguration(Configuration);
-
             // Configure the app
             app.UseErrorPage();
             app.Use(async (context, next) =>
@@ -97,15 +106,17 @@ namespace NuGet.Services.Search
                 RequestPath = new PathString("/console"),
                 FileSystem = new EmbeddedResourceFileSystem("NuGet.Services.Search.Console")
             };
+
+            Func<PackageSearcherManager> searcherManagerThunk = () => SearcherManager;
             
             // Public endpoint(s)
-            app.Use(typeof(QueryMiddleware), "/query", _config);
+            app.Use(typeof(QueryMiddleware), "/query", searcherManagerThunk);
                
             // Admin endpoints
-            app.Use(typeof(DiagMiddleware), "/diag", _config);
-            app.Use(typeof(FieldsMiddleware), "/fields", _config);
-            app.Use(typeof(RangeMiddleware), "/range", _config);
-            app.Use(typeof(ConfigMiddleware), "/config", _config);
+            app.Use(typeof(DiagMiddleware), "/diag", searcherManagerThunk);
+            app.Use(typeof(FieldsMiddleware), "/fields", searcherManagerThunk);
+            app.Use(typeof(RangeMiddleware), "/range", searcherManagerThunk);
+            app.Use(typeof(SegmentsMiddleware), "/segments", searcherManagerThunk);
 
             // Just a little bit of rewriting. Not the full UseDefaultFiles middleware, just a quick hack
             app.Use((context, next) =>
@@ -141,9 +152,9 @@ namespace NuGet.Services.Search
                     {
                         resources.Add("range", MakeUri(context, "/range"));
                         resources.Add("fields", MakeUri(context, "/fields"));
-                        resources.Add("config", MakeUri(context, "/config"));
                         resources.Add("console", MakeUri(context, "/console"));
                         resources.Add("diagnostics", MakeUri(context, "/diag"));
+                        resources.Add("segments", MakeUri(context, "/segments"));
                     }
                     resources.Add("query", MakeUri(context, "/query"));
 
@@ -180,6 +191,58 @@ namespace NuGet.Services.Search
             {
                 Path = (context.Request.PathBase + new PathString(path)).Value
             }.Uri.AbsoluteUri;
+        }
+
+        private PackageSearcherManager CreateSearcherManager()
+        {
+            Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
+
+            SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
+            Lucene.Net.Store.Directory directory = GetDirectory(config.IndexPath);
+            Rankings rankings = GetRankings(config.IndexPath);
+            return new PackageSearcherManager(directory, rankings);
+        }
+
+        private Lucene.Net.Store.Directory GetDirectory(string localPath)
+        {
+            if (String.IsNullOrEmpty(localPath))
+            {
+                CloudStorageAccount storageAccount = Configuration.Storage.Primary;
+
+                Trace.TraceInformation("GetDirectory using storage. Container: {0}", "ng-search");
+
+                return new AzureDirectory(storageAccount, "ng-search", new RAMDirectory());
+            }
+            else
+            {
+                Trace.TraceInformation("GetDirectory using filesystem. Folder: {0}", localPath);
+
+                return new SimpleFSDirectory(new DirectoryInfo(localPath));
+            }
+        }
+
+        private Rankings GetRankings(string localPath)
+        {
+            if (String.IsNullOrEmpty(localPath))
+            {
+                CloudStorageAccount storageAccount = Configuration.Storage.Primary;
+
+                Trace.TraceInformation("Rankings from storage.");
+
+                return new StorageRankings(storageAccount);
+            }
+            else
+            {
+                Trace.TraceInformation("Rankings from folder.");
+
+                return new FolderRankings(localPath);
+            }
+        }
+
+        private void ReloadIndex()
+        {
+            PackageSearcherManager newIndex = CreateSearcherManager();
+            Interlocked.Exchange(ref _searcherManager, newIndex);
         }
     }
 }
