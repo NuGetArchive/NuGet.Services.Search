@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30110.0
+VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "NuGet.Services.Search.Cloud", "src\NuGet.Services.Search.Cloud\NuGet.Services.Search.Cloud.ccproj", "{12CB66A2-0203-4263-B817-6813AB3C335C}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Indexing", "src\NuGet.Indexing\NuGet.Indexing.csproj", "{DDB34145-870F-42C3-9663-A9390CEE1E35}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IndexMaintainance", "src\IndexMaintainance\IndexMaintainance.csproj", "{E844C058-0A10-4D2E-BA52-CA0D0235A546}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Search.Client", "src\NuGet.Services.Search.Client\NuGet.Services.Search.Client.csproj", "{CE0AC7E5-CDF7-4899-AD72-DCB64E402EBE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{E844C058-0A10-4D2E-BA52-CA0D0235A546}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E844C058-0A10-4D2E-BA52-CA0D0235A546}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E844C058-0A10-4D2E-BA52-CA0D0235A546}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE0AC7E5-CDF7-4899-AD72-DCB64E402EBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE0AC7E5-CDF7-4899-AD72-DCB64E402EBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE0AC7E5-CDF7-4899-AD72-DCB64E402EBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE0AC7E5-CDF7-4899-AD72-DCB64E402EBE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
