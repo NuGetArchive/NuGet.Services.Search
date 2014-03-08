@@ -119,10 +119,14 @@ namespace NuGet.Services.Search.Client
             return new ServiceResponse<SearchResults>(await _client.GetAsync("search/query?" + (await qs.ReadAsStringAsync())));
         }
 
-        public async Task<ServiceResponse<IDictionary<string, int>>> GetChecksums(int minKey, int maxKey)
+        public async Task<ServiceResponse<IDictionary<int, int>>> GetChecksums(int minKey, int maxKey)
         {
-            return new ServiceResponse<IDictionary<string, int>>(
-                await _client.GetAsync("search/range?min=" + minKey.ToString() + "&max=" + maxKey.ToString()));
+            var response = await _client.GetAsync("search/range?min=" + minKey.ToString() + "&max=" + maxKey.ToString());
+            return new ServiceResponse<IDictionary<int, int>>(
+                response,
+                async () => (await response.Content.ReadAsAsync<IDictionary<string, int>>())
+                    .Select(pair => new KeyValuePair<int, int>(Int32.Parse(pair.Key), pair.Value))
+                    .ToDictionary(pair => pair.Key, pair => pair.Value));
         }
 
         public async Task<ServiceResponse<IEnumerable<string>>> GetStoredFieldNames()

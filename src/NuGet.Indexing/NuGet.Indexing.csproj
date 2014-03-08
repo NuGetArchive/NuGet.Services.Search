@@ -152,7 +152,6 @@
     <Compile Include="RankingsScoreQuery.cs" />
     <Compile Include="Searcher.cs" />
     <Compile Include="SearcherManager.cs" />
-    <Compile Include="SearchServiceClient.cs" />
     <Compile Include="SemanticVersionFilter.cs" />
     <Compile Include="ShingledIdentifierAnalyzer.cs" />
     <Compile Include="StorageRankings.cs" />
