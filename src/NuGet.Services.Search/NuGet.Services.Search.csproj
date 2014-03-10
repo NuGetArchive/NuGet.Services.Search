@@ -138,8 +138,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\NuGet.Core.2.8.0\lib\net40-Client\NuGet.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Services.Platform">
-      <HintPath>..\..\packages\NuGet.Services.Platform.3.0.1-rel\lib\net45\NuGet.Services.Platform.dll</HintPath>
+    <Reference Include="NuGet.Services.Platform, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\NuGet.Services.Platform.3.0.2-rel-4\lib\net45\NuGet.Services.Platform.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Services.Platform.Client">
       <HintPath>..\..\packages\NuGet.Services.Platform.Client.3.0.1-rel\lib\portable-net45+wp80+win\NuGet.Services.Platform.Client.dll</HintPath>
