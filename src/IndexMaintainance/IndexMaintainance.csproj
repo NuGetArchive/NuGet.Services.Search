@@ -94,10 +94,6 @@
       <Project>{ddb34145-870f-42c3-9663-a9390cee1e35}</Project>
       <Name>NuGet.Indexing</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NuGet.Services.Search.Client\NuGet.Services.Search.Client.csproj">
-      <Project>{ce0ac7e5-cdf7-4899-ad72-dcb64e402ebe}</Project>
-      <Name>NuGet.Services.Search.Client</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
