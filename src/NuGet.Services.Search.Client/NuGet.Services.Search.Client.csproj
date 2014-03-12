@@ -46,6 +46,7 @@
     </Compile>
     <Compile Include="Client\SearchClient.cs" />
     <Compile Include="Models\SearchResults.cs" />
+    <Compile Include="Models\SortOrder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

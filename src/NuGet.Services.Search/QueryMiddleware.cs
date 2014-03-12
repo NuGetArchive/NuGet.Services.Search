@@ -22,6 +22,8 @@ namespace NuGet.Services.Search
 
             string projectType = context.Request.Query["projectType"] ?? String.Empty;
 
+            string sortBy = context.Request.Query["sortBy"] ?? String.Empty;
+
             bool luceneQuery;
             if (!bool.TryParse(context.Request.Query["luceneQuery"], out luceneQuery))
             {
@@ -69,7 +71,7 @@ namespace NuGet.Services.Search
                 ignoreFilter = false;
             }
 
-            string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9})", q, countOnly, projectType, includePrerelease, feed, skip, take, includeExplanation, ignoreFilter, luceneQuery);
+            string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
             Trace.TraceInformation(args);
 
             if (!luceneQuery)
@@ -77,7 +79,7 @@ namespace NuGet.Services.Search
                 q = LuceneQueryCreator.Parse(q);
             }
 
-            string content = Searcher.Search(SearcherManager, q, countOnly, projectType, includePrerelease, feed, skip, take, includeExplanation, ignoreFilter);
+            string content = Searcher.Search(SearcherManager, q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
 
             await WriteResponse(context, content);
         }
