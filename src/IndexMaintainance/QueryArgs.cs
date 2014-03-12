@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using NuGet.Services.Search.Models;
 using PowerArgs;
 
 namespace IndexMaintainance
@@ -48,5 +49,9 @@ namespace IndexMaintainance
         [ArgShortcut("-if")]
         [ArgDescription("Ignores filters")]
         public bool IgnoreFilter { get; set; }
+
+        [ArgShortcut("-sort")]
+        [ArgDescription("Specifies an order in which to sort the results")]
+        public string SortOrder { get; set; }
     }
 }

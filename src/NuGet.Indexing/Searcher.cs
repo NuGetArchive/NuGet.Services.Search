@@ -36,7 +36,7 @@ namespace NuGet.Indexing
             }
         }
 
-        public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, string feed, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
             IndexSearcher searcher;
 
@@ -68,7 +68,7 @@ namespace NuGet.Indexing
                     {
                         IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
 
-                        return ListDocuments(searcher, rankings, includePrerelease, feed, skip, take, includeExplanation, ignoreFilter);
+                        return ListDocuments(searcher, rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
                     }
                 }
                 else
@@ -83,7 +83,7 @@ namespace NuGet.Indexing
                     {
                         IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
 
-                        return ListDocumentsForQuery(searcher, q, rankings, includePrerelease, feed, skip, take, includeExplanation, ignoreFilter);
+                        return ListDocumentsForQuery(searcher, q, rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
                     }
                 }
             }
@@ -98,9 +98,9 @@ namespace NuGet.Indexing
             return DocumentCountImpl(searcher, new MatchAllDocsQuery(), includePrerelease, feed, ignoreFilter);
         }
 
-        private static string ListDocuments(IndexSearcher searcher, IDictionary<string, int> rankings, bool includePrerelease, string feed, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        private static string ListDocuments(IndexSearcher searcher, IDictionary<string, int> rankings, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
-            return ListDocumentsImpl(searcher, new MatchAllDocsQuery(), rankings, includePrerelease, feed, skip, take, includeExplanation, ignoreFilter);
+            return ListDocumentsImpl(searcher, new MatchAllDocsQuery(), rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
         }
 
         private static string DocumentCountForQuery(IndexSearcher searcher, string q, bool includePrerelease, string feed, bool ignoreFilter)
@@ -108,9 +108,9 @@ namespace NuGet.Indexing
             return DocumentCountImpl(searcher, CreateBasicQuery(q), includePrerelease, feed, ignoreFilter);
         }
 
-        private static string ListDocumentsForQuery(IndexSearcher searcher, string q, IDictionary<string, int> rankings, bool includePrerelease, string feed, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        private static string ListDocumentsForQuery(IndexSearcher searcher, string q, IDictionary<string, int> rankings, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
-            return ListDocumentsImpl(searcher, CreateBasicQuery(q), rankings, includePrerelease, feed, skip, take, includeExplanation, ignoreFilter);
+            return ListDocumentsImpl(searcher, CreateBasicQuery(q), rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
         }
 
         private static string DocumentCountImpl(IndexSearcher searcher, Query query, bool includePrerelease, string feed, bool ignoreFilter)
@@ -121,17 +121,40 @@ namespace NuGet.Indexing
             return MakeCountResult(topDocs.TotalHits);
         }
 
-        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, bool includePrerelease, string feed, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
             Filter filter = ignoreFilter ? null : GetFilter(includePrerelease, feed);
 
             Query boostedQuery = new RankingScoreQuery(query, rankings);
             
             int nDocs = GetDocsCount(skip, take);
+            Sort sort = GetSort(sortBy);
 
-            TopDocs topDocs = searcher.Search(boostedQuery, filter, nDocs);
-
+            TopDocs topDocs = (sort == null) ?
+               searcher.Search(boostedQuery, filter, nDocs) :
+               searcher.Search(boostedQuery, filter, nDocs, sort);
+            
             return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery);
+        }
+
+        private static readonly Dictionary<string, Func<Sort>> _sorts = new Dictionary<string, Func<Sort>>(StringComparer.OrdinalIgnoreCase) {
+            {"lastEdited", () => new Sort(new SortField("EditedDate", SortField.INT, reverse: true))},
+            {"published", () => new Sort(new SortField("PublishedDate", SortField.INT, reverse: true))},
+            {"title-asc", () => new Sort(new SortField("DisplayName", SortField.STRING, reverse: false))},
+            {"title-desc", () => new Sort(new SortField("DisplayName", SortField.STRING, reverse: true))},
+        };
+        private static Sort GetSort(string sortBy)
+        {
+            if (String.IsNullOrEmpty(sortBy))
+            {
+                return null;
+            }
+            Func<Sort> sort;
+            if (!_sorts.TryGetValue(sortBy, out sort))
+            {
+                return null;
+            }
+            return sort();
         }
 
         private static Filter GetFilter(bool includePrerelease, string feed)

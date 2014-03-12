@@ -101,7 +101,8 @@ namespace IndexMaintainance
                 args.ProjectType ?? String.Empty, 
                 args.IncludePrerelease, 
                 args.Feed ?? "none",
-                args.Skip, 
+                args.SortOrder,
+                args.Skip,
                 args.Take, 
                 args.IncludeExplanation, 
                 args.IgnoreFilter);
@@ -110,7 +111,7 @@ namespace IndexMaintainance
             Console.WriteLine("{0} hits", (int)json.totalHits);
             foreach (dynamic hit in json.data)
             {
-                Console.WriteLine(" {0} {1} ", hit.PackageRegistration.Id, hit.Version);
+                Console.WriteLine(" {0} {1} (Published: {2})", hit.Title ?? hit.PackageRegistration.Id, hit.Version, hit.Published);
             }
         }
     }
