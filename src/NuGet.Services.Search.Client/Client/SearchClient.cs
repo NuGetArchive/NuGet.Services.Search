@@ -65,6 +65,7 @@ namespace NuGet.Services.Search.Client
 
         private static readonly Dictionary<SortOrder, string> _sortNames = new Dictionary<SortOrder, string>()
         {
+            {SortOrder.LastEdited, "lastEdited"},
             {SortOrder.Relevance, "relevance"},
             {SortOrder.Published, "published"},
             {SortOrder.TitleAscending, "title-asc"},
