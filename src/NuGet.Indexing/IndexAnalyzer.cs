@@ -10,7 +10,7 @@ namespace NuGet.Indexing
 {
     public static class IndexAnalyzer
     {
-        public static string Analyze(PackageSearcherManager searcherManager)
+        public static string Analyze(PackageSearcherManager searcherManager, bool includeMemory)
         {
             if ((DateTime.UtcNow - searcherManager.WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
             {
@@ -25,7 +25,10 @@ namespace NuGet.Indexing
 
                 JObject report = new JObject();
 
-                report.Add("TotalMemory", GC.GetTotalMemory(false));
+                if (includeMemory)
+                {
+                    report.Add("TotalMemory", GC.GetTotalMemory(false));
+                }
                 report.Add("NumDocs", indexReader.NumDocs());
                 report.Add("SearcherManagerIdentity", searcherManager.Id.ToString());
 
