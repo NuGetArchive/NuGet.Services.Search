@@ -165,6 +165,14 @@ namespace IndexMaintainance
             Console.WriteLine("Average: {0:0.00}ms", warmAvg);
         }
 
+        [ArgActionMethod]
+        public void ParseQuery(ParseQueryArgs args)
+        {
+            Console.WriteLine("---- Converted Lucene Query ----");
+            Console.WriteLine(LuceneQueryCreator.Parse(args.Query));
+            Console.WriteLine("-- End Converted Lucene Query --");
+        }
+
         private void RenderRunData(IList<Tuple<string, double>> run)
         {
             // Find the interesting values
