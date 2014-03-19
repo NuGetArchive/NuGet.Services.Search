@@ -181,7 +181,9 @@ namespace NuGet.Services.Search
             SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
             Lucene.Net.Store.Directory directory = GetDirectory(config.IndexPath);
             Rankings rankings = GetRankings(config.IndexPath);
-            return new PackageSearcherManager(directory, rankings);
+            var searcher = new PackageSearcherManager(directory, rankings);
+            searcher.MaybeReopen(); // Ensure the index is initially opened.
+            return searcher;
         }
 
         private Lucene.Net.Store.Directory GetDirectory(string localPath)
