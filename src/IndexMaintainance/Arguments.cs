@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Lucene.Net.Store;
@@ -119,6 +120,8 @@ namespace IndexMaintainance
         [ArgActionMethod]
         public void PerfTest(PerfTestArgs args)
         {
+            ServicePointManager.ServerCertificateValidationCallback = (_, __, ___, ____) => true;
+
             // Load the query file
             IList<string> queries = (args.Queries ?? System.IO.File.ReadAllLines(args.QueryList)).ToList();
 

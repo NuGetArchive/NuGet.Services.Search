@@ -8,11 +8,13 @@ using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace NuGet.Indexing
 {
     public static class Searcher
     {
+        static DateTime WarmTimeStampUtc = DateTime.UtcNow;
         static IDictionary<string, Filter> _filters = new Dictionary<string, Filter>();
 
         public static string KeyRangeQuery(PackageSearcherManager searcherManager, int minKey, int maxKey)
@@ -44,11 +46,28 @@ namespace NuGet.Indexing
             
             try
             {
-                if ((DateTime.UtcNow - searcherManager.WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
+                if ((DateTime.UtcNow - WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
                 {
-                    searcherManager.MaybeReopen();
+                    WarmTimeStampUtc = DateTime.UtcNow;
+                    
+                    // Re-open on a background thread. We can safely continue to use the old reader while this happens.
+                    Task.Factory
+                        .StartNew(() => searcherManager.MaybeReopen())
+                        .ContinueWith(t =>
+                        {
+                            // Log and suppress the exception to prevent taking down the whole process
+                            if (t.IsFaulted)
+                            {
+                                Trace.WriteLine("Exception reopening searcher: {0}", t.Exception.ToString());
+
+                                // Return a completed task indicating everything is A-OK :)
+                                return Task.FromResult(0);
+                            }
+                            return t;
+                        });
                 }
 
+                // Get the current reader. If a re-open is in progress but not yet complete, this will return the current reader.
                 searcher = searcherManager.Get();
             }
             catch (Exception e)

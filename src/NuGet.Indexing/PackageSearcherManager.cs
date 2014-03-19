@@ -16,21 +16,13 @@ namespace NuGet.Indexing
             : base(directory)
         {
             _rankings = rankings;
-            WarmTimeStampUtc = DateTime.UtcNow;
-
+        
             Id = Guid.NewGuid(); // Used for identifying changes to the searcher manager at runtime.
         }
 
         protected override void Warm(IndexSearcher searcher)
         {
             searcher.Search(new MatchAllDocsQuery(), 1);
-            WarmTimeStampUtc = DateTime.UtcNow;
-        }
-
-        public DateTime WarmTimeStampUtc
-        {
-            get;
-            private set;
         }
 
         public IDictionary<string, int> GetRankings(string context)
