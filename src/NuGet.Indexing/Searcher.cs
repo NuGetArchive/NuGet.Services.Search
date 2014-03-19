@@ -6,6 +6,8 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Diagnostics;
+using System.Linq;
 
 namespace NuGet.Indexing
 {
@@ -39,7 +41,7 @@ namespace NuGet.Indexing
         public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
             IndexSearcher searcher;
-
+            
             try
             {
                 if ((DateTime.UtcNow - searcherManager.WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
@@ -117,8 +119,11 @@ namespace NuGet.Indexing
         {
             Filter filter = ignoreFilter ? null : GetFilter(includePrerelease, feed);
 
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             TopDocs topDocs = searcher.Search(query, filter, 1);
-            return MakeCountResult(topDocs.TotalHits);
+            sw.Stop();
+            return MakeCountResult(topDocs.TotalHits, sw.ElapsedMilliseconds);
         }
 
         private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
@@ -130,11 +135,14 @@ namespace NuGet.Indexing
             int nDocs = GetDocsCount(skip, take);
             Sort sort = GetSort(sortBy);
 
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             TopDocs topDocs = (sort == null) ?
                searcher.Search(boostedQuery, filter, nDocs) :
                searcher.Search(boostedQuery, filter, nDocs, sort);
+            sw.Stop();
             
-            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery);
+            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds);
         }
 
         private static readonly Dictionary<string, Func<Sort>> _sorts = new Dictionary<string, Func<Sort>>(StringComparer.OrdinalIgnoreCase) {
@@ -155,6 +163,7 @@ namespace NuGet.Indexing
                 return null;
             }
             return sort();
+            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds);
         }
 
         private static Filter GetFilter(bool includePrerelease, string feed)
@@ -201,18 +210,18 @@ namespace NuGet.Indexing
             }
         }
 
-        private static string MakeCountResult(int totalHits)
+        private static string MakeCountResult(int totalHits, long elapsed)
         {
-            return (new JObject { { "totalHits", totalHits } }).ToString();
+            return (new JObject { { "totalHits", totalHits }, { "timeTakenInMs", elapsed } }).ToString();
         }
 
-        private static string MakeResults(IndexSearcher searcher, TopDocs topDocs, int skip, int take, bool includeExplanation, Query query)
+        private static string MakeResults(IndexSearcher searcher, TopDocs topDocs, int skip, int take, bool includeExplanation, Query query, long elapsed)
         {
             //  note the use of a StringBuilder because we have the response data already formatted as JSON in the fields in the index
 
             StringBuilder strBldr = new StringBuilder();
 
-            strBldr.AppendFormat("{{\"totalHits\":{0},\"data\":[", topDocs.TotalHits);
+            strBldr.AppendFormat("{{\"totalHits\":{0},\"timeTakenInMs\":{1},\"data\":[", topDocs.TotalHits, elapsed);
 
             bool hasResult = false;
 
@@ -399,7 +408,9 @@ namespace NuGet.Indexing
 
         private static int GetDocsCount(int skip, int take)
         {
-            return (skip + 1) * take;
+            // Skip is the number of RECORDS to skip, Take is the number of RECORDS to take
+            // Calculate the total to retrieve (because Lucene doesn't have a native concept of Skip)
+            return skip + take;
         }
     }
 }
