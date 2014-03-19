@@ -20,6 +20,14 @@
                     <option value="false" selected>Stable Only</option>
                     <option value="true">Include Prerelease</option>
                 </select>
+                Sort By:
+                <select id="sortBy">
+                    <option value="" selected>Relevance</option>
+                    <option value="lastEdited">Recently Edited</option>
+                    <option value="published">Recently Published</option>
+                    <option value="title-asc">Title: Ascending</option>
+                    <option value="title-desc">Title: Descending</option>
+                </select>
             </div>
         </div>
     </div>
@@ -53,7 +61,6 @@
 
             <div style="width:360px;display:inline-block;">
                 ProjectType:&nbsp;<input id="projectType" type="text" size="40">
-                (see Stored Fields for VS Project guid sets)
             </div>
 
             <div style="width:100px;display:inline-block;">
@@ -466,7 +473,7 @@
             var query = {
                 query: $('#query').val(),
                 prerelease: $('#prerelease').val(),
-                sortBy: 'NA',
+                sortBy: $('#sortBy').val(),
                 expectedPackageId: $('#expectedPackageId').val(),
                 contactDetails: $('#contactDetails').val()
             };

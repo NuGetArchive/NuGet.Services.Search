@@ -48,5 +48,9 @@ namespace IndexMaintainance
         [ArgShortcut("-if")]
         [ArgDescription("Ignores filters")]
         public bool IgnoreFilter { get; set; }
+
+        [ArgShortcut("-sort")]
+        [ArgDescription("Specifies an order in which to sort the results")]
+        public string SortOrder { get; set; }
     }
 }

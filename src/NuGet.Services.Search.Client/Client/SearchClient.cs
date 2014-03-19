@@ -62,11 +62,22 @@ namespace NuGet.Services.Search.Client
             _client = client;
         }
 
+
+        private static readonly Dictionary<SortOrder, string> _sortNames = new Dictionary<SortOrder, string>()
+        {
+            {SortOrder.LastEdited, "lastEdited"},
+            {SortOrder.Relevance, "relevance"},
+            {SortOrder.Published, "published"},
+            {SortOrder.TitleAscending, "title-asc"},
+            {SortOrder.TitleDescending, "title-desc"},
+        };
+
         public async Task<ServiceResponse<SearchResults>> Search(
             string query,
             string projectTypeFilter = null,
             bool includePrerelease = false,
             string curatedFeed = null,
+            SortOrder sortBy = SortOrder.Relevance,
             int skip = 0,
             int take = 10,
             bool isLuceneQuery = false,
@@ -78,6 +89,7 @@ namespace NuGet.Services.Search.Client
             nameValue.Add("q", query);
             nameValue.Add("skip", skip.ToString());
             nameValue.Add("take", take.ToString());
+            nameValue.Add("sortBy", _sortNames[sortBy]);
             
             if (!String.IsNullOrEmpty(projectTypeFilter))
             {
