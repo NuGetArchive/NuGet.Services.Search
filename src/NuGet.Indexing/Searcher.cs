@@ -184,7 +184,6 @@ namespace NuGet.Indexing
                 return null;
             }
             return sort();
-            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds);
         }
 
         private static Filter GetFilter(bool includePrerelease, string feed)
