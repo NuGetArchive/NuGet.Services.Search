@@ -61,12 +61,20 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Newtonsoft.Json.6.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="NuGet.Services.Platform.Client">
+      <HintPath>..\..\packages\NuGet.Services.Platform.Client.3.0.2-alpha-9\lib\portable-net45+wp80+win\NuGet.Services.Platform.Client.dll</HintPath>
+    </Reference>
     <Reference Include="PowerArgs">
       <HintPath>..\..\packages\PowerArgs.2.0.4.0-preview\lib\net40\PowerArgs.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Services.Client" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.Formatting, Version=5.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.AspNet.WebApi.Client.5.1.1\lib\net45\System.Net.Http.Formatting.dll</HintPath>
+    </Reference>
     <Reference Include="System.Spatial, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\packages\System.Spatial.5.6.0\lib\net40\System.Spatial.dll</HintPath>
     </Reference>
@@ -80,6 +88,7 @@
     <Compile Include="Arguments.cs" />
     <Compile Include="FullBuildArgs.cs" />
     <Compile Include="IndexArgs.cs" />
+    <Compile Include="PerfTestArgs.cs" />
     <Compile Include="UpdateIndexArgs.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -93,6 +102,10 @@
     <ProjectReference Include="..\NuGet.Indexing\NuGet.Indexing.csproj">
       <Project>{ddb34145-870f-42c3-9663-a9390cee1e35}</Project>
       <Name>NuGet.Indexing</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NuGet.Services.Search.Client\NuGet.Services.Search.Client.csproj">
+      <Project>{ce0ac7e5-cdf7-4899-ad72-dcb64e402ebe}</Project>
+      <Name>NuGet.Services.Search.Client</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
