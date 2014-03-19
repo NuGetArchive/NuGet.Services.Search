@@ -5,7 +5,7 @@
         <ConfigurationSettings>
             <Setting name="Host.Name" value="nuget-local-0-search" />
             <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
-            <Setting name="Storage.Primary" value="DefaultEndpointsProtocol=https;AccountName=nugetdev0;AccountKey=7wTCkrEV13HEKPbyVQbf3hcGTCQdO4GURnsHdbEwIat44qerZwaeX0cTsFww3fgFHsCqoT/VIwvXhn/LzeIQUg==" />
+            <Setting name="Storage.Primary" value="UseDevelopmentStorage=true" />
             
             <Setting name="Http.BasePath" value="" />
             <Setting name="Http.AdminKey" value="password" />
