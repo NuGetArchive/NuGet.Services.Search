@@ -160,6 +160,7 @@ namespace NuGet.Indexing
             TopDocs topDocs = (sort == null) ?
                searcher.Search(boostedQuery, filter, nDocs) :
                searcher.Search(boostedQuery, filter, nDocs, sort);
+            sw.Stop();
             
             sw.Stop();
             return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds);
@@ -183,6 +184,7 @@ namespace NuGet.Indexing
                 return null;
             }
             return sort();
+            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds);
         }
 
         private static Filter GetFilter(bool includePrerelease, string feed)
