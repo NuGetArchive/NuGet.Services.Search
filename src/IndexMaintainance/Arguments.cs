@@ -156,9 +156,9 @@ namespace IndexMaintainance
             // Calculate aggregate warm time
             var maxAgg = TupleAggregate(max: true);
             var minAgg = TupleAggregate(max: false);
-            var warmMax = data.Select(d => d.Aggregate(maxAgg)).Aggregate(maxAgg);
-            var warmMin = data.Select(d => d.Aggregate(minAgg)).Aggregate(minAgg);
-            var warmAvg = data.SelectMany(run => run).Average(t => t.Item2);
+            var warmMax = data.Skip(1).Select(d => d.Aggregate(maxAgg)).Aggregate(maxAgg);
+            var warmMin = data.Skip(1).Select(d => d.Aggregate(minAgg)).Aggregate(minAgg);
+            var warmAvg = data.Skip(1).SelectMany(run => run).Average(t => t.Item2);
             Console.WriteLine("-- Warm Run Aggregates --");
             Console.WriteLine("Maximum: {0:0.00}ms for {1}", warmMax.Item2, warmMax.Item1);
             Console.WriteLine("Minimum: {0:0.00}ms for {1}", warmMin.Item2, warmMin.Item1);
