@@ -88,6 +88,7 @@
     <Compile Include="Arguments.cs" />
     <Compile Include="FullBuildArgs.cs" />
     <Compile Include="IndexArgs.cs" />
+    <Compile Include="ParseQueryArgs.cs" />
     <Compile Include="PerfTestArgs.cs" />
     <Compile Include="UpdateIndexArgs.cs" />
     <Compile Include="Program.cs" />

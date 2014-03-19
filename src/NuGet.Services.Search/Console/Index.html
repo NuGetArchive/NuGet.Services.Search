@@ -293,10 +293,18 @@
             $('.result-json').click(showJson(data));
         }
 
-        var createFieldClause = function (field, query) {
+        var addBoost = function(term, boost)
+        {
+            if (boost !== undefined && boost !== 1) {
+                term += '^' + boost;
+            }
+            return term;
+        }
+
+        var createFieldClause = function (field, query, boost) {
 
             if (query[0] === '"' && query[query.length - 1] === '"') {
-                return field + ':' + query;
+                return addBoost(field + ':' + query, boost);
             }
 
             var t = query.split(' ');
@@ -313,16 +321,16 @@
             }
 
             if (subterms.length === 1) {
-                return field + ':' + '"' + subterms[0] + '"';
+                return addBoost(field + ':' + subterms[0], boost);
             }
 
-            var clause = '(' + field + ':' + '"' + subterms[0] + '"';
+            var clause = '(' + field + ':' + subterms[0];
             for (var i = 1; i < subterms.length; i += 1) {
-                clause += ' OR ' + field + ':' + '"' + subterms[i] + '"';
+                clause += ' OR ' + field + ':' + subterms[i];
             }
             clause += ')';
 
-            return clause;
+            return addBoost(clause, boost);
         }
 
         var createFieldClauseAND = function (field, query, boost) {
@@ -344,17 +352,13 @@
                 return '';
             }
 
-            var clause = '(' + field + ':' + '"' + subterms[0] + '"';
+            var clause = '(' + field + ':' + subterms[0];
             for (var i = 1; i < subterms.length; i += 1) {
-                clause += ' AND ' + field + ':' + '"' + subterms[i] + '"';
+                clause += ' AND ' + field + ':' + subterms[i];
             }
             clause += ')';
 
-            if (boost !== 1) {
-                clause += '^' + boost;
-            }
-
-            return clause;
+            return addBoost(clause, boost);
         }
 
         var createLuceneQuery = function (query) {
@@ -374,7 +378,7 @@
             luceneQuery += ' ' + createFieldClause('TokenizedId', query);
             luceneQuery += ' ' + createFieldClauseAND('TokenizedId', query, 4);
             luceneQuery += ' ' + createFieldClause('ShingledId', query);
-            luceneQuery += ' ' + createFieldClause('Title', query);
+            luceneQuery += ' ' + createFieldClause('Title', query, 2);
             luceneQuery += ' ' + createFieldClauseAND('Title', query, 4);
             luceneQuery += ' ' + createFieldClause('Tags', query);
             luceneQuery += ' ' + createFieldClause('Description', query);
