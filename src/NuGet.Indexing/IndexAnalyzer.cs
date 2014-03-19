@@ -12,11 +12,8 @@ namespace NuGet.Indexing
     {
         public static string Analyze(PackageSearcherManager searcherManager, bool includeMemory)
         {
-            if ((DateTime.UtcNow - searcherManager.WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
-            {
-                searcherManager.MaybeReopen();
-            }
-
+            searcherManager.MaybeReopen();
+            
             IndexSearcher searcher = searcherManager.Get();
 
             try
@@ -54,11 +51,8 @@ namespace NuGet.Indexing
 
         public static string GetSegments(PackageSearcherManager searcherManager)
         {
-            if ((DateTime.UtcNow - searcherManager.WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
-            {
-                searcherManager.MaybeReopen();
-            }
-
+            searcherManager.MaybeReopen();
+            
             IndexSearcher searcher = searcherManager.Get();
 
             try
@@ -83,11 +77,8 @@ namespace NuGet.Indexing
 
         public static string GetDistinctStoredFieldNames(PackageSearcherManager searcherManager)
         {
-            if ((DateTime.UtcNow - searcherManager.WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
-            {
-                searcherManager.MaybeReopen();
-            }
-
+            searcherManager.MaybeReopen();
+            
             IndexSearcher searcher = searcherManager.Get();
 
             try
@@ -126,10 +117,7 @@ namespace NuGet.Indexing
         // Doesn't return JSON because consumers will want to make monitoring decisions based on this data as well as saving it/returning it from APIs
         public static IndexConsistencyReport GetIndexConsistency(PackageSearcherManager searcherManager, int databasePackageCount)
         {
-            if ((DateTime.UtcNow - searcherManager.WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
-            {
-                searcherManager.MaybeReopen();
-            }
+            searcherManager.MaybeReopen();
 
             IndexSearcher searcher = searcherManager.Get();
 
