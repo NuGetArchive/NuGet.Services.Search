@@ -19,7 +19,7 @@ namespace NuGet.Indexing
             CreateFieldClause(luceneQuery, "TokenizedId", nugetQuery);
             CreateFieldClauseAND(luceneQuery, "TokenizedId", nugetQuery, 4);
             CreateFieldClause(luceneQuery, "ShingledId", nugetQuery);
-            CreateFieldClause(luceneQuery, "Title", nugetQuery);
+            CreateFieldClause(luceneQuery, "Title", nugetQuery, 2);
             CreateFieldClauseAND(luceneQuery, "Title", nugetQuery, 4);
             CreateFieldClause(luceneQuery, "Tags", nugetQuery);
             CreateFieldClause(luceneQuery, "Description", nugetQuery);
@@ -29,14 +29,14 @@ namespace NuGet.Indexing
             return luceneQuery.ToString();
         }
 
-        static void CreateFieldClause(StringBuilder luceneQuery, string field, string query)
+        static void CreateFieldClause(StringBuilder luceneQuery, string field, string query, float boost = 1.0f)
         {
             List<string> subterms = GetTerms(query);
             if (subterms.Count > 0)
             {
                 if (subterms.Count == 1)
                 {
-                    luceneQuery.AppendFormat("{0}:{1} ", field, subterms[0]);
+                    luceneQuery.AppendFormat("{0}:{1}", field, subterms[0]);
                 }
                 else
                 {
@@ -45,7 +45,16 @@ namespace NuGet.Indexing
                     {
                         luceneQuery.AppendFormat(" OR {0}:{1}", field, subterms[i]);
                     }
-                    luceneQuery.Append(") ");
+                    luceneQuery.Append(")");
+                }
+
+                if (boost != 1.0f)
+                {
+                    luceneQuery.AppendFormat("^{0} ", boost);
+                }
+                else
+                {
+                    luceneQuery.AppendFormat(" ");
                 }
             }
         }
@@ -72,33 +81,40 @@ namespace NuGet.Indexing
         {
             List<string> result = new List<string>();
 
-            bool literal = false;
-            int start = 0;
-            for (int i = 0; i < query.Length; i++)
+            if (query.StartsWith("\"") && query.EndsWith("\""))
             {
-                char ch = query[i];
-                if (ch == '"')
+                result.Add(query);
+            }
+            else
+            {
+                bool literal = false;
+                int start = 0;
+                for (int i = 0; i < query.Length; i++)
                 {
-                    literal = !literal;
-                }
-                if (!literal)
-                {
-                    if (ch == ' ')
+                    char ch = query[i];
+                    if (ch == '"')
                     {
-                        string s = query.Substring(start, i - start);
-                        if (!string.IsNullOrWhiteSpace(s))
+                        literal = !literal;
+                    }
+                    if (!literal)
+                    {
+                        if (ch == ' ')
                         {
-                            result.Add(Quote(s));
+                            string s = query.Substring(start, i - start);
+                            if (!string.IsNullOrWhiteSpace(s))
+                            {
+                                result.Add(s);
+                            }
+                            start = i + 1;
                         }
-                        start = i + 1;
                     }
                 }
-            }
 
-            string t = query.Substring(start, query.Length - start);
-            if (!string.IsNullOrWhiteSpace(t))
-            {
-                result.Add(Quote(t));
+                string t = query.Substring(start, query.Length - start);
+                if (!string.IsNullOrWhiteSpace(t))
+                {
+                    result.Add(t);
+                }
             }
 
             return result;
