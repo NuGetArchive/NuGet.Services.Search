@@ -34,7 +34,9 @@
 
                     var html = '';
 
-                    html += '<p>Total Memory:&nbsp;<span id="totalMemory">' + bytesToSize(data.TotalMemory) + '</span></p>';
+                    if (data.TotalMemory) {
+                        html += '<p>Total Memory:&nbsp;<span id="totalMemory">' + bytesToSize(data.TotalMemory) + '</span></p>';
+                    }
                     html += '<p>Searcher Manager Identity:&nbsp;<span id="searcherManagerId">' + data.SearcherManagerIdentity + '</span></p>';
                     html += '<p>Total Documents:&nbsp;<span id="totalDocuments">' + numberFormat(data.NumDocs) + '</span></p>';
 

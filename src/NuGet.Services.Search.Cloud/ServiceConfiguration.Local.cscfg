@@ -11,7 +11,6 @@
             <Setting name="Http.AdminKey" value="password" />
 
             <!-- Set this to the location of a local file-system-based search index. -->
-            <!-- Yes, I made this "Tmep". That's what I use for my personal temp dir to avoid conflicts. Is it stupid? Probably - anurse -->
             <Setting name="Search.IndexPath" value="" />
 
             <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="" />
