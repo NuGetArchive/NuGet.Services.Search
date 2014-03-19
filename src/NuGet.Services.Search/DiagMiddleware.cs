@@ -18,7 +18,7 @@ namespace NuGet.Services.Search
         {
             Trace.TraceInformation("Diag");
 
-            await WriteResponse(context, IndexAnalyzer.Analyze(SearcherManager));
+            await WriteResponse(context, IndexAnalyzer.Analyze(SearcherManager, includeMemory: await SearchService.IsAdmin(context, challenge: false)));
         }
     }
 }

@@ -80,27 +80,11 @@ namespace NuGet.Services.Search
             return tcs.Task;
         }
 
-        private static readonly IList<PathString> _adminPaths = new List<PathString>()
-        {
-            new PathString("/diag"),
-            new PathString("/fields"),
-            new PathString("/range"),
-            new PathString("/console"),
-            new PathString("/segments")
-        };
         protected override void Configure(IAppBuilder app)
         {
             // Configure the app
             app.UseErrorPage();
-            app.Use(async (context, next) =>
-            {
-                if (!_adminPaths.Any(p => context.Request.Path.StartsWithSegments(p)) ||
-                    await IsAdmin(context))
-                {
-                    await next();
-                }
-            });
-
+            
             SharedOptions sharedStaticFileOptions = new SharedOptions()
             {
                 RequestPath = new PathString("/console"),
@@ -148,14 +132,11 @@ namespace NuGet.Services.Search
                     JObject resources = new JObject();
                     response.Add("resources", resources);
 
-                    if (await IsAdmin(context, challenge: false)) 
-                    {
-                        resources.Add("range", MakeUri(context, "/range"));
-                        resources.Add("fields", MakeUri(context, "/fields"));
-                        resources.Add("console", MakeUri(context, "/console"));
-                        resources.Add("diagnostics", MakeUri(context, "/diag"));
-                        resources.Add("segments", MakeUri(context, "/segments"));
-                    }
+                    resources.Add("range", MakeUri(context, "/range"));
+                    resources.Add("fields", MakeUri(context, "/fields"));
+                    resources.Add("console", MakeUri(context, "/console"));
+                    resources.Add("diagnostics", MakeUri(context, "/diag"));
+                    resources.Add("segments", MakeUri(context, "/segments"));
                     resources.Add("query", MakeUri(context, "/query"));
 
                     await SearchMiddleware.WriteResponse(context, response.ToString());
