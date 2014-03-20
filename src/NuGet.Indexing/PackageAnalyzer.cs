@@ -24,7 +24,8 @@ namespace NuGet.Indexing
                 { "Description", new DescriptionAnalyzer() },
                 { "Authors", new DescriptionAnalyzer() },
                 { "Owners", new DescriptionAnalyzer() },
-                { "Tags", new TagsAnalyzer() }
+                { "Tags", new TagsAnalyzer() },
+                { "Typeahead", new TypeaheadAnalyzer() }
             };
         }
     }

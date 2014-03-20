@@ -281,6 +281,15 @@ namespace NuGet.Indexing
 
             doc.Add(new NumericField("Checksum", Field.Store.YES, true).SetIntValue(documentData.Checksum));
 
+            //  Add data for typeahead search
+            string typeahead = package.PackageRegistration.Id;
+            if (!String.IsNullOrEmpty(package.Title) && !String.Equals(package.Title, typeahead, StringComparison.OrdinalIgnoreCase))
+            {
+                // Add the title if it contributes anything new
+                typeahead += " " + package.Title;
+            }
+            Add(doc, "Typeahead", typeahead, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
+
             //  Data we want to store in index - these cannot be queried
 
             JObject obj = PackageJson.ToJson(package);
