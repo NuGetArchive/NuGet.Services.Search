@@ -56,11 +56,8 @@ namespace NuGet.Services.Search
                 take = 20;
             }
 
-            // Ignore explanation field if not an admin
-            // It's not really secret, but it's internal for now at least
             bool includeExplanation = false;
-            if (!(await SearchService.IsAdmin(context, challenge: false)) &&
-                !bool.TryParse(context.Request.Query["explanation"], out includeExplanation))
+            if (!bool.TryParse(context.Request.Query["explanation"], out includeExplanation))
             {
                 includeExplanation = false;
             }
