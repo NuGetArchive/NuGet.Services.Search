@@ -10,7 +10,7 @@ namespace NuGet.Indexing
 {
     public static class IndexAnalyzer
     {
-        public static string Analyze(PackageSearcherManager searcherManager, bool includeMemory)
+        public static string Analyze(PackageSearcherManager searcherManager)
         {
             searcherManager.MaybeReopen();
             
@@ -22,10 +22,6 @@ namespace NuGet.Indexing
 
                 JObject report = new JObject();
 
-                if (includeMemory)
-                {
-                    report.Add("TotalMemory", GC.GetTotalMemory(false));
-                }
                 report.Add("NumDocs", indexReader.NumDocs());
                 report.Add("SearcherManagerIdentity", searcherManager.Id.ToString());
 
