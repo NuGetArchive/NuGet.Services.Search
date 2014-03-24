@@ -7,8 +7,8 @@
     <ProjectGuid>{E844C058-0A10-4D2E-BA52-CA0D0235A546}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>IndexMaintainance</RootNamespace>
-    <AssemblyName>IndexMaintainance</AssemblyName>
+    <RootNamespace>IndexMaintenance</RootNamespace>
+    <AssemblyName>IndexMaintenance</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
