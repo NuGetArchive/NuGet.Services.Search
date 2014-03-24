@@ -61,8 +61,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Newtonsoft.Json.6.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Services.Platform.Client">
-      <HintPath>..\..\packages\NuGet.Services.Platform.Client.3.0.2-alpha-9\lib\portable-net45+wp80+win\NuGet.Services.Platform.Client.dll</HintPath>
+    <Reference Include="NuGet.Services.Platform.Client, Version=3.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\NuGet.Services.Platform.Client.3.0.3-rel-0008\lib\portable-net45+wp80+win\NuGet.Services.Platform.Client.dll</HintPath>
     </Reference>
     <Reference Include="PowerArgs">
       <HintPath>..\..\packages\PowerArgs.2.0.4.0-preview\lib\net40\PowerArgs.dll</HintPath>
