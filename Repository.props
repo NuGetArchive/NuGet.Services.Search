@@ -4,10 +4,4 @@
   <ItemGroup>
     <SolutionFile Include="$(MSBuildThisFileDirectory)\*.sln" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <RootDirectory>$(MSBuildThisFileDirectory)</RootDirectory>
-  </PropertyGroup>
-
-  <Import Project="$(MSBuildThisFileDirectory)\build\NuGet.props" />
 </Project>
