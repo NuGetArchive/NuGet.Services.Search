@@ -250,7 +250,17 @@ namespace NuGet.Services.Search
             batch.AddRange(entries.Select(e => TableOperation.InsertOrReplace(e)));
 
             // Upload the batch, ignore results
-            await _table.ExecuteBatchAsync(batch);
+            try
+            {
+                await _table.ExecuteBatchAsync(batch);
+            }
+            catch (Exception ex)
+            {
+                // Trace the error
+                Trace.TraceError(ex.ToString());
+
+                // Just ignore it though.
+            }
         }
     }
 }
