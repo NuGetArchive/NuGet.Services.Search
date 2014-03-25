@@ -15,17 +15,23 @@ using Microsoft.Owin.StaticFiles;
 using Microsoft.Owin.StaticFiles.Infrastructure;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using NuGet.Services.Http;
 using NuGet.Services.ServiceModel;
+using NuGet.Services.Storage;
 using Owin;
 
 namespace NuGet.Services.Search
 {
     public class SearchService : NuGetHttpService
     {
+        private static readonly int BatchSize = 1000;
+
+        private CloudTable _table;
         private PackageSearcherManager _searcherManager;
+        private QueryLog _log = new QueryLog();
 
         public override PathString BasePath
         {
@@ -42,8 +48,14 @@ namespace NuGet.Services.Search
         {
         }
 
-        protected override Task<bool> OnStart()
+        protected override async Task<bool> OnStart()
         {
+            if (Storage.Primary != null)
+            {
+                _table = Storage.Primary.Tables.Client.GetTableReference("NGSearchQueryLog");
+                await _table.CreateIfNotExistsAsync();
+            }
+
             // Load the index
             ReloadIndex();
 
@@ -63,21 +75,26 @@ namespace NuGet.Services.Search
                 // Ignore failures, they will only occur outside of Azure
             }
 
-            return base.OnStart();
+            return await base.OnStart();
         }
 
-        protected override Task OnRun()
+        protected override async Task OnRun()
         {
-            return WaitForShutdown();
-        }
-
-        // This could be moved up to the service platform
-        private static readonly object Unit = new object();
-        private Task WaitForShutdown()
-        {
-            var tcs = new TaskCompletionSource<object>();
-            Host.ShutdownToken.Register(() => tcs.SetResult(Unit)); // Don't want to return null, just a useless object
-            return tcs.Task;
+            while (!Host.ShutdownToken.IsCancellationRequested)
+            {
+                // Grab a batch of log records
+                var batch = _log.GetBatch(maxSize: BatchSize);
+                if (batch.Any())
+                {
+                    // Process the batch
+                    await UploadQueryRecords(batch);
+                }
+                else
+                {
+                    // Sleep for a few seconds to wait for more
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                }
+            }
         }
 
         protected override void Configure(IAppBuilder app)
@@ -94,9 +111,7 @@ namespace NuGet.Services.Search
             Func<PackageSearcherManager> searcherManagerThunk = () => SearcherManager;
             
             // Public endpoint(s)
-            app.Use(typeof(QueryMiddleware), "/query", searcherManagerThunk);
-               
-            // Admin endpoints
+            app.Use(typeof(QueryMiddleware), "/query", searcherManagerThunk, _log);
             app.Use(typeof(DiagMiddleware), "/diag", searcherManagerThunk);
             app.Use(typeof(FieldsMiddleware), "/fields", searcherManagerThunk);
             app.Use(typeof(RangeMiddleware), "/range", searcherManagerThunk);
@@ -226,6 +241,26 @@ namespace NuGet.Services.Search
         {
             PackageSearcherManager newIndex = CreateSearcherManager();
             Interlocked.Exchange(ref _searcherManager, newIndex);
+        }
+
+        private async Task UploadQueryRecords(IList<SearchQueryLogEntry> entries)
+        {
+            // Upload to the table!
+            var batch = new TableBatchOperation();
+            batch.AddRange(entries.Select(e => TableOperation.InsertOrReplace(e)));
+
+            // Upload the batch, ignore results
+            try
+            {
+                await _table.ExecuteBatchAsync(batch);
+            }
+            catch (Exception ex)
+            {
+                // Trace the error
+                Trace.TraceError(ex.ToString());
+
+                // Just ignore it though.
+            }
         }
     }
 }

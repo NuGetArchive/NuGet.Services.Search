@@ -12,7 +12,11 @@ namespace NuGet.Services.Search
 {
     public class QueryMiddleware : SearchMiddleware
     {
-        public QueryMiddleware(OwinMiddleware next, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, path, searcherManagerThunk) { }
+        private QueryLog _log;
+
+        public QueryMiddleware(OwinMiddleware next, string path, Func<PackageSearcherManager> searcherManagerThunk, QueryLog log) : base(next, path, searcherManagerThunk) {
+            _log = log;
+        }
 
         protected override async Task Execute(IOwinContext context)
         {
@@ -71,12 +75,19 @@ namespace NuGet.Services.Search
             string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
             Trace.TraceInformation(args);
 
+            string queryToExecute = q;
             if (!luceneQuery)
             {
-                q = LuceneQueryCreator.Parse(q);
+                queryToExecute = LuceneQueryCreator.Parse(q);
             }
 
-            string content = Searcher.Search(SearcherManager, q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            string content = Searcher.Search(SearcherManager, queryToExecute, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
+            sw.Stop();
+
+            // Queue the request for recording
+            _log.RecordQuery(q, projectType, feed, context.Request.Headers.Get("User-Agent"), (int)sw.ElapsedMilliseconds);
 
             await WriteResponse(context, content);
         }

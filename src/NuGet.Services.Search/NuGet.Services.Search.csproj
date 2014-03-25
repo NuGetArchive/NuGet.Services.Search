@@ -190,6 +190,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="QueryLog.cs" />
     <Compile Include="SegmentsMiddleware.cs" />
     <Compile Include="DiagMiddleware.cs" />
     <Compile Include="FieldsMiddleware.cs" />
