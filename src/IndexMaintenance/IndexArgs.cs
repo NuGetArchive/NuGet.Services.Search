@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using NuGet.Indexing;
 using PowerArgs;
 
 namespace IndexMaintainance
@@ -30,6 +31,11 @@ namespace IndexMaintainance
         [ArgShortcut("-ldb")]
         [ArgDescription("Instead of -db, use this parameter to connect to a SQL LocalDb database of the specified name")]
         public string LocalDbName { get; set; }
+
+        [ArgShortcut("-c")]
+        [ArgDescription("The components to include in the index: Data, Typeahead or All")]
+        [DefaultValue(IndexComponents.Data)]
+        public IndexComponents Components { get; set; }
 
         [ArgShortcut("-n")]
         [ArgShortcut("-!")]

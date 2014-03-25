@@ -122,6 +122,7 @@
   <ItemGroup>
     <Compile Include="GalleryExport.cs" />
     <Compile Include="FullBuildTask.cs" />
+    <Compile Include="IndexComponents.cs" />
     <Compile Include="IndexConsistencyReport.cs" />
     <Compile Include="IndexDocumentData.cs" />
     <Compile Include="IndexTask.cs" />

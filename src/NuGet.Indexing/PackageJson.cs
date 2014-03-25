@@ -9,66 +9,72 @@ namespace NuGet.Indexing
 {
     public static class PackageJson
     {
-        public static JObject ToJson(Package package)
+        public static JObject ToJson(Package package, bool minimal = false)
         {
             JObject obj = new JObject();
 
+            // "Minimal" data set. Enough to render a Typeahead entry or a package list entry
             obj.Add("Key", package.Key);
             obj.Add("PackageRegistrationKey", package.PackageRegistrationKey);
-            obj.Add("PackageRegistration", ToJson_PackageRegistration(package.PackageRegistration));
+            obj.Add("PackageRegistration", ToJson_PackageRegistration(package.PackageRegistration, minimal));
             obj.Add("Version", package.Version);
             obj.Add("NormalizedVersion", package.NormalizedVersion);
 
             obj.Add("Title", package.Title);
             obj.Add("Description", package.Description);
             obj.Add("Summary", package.Summary);
-            obj.Add("Authors", package.FlattenedAuthors);
-            obj.Add("Copyright", package.Copyright);
-            obj.Add("Language", package.Language);
-            obj.Add("Tags", package.Tags);
-            obj.Add("ReleaseNotes", package.ReleaseNotes);
-            obj.Add("ProjectUrl", package.ProjectUrl);
             obj.Add("IconUrl", package.IconUrl);
-
+            
             obj.Add("IsLatest", package.IsLatest);
             obj.Add("IsLatestStable", package.IsLatestStable);
             obj.Add("Listed", package.Listed);
-            
+            obj.Add("DownloadCount", package.DownloadCount);
+
             obj.Add("Created", package.Created);
             obj.Add("Published", package.Published);
             obj.Add("LastUpdated", package.LastUpdated);
             obj.Add("LastEdited", package.LastEdited);
+            
+            // "Full" data set. Everything else
+            if (!minimal)
+            {
+                obj.Add("Authors", package.FlattenedAuthors);
+                obj.Add("Copyright", package.Copyright);
+                obj.Add("Language", package.Language);
+                obj.Add("Tags", package.Tags);
+                obj.Add("ReleaseNotes", package.ReleaseNotes);
+                obj.Add("ProjectUrl", package.ProjectUrl);
 
-            obj.Add("DownloadCount", package.DownloadCount);
+                obj.Add("FlattenedDependencies", package.FlattenedDependencies);
+                obj.Add("Dependencies", ToJson_PackageDependencies(package.Dependencies));
+                obj.Add("SupportedFrameworks", ToJson_SupportedFrameworks(package.SupportedFrameworks));
+                obj.Add("MinClientVersion", package.MinClientVersion);
 
-            obj.Add("FlattenedDependencies", package.FlattenedDependencies);
-            obj.Add("Dependencies", ToJson_PackageDependencies(package.Dependencies));
-            obj.Add("SupportedFrameworks", ToJson_SupportedFrameworks(package.SupportedFrameworks));
-            obj.Add("MinClientVersion", package.MinClientVersion);
+                obj.Add("Hash", package.Hash);
+                obj.Add("HashAlgorithm", package.HashAlgorithm);
+                obj.Add("PackageFileSize", package.PackageFileSize);
 
-            obj.Add("Hash", package.Hash);
-            obj.Add("HashAlgorithm", package.HashAlgorithm);
-            obj.Add("PackageFileSize", package.PackageFileSize);
-
-            obj.Add("LicenseUrl", package.LicenseUrl);
-            obj.Add("RequiresLicenseAcceptance", package.RequiresLicenseAcceptance);
-            obj.Add("LicenseNames", package.LicenseNames);
-            obj.Add("LicenseReportUrl", package.LicenseReportUrl);
-            obj.Add("HideLicenseReport", package.HideLicenseReport);
-
+                obj.Add("LicenseUrl", package.LicenseUrl);
+                obj.Add("RequiresLicenseAcceptance", package.RequiresLicenseAcceptance);
+                obj.Add("LicenseNames", package.LicenseNames);
+                obj.Add("LicenseReportUrl", package.LicenseReportUrl);
+                obj.Add("HideLicenseReport", package.HideLicenseReport);
+            }
             return obj;
         }
 
-        private static JObject ToJson_PackageRegistration(PackageRegistration packageRegistration)
+        private static JObject ToJson_PackageRegistration(PackageRegistration packageRegistration, bool minimal)
         {
-            JArray owners = ToJson_Owners(packageRegistration.Owners);
-
             JObject obj = new JObject();
 
             obj.Add("Key", packageRegistration.Key);
             obj.Add("Id", packageRegistration.Id);
             obj.Add("DownloadCount", packageRegistration.DownloadCount);
-            obj.Add("Owners", owners);
+            if (!minimal)
+            {
+                JArray owners = ToJson_Owners(packageRegistration.Owners);
+                obj.Add("Owners", owners);
+            }
 
             return obj;
         }
