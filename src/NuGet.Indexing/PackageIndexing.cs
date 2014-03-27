@@ -248,7 +248,8 @@ namespace NuGet.Indexing
                 typeahead += " " + package.Title;
             }
 
-            Add(doc, "Typeahead", typeahead, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
+            // Store the typeahead without term vectors, so we don't care about order or position of terms
+            Add(doc, "Typeahead", typeahead, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.NO);
 
             // Is there a data field?
             if (doc.GetField("Data") == null)

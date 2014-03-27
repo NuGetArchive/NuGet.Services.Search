@@ -126,6 +126,7 @@
     <Compile Include="IndexConsistencyReport.cs" />
     <Compile Include="IndexDocumentData.cs" />
     <Compile Include="IndexTask.cs" />
+    <Compile Include="RemoveDuplicatesTokenFilter.cs" />
     <Compile Include="TypeaheadAnalyzer.cs" />
     <Compile Include="UpdateIndexTask.cs" />
     <Compile Include="PackageJson.cs" />

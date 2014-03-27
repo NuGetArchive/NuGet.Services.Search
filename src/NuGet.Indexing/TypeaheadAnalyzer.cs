@@ -12,7 +12,8 @@ namespace NuGet.Indexing
         public override TokenStream TokenStream(string fieldName, System.IO.TextReader reader)
         {
             // Do all the DescriptionAnalyzer stuff, then build NGrams
-            return new EdgeNGramTokenFilter(base.TokenStream(fieldName, reader), Side.FRONT, minGram: 2, maxGram: 10);
+            return new RemoveDuplicatesTokenFilter(
+                new EdgeNGramTokenFilter(base.TokenStream(fieldName, reader), Side.FRONT, minGram: 2, maxGram: 10));
         }
     }
 }
