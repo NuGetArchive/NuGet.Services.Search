@@ -11,7 +11,7 @@ namespace NuGet.Indexing
         static IDictionary<string, string> Alternatives = new Dictionary<string, string>
         {
             { "id", "Id" },
-            { "exactid", "Id" }, // ExactId will map to Id, but will bypass the rewriter in BuildQuery
+            { "packageid", "Id" }, // PackageId will map to Id, but will bypass the rewriter in BuildQuery and be an exact match
             { "version", "Version" },
             { "tokenizedid", "TokenizedId" },
             { "shingledid", "ShingledId" },
