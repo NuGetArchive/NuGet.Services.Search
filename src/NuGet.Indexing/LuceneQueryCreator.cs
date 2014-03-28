@@ -62,11 +62,15 @@ namespace NuGet.Indexing
             TermQuery tq = arg.Query as TermQuery;
             if(tq == null) 
             {
+                // It's not a term query, leave it alone
                 return arg;
             }
 
             if (String.Equals(tq.Term.Field, "id", StringComparison.OrdinalIgnoreCase))
             {
+                // Users expect "id:foo" to be a substring search, so we need
+                // to rewrite that into "(Id:foo TokenizedId:foo ShingledId:foo)" in order
+                // to match our existing substring searching.
                 return new BooleanClause(
                     BuildBooleanQuery(new [] {
                         new BooleanClause(new TermQuery(new Term("Id", tq.Term.Text)), Occur.SHOULD),
@@ -76,10 +80,13 @@ namespace NuGet.Indexing
             }
             else if (String.Equals(tq.Term.Field, "packageid", StringComparison.OrdinalIgnoreCase))
             {
+                // PackageId is not a real field, it's just an alias for Id that bypasses
+                // the filter above and does a real exact-string match.
                 return new BooleanClause(new TermQuery(new Term("Id", tq.Term.Text)), arg.Occur);
             }
             else 
             {
+                // All other fields pass through as-is
                 return arg;
             }
         }
@@ -100,47 +107,55 @@ namespace NuGet.Indexing
         private static string ExtractLuceneClauses(Query query, string inputQuery, List<BooleanClause> luceneClauses)
         {
             BooleanQuery boolQuery = query as BooleanQuery;
-            if (boolQuery != null)
+            IEnumerable<Query> clauses = boolQuery == null ? new[] { query } : boolQuery.Clauses.Select(c => c.Query);
+
+            // Process the query to extract the "nuget query" part and the "lucene filters" part
+            StringBuilder nugetQuery = new StringBuilder();
+            foreach (Query q in clauses)
             {
-                // Process the query to extract the "nuget query" part and the "lucene filters" part
-                StringBuilder nugetQuery = new StringBuilder();
-                foreach (BooleanClause clause in boolQuery.Clauses)
+                TermQuery tq = q as TermQuery;
+                bool handledQuery = false;
+                if (tq != null && !AllowedNuGetFields.Contains(tq.Term.Field))
                 {
-                    TermQuery tq = clause.Query as TermQuery;
-                    if (tq != null && !AllowedNuGetFields.Contains(tq.Term.Field))
-                    {
-                        // Ignore fields we don't accept in NuGet-style queries
-                        // And, add in terms that aren't labelled with a field.
-                        nugetQuery.Append(tq.Term.Text);
-                        nugetQuery.Append(" ");
-                    }
-                    else
-                    {
-                        // Convert the clause to a MUST-have clause
-                        clause.Occur = Occur.MUST;
-                        luceneClauses.Add(clause);
-                    }
-                }
-                if(nugetQuery.Length > 0) {
-                    nugetQuery.Length -= 1; // Strip trailing space.
-                }
-                return nugetQuery.ToString();
-            }
-            else
-            {
-                TermQuery tq = query as TermQuery;
-                if (tq == null || !String.Equals(tq.Term.Field, DefaultTermName, StringComparison.Ordinal))
-                {
-                    luceneClauses.Add(new BooleanClause(query, Occur.SHOULD));
-                    return null;
+                    // Ignore fields we don't accept in NuGet-style queries
+                    // And, add in terms that aren't labelled with a field.
+                    nugetQuery.Append(tq.Term.Text);
+                    nugetQuery.Append(" ");
+                    handledQuery = true;
                 }
                 else
                 {
-                    // Term Query is not null and refers to the default term
-                    Debug.Assert(tq != null);
-                    return tq.Term.Text;
+                    PhraseQuery pq = q as PhraseQuery;
+                    if (pq != null)
+                    {
+                        Term[] terms = pq.GetTerms();
+                        string[] fieldNames = terms
+                            .Select(t => t.Field)
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToArray();
+                        if (fieldNames.Length == 1 && !AllowedNuGetFields.Contains(fieldNames[0]))
+                        {
+                            // All the terms refer to the same field and it's 
+                            // not a valid NuGet-style field
+                            nugetQuery.AppendFormat("\"{0}\"", String.Join(" ", terms.Select(t => t.Text)));
+                            nugetQuery.Append(" ");
+                            handledQuery = true;
+                        }
+                    }
+                }
+
+                // Convert the clause to a MUST-have clause
+                if (!handledQuery)
+                {
+                    luceneClauses.Add(new BooleanClause(q, Occur.MUST));
                 }
             }
+
+            if (nugetQuery.Length > 0)
+            {
+                nugetQuery.Length -= 1; // Strip trailing space.
+            }
+            return nugetQuery.ToString();
         }
 
         private static Query ParseNuGetQuery(string nugetQuery)
