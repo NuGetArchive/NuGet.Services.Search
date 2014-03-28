@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NuGetGallery;
+using Newtonsoft.Json;
 
 namespace NuGet.Indexing
 {
@@ -29,7 +30,7 @@ namespace NuGet.Indexing
         //  this function will incrementally build an index from the gallery using a high water mark stored in the commit metadata
         //  this function is useful for building a fresh index as in that case it is more efficient than diff-ing approach
 
-        public static void BuildIndex(string sqlConnectionString, Lucene.Net.Store.Directory directory, TextWriter log = null)
+        public static void BuildIndex(string sqlConnectionString, Lucene.Net.Store.Directory directory, IndexComponents components, TextWriter log = null)
         {
             log = log ?? DefaultTraceWriter;
 
@@ -57,13 +58,13 @@ namespace NuGet.Indexing
                 log.WriteLine("associate the feeds and checksum data with each packages");
                 List<IndexDocumentData> indexDocumentData = MakeIndexDocumentData(packages, feeds, checksums);
 
-                AddPackagesToIndex(indexDocumentData, directory, log);
+                AddPackagesToIndex(indexDocumentData, directory, log, components);
             }
 
             log.WriteLine("all done");
         }
 
-        private static void AddPackagesToIndex(List<IndexDocumentData> indexDocumentData, Lucene.Net.Store.Directory directory, TextWriter log)
+        private static void AddPackagesToIndex(List<IndexDocumentData> indexDocumentData, Lucene.Net.Store.Directory directory, TextWriter log, IndexComponents components)
         {
             log.WriteLine("About to add {0} packages", indexDocumentData.Count);
 
@@ -73,11 +74,11 @@ namespace NuGet.Indexing
 
                 List<IndexDocumentData> rangeToIndex = indexDocumentData.GetRange(index, count);
 
-                AddToIndex(directory, rangeToIndex, log);
+                AddToIndex(directory, rangeToIndex, log, components);
             }
         }
 
-        private static void AddToIndex(Lucene.Net.Store.Directory directory, List<IndexDocumentData> rangeToIndex, TextWriter log)
+        private static void AddToIndex(Lucene.Net.Store.Directory directory, List<IndexDocumentData> rangeToIndex, TextWriter log, IndexComponents components)
         {
             log.WriteLine("begin AddToIndex");
 
@@ -89,7 +90,7 @@ namespace NuGet.Indexing
                 {
                     int currentPackageKey = documentData.Package.Key;
 
-                    Document newDocument = CreateLuceneDocument(documentData);
+                    Document newDocument = CreateLuceneDocument(documentData, components);
 
                     indexWriter.AddDocument(newDocument);
 
@@ -214,14 +215,56 @@ namespace NuGet.Indexing
 
         // ----------------------------------------------------------------------------------------------------------------------------------------
 
-        private static Document CreateLuceneDocument(IndexDocumentData documentData)
+        private static Document CreateLuceneDocument(IndexDocumentData documentData, IndexComponents components)
         {
-            Package package = documentData.Package;
-
             Document doc = new Document();
 
-            //  Query Fields
+            //  Add key and checksum info (in order to support the synchronization with the gallery)
 
+            doc.Add(new NumericField("Key", Field.Store.YES, true).SetIntValue(documentData.Package.Key));
+            doc.Add(new NumericField("Checksum", Field.Store.YES, true).SetIntValue(documentData.Checksum));
+
+            if (components.HasFlag(IndexComponents.Data))
+            {
+                AddDataToDocument(doc, documentData);
+            }
+
+            if (components.HasFlag(IndexComponents.Typeahead))
+            {
+                AddTypeaheadToDocument(doc, documentData);
+            }
+
+            return doc;
+        }
+
+        private static void AddTypeaheadToDocument(Document doc, IndexDocumentData documentData)
+        {
+            //  Add data for typeahead search
+            Package package = documentData.Package;
+            string typeahead = package.PackageRegistration.Id;
+            if (!String.IsNullOrEmpty(package.Title) && !String.Equals(package.Title, typeahead, StringComparison.OrdinalIgnoreCase))
+            {
+                // Add the title if it contributes anything new
+                typeahead += " " + package.Title;
+            }
+
+            // Store the typeahead without term vectors, so we don't care about order or position of terms
+            Add(doc, "Typeahead", typeahead, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.NO);
+
+            // Is there a data field?
+            if (doc.GetField("Data") == null)
+            {
+                // Add a limited set of data for rendering only
+                string json = PackageJson.ToJson(package, minimal: true).ToString(Formatting.None);
+                Add(doc, "Data", json, Field.Store.YES, Field.Index.NO, Field.TermVector.NO);
+            }
+        }
+
+        private static void AddDataToDocument(Document doc, IndexDocumentData documentData)
+        {
+            Package package = documentData.Package;
+            
+            //  Query Fields
             float titleBoost = 3.0f;
             float idBoost = 2.0f;
 
@@ -275,23 +318,15 @@ namespace NuGet.Indexing
                 Add(doc, "SupportedFramework", packageFramework.TargetFramework, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
             }
 
-            //  Add Package Key so we can quickly retrieve ranges of packages (in order to support the synchronization with the gallery)
-
-            doc.Add(new NumericField("Key", Field.Store.YES, true).SetIntValue(package.Key));
-
-            doc.Add(new NumericField("Checksum", Field.Store.YES, true).SetIntValue(documentData.Checksum));
-
             //  Data we want to store in index - these cannot be queried
 
             JObject obj = PackageJson.ToJson(package);
-            string data = obj.ToString();
+            string data = obj.ToString(Formatting.None);
 
             Add(doc, "Data", data, Field.Store.YES, Field.Index.NO, Field.TermVector.NO);
-
-            return doc;
         }
 
-        public static void UpdateIndex(bool whatIf, List<int> adds, List<int> updates, List<int> deletes, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log = null)
+        public static void UpdateIndex(bool whatIf, List<int> adds, List<int> updates, List<int> deletes, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, IndexComponents components, TextWriter log = null)
         {
             log = log ?? DefaultTraceWriter;
 
@@ -299,29 +334,29 @@ namespace NuGet.Indexing
             {
                 log.WriteLine("WhatIf mode");
 
-                Apply(adds, WhatIf_ApplyAdds, fetch, directory, log);
-                Apply(updates, WhatIf_ApplyUpdates, fetch, directory, log);
-                Apply(deletes, WhatIf_ApplyDeletes, fetch, directory, log);
+                Apply(adds, WhatIf_ApplyAdds, fetch, directory, components, log);
+                Apply(updates, WhatIf_ApplyUpdates, fetch, directory, components, log);
+                Apply(deletes, WhatIf_ApplyDeletes, fetch, directory, components, log);
             }
             else
             {
-                Apply(adds, ApplyAdds, fetch, directory, log);
-                Apply(updates, ApplyUpdates, fetch, directory, log);
-                Apply(deletes, ApplyDeletes, fetch, directory, log);
+                Apply(adds, ApplyAdds, fetch, directory, components, log);
+                Apply(updates, ApplyUpdates, fetch, directory, components, log);
+                Apply(deletes, ApplyDeletes, fetch, directory, components, log);
             }
         }
 
-        private static void Apply(List<int> packageKeys, Action<List<int>, Func<int, IndexDocumentData>, Lucene.Net.Store.Directory, TextWriter> action, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log)
+        private static void Apply(List<int> packageKeys, Action<List<int>, Func<int, IndexDocumentData>, Lucene.Net.Store.Directory, IndexComponents, TextWriter> action, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, IndexComponents components, TextWriter log)
         {
             for (int index = 0; index < packageKeys.Count; index += MaxDocumentsPerCommit)
             {
                 int count = Math.Min(MaxDocumentsPerCommit, packageKeys.Count - index);
                 List<int> range = packageKeys.GetRange(index, count);
-                action(range, fetch, directory, log);
+                action(range, fetch, directory, components, log);
             }
         }
 
-        private static void WhatIf_ApplyAdds(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log)
+        private static void WhatIf_ApplyAdds(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, IndexComponents components, TextWriter log)
         {
             log.WriteLine("[WhatIf] adding...");
             foreach (int packageKey in packageKeys)
@@ -331,7 +366,7 @@ namespace NuGet.Indexing
             }
         }
 
-        private static void WhatIf_ApplyUpdates(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log)
+        private static void WhatIf_ApplyUpdates(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, IndexComponents components, TextWriter log)
         {
             log.WriteLine("[WhatIf] updating...");
             foreach (int packageKey in packageKeys)
@@ -341,7 +376,7 @@ namespace NuGet.Indexing
             }
         }
 
-        private static void WhatIf_ApplyDeletes(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log)
+        private static void WhatIf_ApplyDeletes(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, IndexComponents components, TextWriter log)
         {
             log.WriteLine("[WhatIf] deleting...");
             foreach (int packageKey in packageKeys)
@@ -350,7 +385,7 @@ namespace NuGet.Indexing
             }
         }
         
-        private static void ApplyAdds(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log)
+        private static void ApplyAdds(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, IndexComponents components, TextWriter log)
         {
             log.WriteLine("ApplyAdds");
 
@@ -361,7 +396,7 @@ namespace NuGet.Indexing
                 {
                     IndexDocumentData documentData = fetch(packageKey);
                     int currentPackageKey = documentData.Package.Key;
-                    Document newDocument = CreateLuceneDocument(documentData);
+                    Document newDocument = CreateLuceneDocument(documentData, components);
                     indexWriter.AddDocument(newDocument);
                     if (currentPackageKey <= highestPackageKey)
                     {
@@ -383,7 +418,7 @@ namespace NuGet.Indexing
             }
         }
 
-        private static void ApplyUpdates(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log)
+        private static void ApplyUpdates(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, IndexComponents components, TextWriter log)
         {
             log.WriteLine("ApplyUpdates");
 
@@ -400,7 +435,7 @@ namespace NuGet.Indexing
                     Query query = NumericRangeQuery.NewIntRange("Key", packageKey, packageKey, true, true);
                     indexWriter.DeleteDocuments(query);
 
-                    Document newDocument = PackageIndexing.CreateLuceneDocument(documentData);
+                    Document newDocument = PackageIndexing.CreateLuceneDocument(documentData, components);
                     indexWriter.AddDocument(newDocument);
                 }
 
@@ -412,7 +447,7 @@ namespace NuGet.Indexing
             }
         }
 
-        private static void ApplyDeletes(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log)
+        private static void ApplyDeletes(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, IndexComponents components, TextWriter log)
         {
             log.WriteLine("ApplyDeletes");
 

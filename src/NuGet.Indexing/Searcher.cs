@@ -334,6 +334,7 @@ namespace NuGet.Indexing
             "DescriptionTerms",
             "AuthorsTerms",
             "OwnersTerms",
+            "TypeaheadTerms",
             "PublishedDate",
             "EditedDate",
             "DisplayName",
@@ -384,7 +385,8 @@ namespace NuGet.Indexing
             diagnostics.Add("DescriptionTerms", GetTerms(searcher, scoreDoc.Doc, "Description"));
             diagnostics.Add("AuthorsTerms", GetTerms(searcher, scoreDoc.Doc, "Authors"));
             diagnostics.Add("OwnersTerms", GetTerms(searcher, scoreDoc.Doc, "Owners"));
-
+            diagnostics.Add("TypeaheadTerms", GetTerms(searcher, scoreDoc.Doc, "Typeahead"));
+            
             diagnostics.Add("PublishedDate", GetInt(searcher, scoreDoc.Doc, "PublishedDate"));
             diagnostics.Add("EditedDate", GetInt(searcher, scoreDoc.Doc, "EditedDate"));
 

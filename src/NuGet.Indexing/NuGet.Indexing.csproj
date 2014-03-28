@@ -122,9 +122,12 @@
   <ItemGroup>
     <Compile Include="GalleryExport.cs" />
     <Compile Include="FullBuildTask.cs" />
+    <Compile Include="IndexComponents.cs" />
     <Compile Include="IndexConsistencyReport.cs" />
     <Compile Include="IndexDocumentData.cs" />
     <Compile Include="IndexTask.cs" />
+    <Compile Include="RemoveDuplicatesTokenFilter.cs" />
+    <Compile Include="TypeaheadAnalyzer.cs" />
     <Compile Include="UpdateIndexTask.cs" />
     <Compile Include="PackageJson.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

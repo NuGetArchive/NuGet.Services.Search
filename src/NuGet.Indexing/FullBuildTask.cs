@@ -12,9 +12,13 @@ namespace NuGet.Indexing
     public class FullBuildTask : IndexTask
     {
         public bool Force { get; set; }
+
+        public IndexComponents Components { get; set; }
         
         public override void Execute()
         {
+            Components = Components == IndexComponents.Unspecified ? IndexComponents.Data : Components;
+
             DateTime before = DateTime.Now;
 
             if (Force && StorageAccount != null && !string.IsNullOrEmpty(Container))
@@ -27,7 +31,7 @@ namespace NuGet.Indexing
             // Recreate the index
             PackageIndexing.CreateNewEmptyIndex(directory);
             
-            PackageIndexing.BuildIndex(SqlConnectionString, directory, Log);
+            PackageIndexing.BuildIndex(SqlConnectionString, directory, Components, Log);
 
             DateTime after = DateTime.Now;
             Log.WriteLine("duration = {0} seconds", (after - before).TotalSeconds);

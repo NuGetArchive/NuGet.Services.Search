@@ -12,8 +12,12 @@ namespace NuGet.Indexing
     /// </summary>
     public class UpdateIndexTask : IndexTask
     {
+        public IndexComponents Components { get; set; }
+
         public override void Execute()
         {
+            Components = Components == IndexComponents.Unspecified ? IndexComponents.Data : Components;
+
             IDictionary<int, int> database = GalleryExport.FetchGalleryChecksums(SqlConnectionString);
 
             Log.WriteLine("fetched {0} keys from database", database.Count);
@@ -48,7 +52,7 @@ namespace NuGet.Indexing
 
             Lucene.Net.Store.Directory directory = GetDirectory();
 
-            PackageIndexing.UpdateIndex(WhatIf, adds, updates, deletes, (key) => { return packages[key]; }, directory, log: Log);
+            PackageIndexing.UpdateIndex(WhatIf, adds, updates, deletes, (key) => { return packages[key]; }, directory, Components, log: Log);
         }
 
         private void SortIntoAddsUpdateDeletes(IDictionary<int, int> database, IDictionary<int, int> index, List<int> adds, List<int> updates, List<int> deletes)

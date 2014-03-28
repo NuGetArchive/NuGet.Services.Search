@@ -38,7 +38,8 @@ namespace IndexMaintainance
                 Log = Console.Out,
                 SqlConnectionString = args.ConnectionString,
                 StorageAccount = acct,
-                WhatIf = args.WhatIf
+                WhatIf = args.WhatIf,
+                Components = args.Components
             };
             task.Execute();
         }
@@ -63,7 +64,8 @@ namespace IndexMaintainance
                 Log = Console.Out,
                 SqlConnectionString = args.ConnectionString,
                 StorageAccount = acct,
-                WhatIf = args.WhatIf
+                WhatIf = args.WhatIf,
+                Components = args.Components
             };
             task.Execute();
         }
