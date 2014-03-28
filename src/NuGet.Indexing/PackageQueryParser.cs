@@ -11,7 +11,6 @@ namespace NuGet.Indexing
         static IDictionary<string, string> Alternatives = new Dictionary<string, string>
         {
             { "id", "Id" },
-            { "packageid", "Id" }, // PackageId will map to Id, but will bypass the rewriter in BuildQuery and be an exact match
             { "version", "Version" },
             { "tokenizedid", "TokenizedId" },
             { "shingledid", "ShingledId" },
@@ -24,17 +23,10 @@ namespace NuGet.Indexing
             { "owner", "Owners" },
             { "owners", "Owners" },
         };
-        private bool _rewriteIdField;
 
         public PackageQueryParser(Lucene.Net.Util.Version matchVersion, string f, Analyzer a) :
-            this(matchVersion, f, a, rewriteIdField: false)
-        {
-        }
-
-        public PackageQueryParser(Lucene.Net.Util.Version matchVersion, string f, Analyzer a, bool rewriteIdField) :
             base(matchVersion, f, a)
         {
-            _rewriteIdField = rewriteIdField;
         }
 
         protected override Query GetPrefixQuery(string field, string termStr)
@@ -71,20 +63,8 @@ namespace NuGet.Indexing
 
         private Query BuildQuery(string field, string termStr, Func<string, string, Query> baseQueryBuilder)
         {
-            if (_rewriteIdField && String.Equals(field, "id", StringComparison.OrdinalIgnoreCase))
-            {
-                // Actually, build an equivalent query against TokenizedId, ShingledId and Id
-                BooleanQuery boolQuery = new BooleanQuery();
-                boolQuery.Add(new BooleanClause(baseQueryBuilder("Id", termStr), Occur.SHOULD));
-                boolQuery.Add(new BooleanClause(baseQueryBuilder("TokenizedId", termStr), Occur.SHOULD));
-                boolQuery.Add(new BooleanClause(baseQueryBuilder("ShingledId", termStr), Occur.SHOULD));
-                return boolQuery;
-            }
-            else
-            {
-                // Just rewrite the field name
-                return baseQueryBuilder(Substitute(field), termStr);
-            }
+            // Just rewrite the field name
+            return baseQueryBuilder(Substitute(field), termStr);
         }
     }
 }

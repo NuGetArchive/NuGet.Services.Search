@@ -1,16 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Diagnostics;
 using System.Text;
 using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
 using Lucene.Net.Util;
+using Lucene.Net.Index;
 
 namespace NuGet.Indexing
 {
     public static class LuceneQueryCreator
     {
         private const string DefaultTermName = "__default";
+
+        private static readonly ISet<string> AllowedNuGetFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            "id",
+            "packageid",
+            "version",
+            "author",
+            "authors",
+            "owner",
+            "owners"
+        };
 
         public static Query Parse(string inputQuery, bool rawLuceneQuery)
         {
@@ -25,12 +37,15 @@ namespace NuGet.Indexing
             }
 
             // Parse the query our query parser
-            PackageQueryParser parser = new PackageQueryParser(Lucene.Net.Util.Version.LUCENE_30, DefaultTermName, new PackageAnalyzer(), rewriteIdField: true);
+            PackageQueryParser parser = new PackageQueryParser(Lucene.Net.Util.Version.LUCENE_30, DefaultTermName, new PackageAnalyzer());
             Query query = parser.Parse(inputQuery);
 
-            // Process the query into portions
-            List<BooleanClause> luceneClauses = new List<BooleanClause>();
-            string nugetQuery = ExtractLuceneClauses(query, inputQuery, luceneClauses);
+            // Process the query into clauses
+            List<BooleanClause> clausesCollector = new List<BooleanClause>();
+            string nugetQuery = ExtractLuceneClauses(query, inputQuery, clausesCollector);
+
+            // Rewrite Id clauses into "TokenizedId, ShingledId, Id" booleans
+            IEnumerable<BooleanClause> luceneClauses = clausesCollector.Select(RewriteClauses);
 
             // Now, take the nuget query, if there is one, and process it
             Query nugetParsedQuery = ParseNuGetQuery(nugetQuery);
@@ -40,6 +55,33 @@ namespace NuGet.Indexing
 
             // Build the final query
             return Combine(nugetParsedQuery, luceneQuery);
+        }
+
+        private static BooleanClause RewriteClauses(BooleanClause arg)
+        {
+            TermQuery tq = arg.Query as TermQuery;
+            if(tq == null) 
+            {
+                return arg;
+            }
+
+            if (String.Equals(tq.Term.Field, "id", StringComparison.OrdinalIgnoreCase))
+            {
+                return new BooleanClause(
+                    BuildBooleanQuery(new [] {
+                        new BooleanClause(new TermQuery(new Term("Id", tq.Term.Text)), Occur.SHOULD),
+                        new BooleanClause(new TermQuery(new Term("TokenizedId", tq.Term.Text)), Occur.SHOULD),
+                        new BooleanClause(new TermQuery(new Term("ShingledId", tq.Term.Text)), Occur.SHOULD)
+                    }), arg.Occur);
+            }
+            else if (String.Equals(tq.Term.Field, "packageid", StringComparison.OrdinalIgnoreCase))
+            {
+                return new BooleanClause(new TermQuery(new Term("Id", tq.Term.Text)), arg.Occur);
+            }
+            else 
+            {
+                return arg;
+            }
         }
 
         public static Query CreateRawQuery(string q)
@@ -65,8 +107,10 @@ namespace NuGet.Indexing
                 foreach (BooleanClause clause in boolQuery.Clauses)
                 {
                     TermQuery tq = clause.Query as TermQuery;
-                    if (tq != null && String.Equals(tq.Term.Field, DefaultTermName, StringComparison.Ordinal))
+                    if (tq != null && !AllowedNuGetFields.Contains(tq.Term.Field))
                     {
+                        // Ignore fields we don't accept in NuGet-style queries
+                        // And, add in terms that aren't labelled with a field.
                         nugetQuery.Append(tq.Term.Text);
                         nugetQuery.Append(" ");
                     }
@@ -125,10 +169,10 @@ namespace NuGet.Indexing
             return nugetParsedQuery;
         }
 
-        private static BooleanQuery BuildBooleanQuery(List<BooleanClause> luceneClauses)
+        private static BooleanQuery BuildBooleanQuery(IEnumerable<BooleanClause> luceneClauses)
         {
             BooleanQuery luceneQuery = null;
-            if (luceneClauses.Count > 0)
+            if (luceneClauses.Any())
             {
                 luceneQuery = new BooleanQuery();
                 foreach (BooleanClause clause in luceneClauses)
