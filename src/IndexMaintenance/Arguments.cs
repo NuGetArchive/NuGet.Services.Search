@@ -87,18 +87,13 @@ namespace IndexMaintainance
                 dir = new AzureDirectory(acct, container.Name, new RAMDirectory());
             }
 
-            if (!args.IsLuceneQuery && !String.IsNullOrEmpty(args.Query))
-            {
-                args.Query = LuceneQueryCreator.Parse(args.Query);
-            }
-
             // Load Searcher Manager
             PackageSearcherManager manager = new PackageSearcherManager(dir, rank);
 
             // Perform the query
             string result = Searcher.Search(
                 manager, 
-                args.Query ?? String.Empty, 
+                LuceneQueryCreator.Parse(args.Query, args.IsLuceneQuery),
                 args.CountOnly, 
                 args.ProjectType ?? String.Empty, 
                 args.IncludePrerelease, 
@@ -169,7 +164,7 @@ namespace IndexMaintainance
         public void ParseQuery(ParseQueryArgs args)
         {
             Console.WriteLine("---- Converted Lucene Query ----");
-            Console.WriteLine(LuceneQueryCreator.Parse(args.Query));
+            Console.WriteLine(LuceneQueryCreator.Parse(args.Query, args.IsLuceneQuery));
             Console.WriteLine("-- End Converted Lucene Query --");
         }
 

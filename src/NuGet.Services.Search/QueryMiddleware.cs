@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Lucene.Net.Index;
+using Lucene.Net.Search;
 using Microsoft.Owin;
 using NuGet.Indexing;
 
@@ -71,12 +72,18 @@ namespace NuGet.Services.Search
             string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
             Trace.TraceInformation(args);
 
-            if (!luceneQuery)
-            {
-                q = LuceneQueryCreator.Parse(q);
-            }
-
-            string content = Searcher.Search(SearcherManager, q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
+            string content = NuGet.Indexing.Searcher.Search(
+                SearcherManager, 
+                LuceneQueryCreator.Parse(q, luceneQuery), 
+                countOnly, 
+                projectType, 
+                includePrerelease, 
+                feed, 
+                sortBy, 
+                skip, 
+                take, 
+                includeExplanation, 
+                ignoreFilter);
 
             await WriteResponse(context, content);
         }

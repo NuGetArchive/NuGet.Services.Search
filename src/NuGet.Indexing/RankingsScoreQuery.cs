@@ -9,16 +9,23 @@ namespace NuGet.Indexing
     public class RankingScoreQuery : CustomScoreQuery
     {
         IDictionary<string, int> _rankings;
+        public Query Query { get; private set; }
 
         public RankingScoreQuery(Query q, IDictionary<string, int> rankings)
             : base(q)
         {
+            Query = q;
             _rankings = rankings;
         }
 
         protected override CustomScoreProvider GetCustomScoreProvider(IndexReader reader)
         {
             return new RankingScoreProvider(reader, _rankings);
+        }
+
+        public override string ToString()
+        {
+            return "rank(" + Query.ToString() + ")";
         }
 
         private class RankingScoreProvider : CustomScoreProvider
