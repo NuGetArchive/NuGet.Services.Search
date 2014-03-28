@@ -43,14 +43,30 @@ namespace NuGet.Indexing
 
         public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
+            return Search(
+                searcherManager,
+                LuceneQueryCreator.Parse(q, true),
+                countOnly,
+                projectType,
+                includePrerelease,
+                feed,
+                sortBy,
+                skip,
+                take,
+                includeExplanation,
+                ignoreFilter);
+        }
+
+        public static string Search(PackageSearcherManager searcherManager, Query q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        {
             IndexSearcher searcher;
-            
+
             try
             {
                 if ((DateTime.UtcNow - WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
                 {
                     WarmTimeStampUtc = DateTime.UtcNow;
-                    
+
                     // Re-open on a background thread. We can safely continue to use the old reader while this happens.
                     Task.Factory
                         .StartNew(() => searcherManager.MaybeReopen())
@@ -73,66 +89,26 @@ namespace NuGet.Indexing
             }
             catch (Exception e)
             {
-                throw new CorruptIndexException("Exception on (re)opening", e); 
+                throw new CorruptIndexException("Exception on (re)opening", e);
             }
 
             try
             {
-                if (string.IsNullOrEmpty(q))
+                if (countOnly)
                 {
-                    //  these results are static and do not strictly require Lucene at all
-
-                    if (countOnly)
-                    {
-                        return DocumentCount(searcher, includePrerelease, feed, ignoreFilter);
-                    }
-                    else
-                    {
-                        IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
-
-                        return ListDocuments(searcher, rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
-                    }
+                    return DocumentCountImpl(searcher, q, includePrerelease, feed, ignoreFilter);
                 }
                 else
                 {
-                    //  these are real query scenarios and absolutely require Lucene
+                    IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
 
-                    if (countOnly)
-                    {
-                        return DocumentCountForQuery(searcher, q, includePrerelease, feed, ignoreFilter);
-                    }
-                    else
-                    {
-                        IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
-
-                        return ListDocumentsForQuery(searcher, q, rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
-                    }
+                    return ListDocumentsImpl(searcher, q, rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
                 }
             }
             finally
             {
                 searcherManager.Release(searcher);
             }
-        }
-
-        private static string DocumentCount(IndexSearcher searcher, bool includePrerelease, string feed, bool ignoreFilter)
-        {
-            return DocumentCountImpl(searcher, new MatchAllDocsQuery(), includePrerelease, feed, ignoreFilter);
-        }
-
-        private static string ListDocuments(IndexSearcher searcher, IDictionary<string, int> rankings, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
-        {
-            return ListDocumentsImpl(searcher, new MatchAllDocsQuery(), rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
-        }
-
-        private static string DocumentCountForQuery(IndexSearcher searcher, string q, bool includePrerelease, string feed, bool ignoreFilter)
-        {
-            return DocumentCountImpl(searcher, CreateBasicQuery(q), includePrerelease, feed, ignoreFilter);
-        }
-
-        private static string ListDocumentsForQuery(IndexSearcher searcher, string q, IDictionary<string, int> rankings, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
-        {
-            return ListDocumentsImpl(searcher, CreateBasicQuery(q), rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
         }
 
         private static string DocumentCountImpl(IndexSearcher searcher, Query query, bool includePrerelease, string feed, bool ignoreFilter)
@@ -241,7 +217,13 @@ namespace NuGet.Indexing
 
             StringBuilder strBldr = new StringBuilder();
 
-            strBldr.AppendFormat("{{\"totalHits\":{0},\"timeTakenInMs\":{1},\"data\":[", topDocs.TotalHits, elapsed);
+            strBldr.AppendFormat("{{\"totalHits\":{0},\"timeTakenInMs\":{1}", topDocs.TotalHits, elapsed);
+            if (includeExplanation)
+            {
+                // JsonConvert.Serialize does escaping and quoting.
+                strBldr.AppendFormat(",\"executedQuery\":{0}", Newtonsoft.Json.JsonConvert.SerializeObject(query.ToString()));
+            }
+            strBldr.Append(",\"data\":[");
 
             bool hasResult = false;
 
@@ -416,14 +398,6 @@ namespace NuGet.Indexing
             data = obj.ToString();
 
             return data;
-        }
-
-        private static Query CreateBasicQuery(string q)
-        {
-            QueryParser parser = new PackageQueryParser(Lucene.Net.Util.Version.LUCENE_30, "Title", new PackageAnalyzer());
-            Query query = parser.Parse(q);
-
-            return query;
         }
 
         private static int GetDocsCount(int skip, int take)

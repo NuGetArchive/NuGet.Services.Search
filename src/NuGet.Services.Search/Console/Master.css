@@ -84,12 +84,10 @@ textarea {
     color:blue;
 }
 
-.result-json {
+.result-button {
     font-size: xx-small;
     font-weight:bold;
     color:blue;
-    height:16px;
-    width:40px;
     margin:10px;
 }
 
@@ -164,6 +162,18 @@ textarea {
     margin:10px;
 }
 
+.explanation {
+    display: none;
+}
+
+p.executedQuery {
+}
+
+p.executedQuery span {
+    font-family: Consolas, 'Lucida Console', 'Courier New', monospace;
+    font-size: 12pt;
+}
+
 /* styles for D3 graph of segments */
 
 .axis path,
@@ -187,4 +197,8 @@ textarea {
 #totalDocuments {
   font-size: 2em;
   font-family: 'Courier New';
+}
+
+form#search {
+    display: inline-block;
 }
