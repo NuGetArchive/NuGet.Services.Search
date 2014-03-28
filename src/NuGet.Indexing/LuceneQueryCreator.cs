@@ -153,7 +153,7 @@ namespace NuGet.Indexing
             {
                 BooleanQuery q = new BooleanQuery();
                 q.Clauses.Add(new BooleanClause(nugetParsedQuery, Occur.SHOULD));
-                q.Clauses.Add(new BooleanClause(luceneQuery, Occur.SHOULD));
+                q.Clauses.AddRange(luceneQuery.Clauses);
                 return q;
             }
         }
