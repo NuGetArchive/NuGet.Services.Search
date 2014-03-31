@@ -7,6 +7,7 @@ using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
 using Lucene.Net.Util;
 using Lucene.Net.Index;
+using System.Text.RegularExpressions;
 
 namespace NuGet.Indexing
 {
@@ -36,8 +37,8 @@ namespace NuGet.Indexing
                 return CreateRawQuery(inputQuery);
             }
 
-            // Escape the query
-            inputQuery = Escape(inputQuery);
+            // Transform the query for Lucene parsing
+            inputQuery = TransformQuery(inputQuery);
 
             // Parse the query our query parser
             PackageQueryParser parser = new PackageQueryParser(Lucene.Net.Util.Version.LUCENE_30, DefaultTermName, new PackageAnalyzer());
@@ -60,27 +61,47 @@ namespace NuGet.Indexing
             return Combine(nugetParsedQuery, luceneQuery);
         }
 
-        private static string Escape(string inputQuery)
+        private static string TransformQuery(string inputQuery)
         {
-            // Split in to chunks, then escape the chunks and rejoin
-            return String.Join(" ",
-                inputQuery.Split(' ')
-                    .Select(s => EscapeFragment(s)));
+            // Split on "Terms" and,
+            // in each term, escape Lucene characters EXCEPT the first ":" in a field query
+            return String.Join(" ", GetTerms(inputQuery).Select(TransformTerm));
         }
 
-        private static string EscapeFragment(string s)
+        private static string TransformTerm(string term)
         {
-            // If the fragment contains a ":" that IS NOT at the start or very end, it's a field query. Don't escape the field name or ":"
-            int colonIndex = s.IndexOf(':');
-            if (colonIndex > 0 && (colonIndex < (s.Length - 1)))
+            // If the term is not quoted and contains a colon that IS NOT at the immediate 
+            // start or end, then it's a field query.
+            //
+            // For example:
+            //  foo:bar - Field query
+            //  :bar - Not a field query
+            //  "foo bar" - Not a field query
+            //  "foo:bar" - Not a field query
+            //  bar: - Not a field query
+            //  f:b - Field query.
+            int colonIndex = term.IndexOf(':');
+
+            // Quoted 
+            if (term.Length >= 2 && term[0] == '\"' && term[term.Length - 1] == '\"')
             {
-                var field = s.Substring(0, colonIndex);
-                var rest = QueryParser.Escape(s.Substring(colonIndex + 1));
-                return field + ":" + rest;
+                // Leave the query entirely alone
+                return term;
             }
+            // Colon in the middle of the string
+            else if(colonIndex > 0 && colonIndex < (term.Length - 1))
+            {
+                // Escape the parts before and after the colon, but otherwise leave it
+                return
+                    QueryParser.Escape(term.Substring(0, colonIndex)) +
+                    ":" +
+                    QueryParser.Escape(term.Substring(colonIndex + 1));
+            }
+            // Leading/Trailing Colon or no colon, and unquoted.
             else
             {
-                return QueryParser.Escape(s);
+                // Escape the whole dang thing
+                return QueryParser.Escape(term);
             }
         }
 
