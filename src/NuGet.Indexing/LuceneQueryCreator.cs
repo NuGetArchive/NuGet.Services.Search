@@ -36,6 +36,9 @@ namespace NuGet.Indexing
                 return CreateRawQuery(inputQuery);
             }
 
+            // Escape the query
+            inputQuery = Escape(inputQuery);
+
             // Parse the query our query parser
             PackageQueryParser parser = new PackageQueryParser(Lucene.Net.Util.Version.LUCENE_30, DefaultTermName, new PackageAnalyzer());
             Query query = parser.Parse(inputQuery);
@@ -55,6 +58,30 @@ namespace NuGet.Indexing
 
             // Build the final query
             return Combine(nugetParsedQuery, luceneQuery);
+        }
+
+        private static string Escape(string inputQuery)
+        {
+            // Split in to chunks, then escape the chunks and rejoin
+            return String.Join(" ",
+                inputQuery.Split(' ')
+                    .Select(s => EscapeFragment(s)));
+        }
+
+        private static string EscapeFragment(string s)
+        {
+            // If the fragment contains a ":" that IS NOT at the start or very end, it's a field query. Don't escape the field name or ":"
+            int colonIndex = s.IndexOf(':');
+            if (colonIndex > 0 && (colonIndex < (s.Length - 1)))
+            {
+                var field = s.Substring(0, colonIndex);
+                var rest = QueryParser.Escape(s.Substring(colonIndex + 1));
+                return field + ":" + rest;
+            }
+            else
+            {
+                return QueryParser.Escape(s);
+            }
         }
 
         private static BooleanClause RewriteClauses(BooleanClause arg)
