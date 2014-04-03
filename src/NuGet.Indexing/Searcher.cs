@@ -227,7 +227,7 @@ namespace NuGet.Indexing
 
             bool hasResult = false;
 
-            for (int i = skip * take; i < topDocs.ScoreDocs.Length; i++)
+            for (int i = skip; i < topDocs.ScoreDocs.Length; i++)
             {
                 ScoreDoc scoreDoc = topDocs.ScoreDocs[i];
 
