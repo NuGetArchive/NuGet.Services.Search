@@ -8,6 +8,7 @@ using Lucene.Net.Search;
 using Lucene.Net.Util;
 using Lucene.Net.Index;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace NuGet.Indexing
 {
@@ -51,7 +52,7 @@ namespace NuGet.Indexing
             string nugetQuery = ExtractLuceneClauses(query, inputQuery, clausesCollector);
 
             // Rewrite Id clauses into "TokenizedId, ShingledId, Id" booleans
-            IEnumerable<BooleanClause> luceneClauses = clausesCollector.Select(RewriteClauses);
+            IEnumerable<BooleanClause> luceneClauses = clausesCollector.Select(RewriteClauses(parser));
 
             // Now, take the nuget query, if there is one, and process it
             Query nugetParsedQuery = ParseNuGetQuery(nugetQuery);
@@ -107,38 +108,42 @@ namespace NuGet.Indexing
             }
         }
 
-        private static BooleanClause RewriteClauses(BooleanClause arg)
+        private static Func<BooleanClause, BooleanClause> RewriteClauses(QueryParser parser)
         {
-            TermQuery tq = arg.Query as TermQuery;
-            if(tq == null) 
+            return clause =>
             {
-                // It's not a term query, leave it alone
-                return arg;
-            }
+                TermQuery tq = clause.Query as TermQuery;
+                if (tq == null)
+                {
+                    // It's not a term query, leave it alone
+                    return clause;
+                }
 
-            if (String.Equals(tq.Term.Field, "id", StringComparison.OrdinalIgnoreCase))
-            {
-                // Users expect "id:foo" to be a substring search, so we need
-                // to rewrite that into "(Id:foo TokenizedId:foo ShingledId:foo)" in order
-                // to match our existing substring searching.
-                return new BooleanClause(
-                    BuildBooleanQuery(new [] {
-                        new BooleanClause(new TermQuery(new Term("Id", tq.Term.Text)), Occur.SHOULD),
-                        new BooleanClause(new TermQuery(new Term("TokenizedId", tq.Term.Text)), Occur.SHOULD),
-                        new BooleanClause(new TermQuery(new Term("ShingledId", tq.Term.Text)), Occur.SHOULD)
-                    }), arg.Occur);
-            }
-            else if (String.Equals(tq.Term.Field, "packageid", StringComparison.OrdinalIgnoreCase))
-            {
-                // PackageId is not a real field, it's just an alias for Id that bypasses
-                // the filter above and does a real exact-string match.
-                return new BooleanClause(new TermQuery(new Term("Id", tq.Term.Text)), arg.Occur);
-            }
-            else 
-            {
-                // All other fields pass through as-is
-                return arg;
-            }
+                if (String.Equals(tq.Term.Field, "id", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Users expect "id:foo" to be a substring search, so we need
+                    // to rewrite that into "(Id:foo TokenizedId:foo ShingledId:foo)" in order
+                    // to match our existing substring searching.
+                    return new BooleanClause(
+                        parser.Parse(
+                            String.Format(
+                                CultureInfo.InvariantCulture, 
+                                "Id:{0} TokenizedId:{0} ShingledId:{0}", 
+                                tq.Term.Text)), 
+                            clause.Occur);
+                }
+                else if (String.Equals(tq.Term.Field, "packageid", StringComparison.OrdinalIgnoreCase))
+                {
+                    // PackageId is not a real field, it's just an alias for Id that bypasses
+                    // the filter above and does a real exact-string match.
+                    return new BooleanClause(new TermQuery(new Term("Id", tq.Term.Text)), clause.Occur);
+                }
+                else
+                {
+                    // All other fields pass through as-is
+                    return clause;
+                }
+            };
         }
 
         public static Query CreateRawQuery(string q)
