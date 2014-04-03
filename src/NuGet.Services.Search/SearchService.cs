@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -64,6 +65,11 @@ namespace NuGet.Services.Search
             }
 
             return base.OnStart();
+        }
+
+        protected override IEnumerable<EventSource> GetTraceEventSources()
+        {
+            yield return SearchServiceEventSource.Log;
         }
 
         protected override Task OnRun()

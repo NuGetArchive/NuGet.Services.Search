@@ -22,7 +22,9 @@ namespace NuGet.Indexing
             "author",
             "authors",
             "owner",
-            "owners"
+            "owners",
+            "tag",
+            "tags"
         };
 
         public static Query Parse(string inputQuery, bool rawLuceneQuery)
@@ -65,7 +67,7 @@ namespace NuGet.Indexing
         {
             // Split on "Terms" and,
             // in each term, escape Lucene characters EXCEPT the first ":" in a field query
-            return String.Join(" ", GetTerms(inputQuery).Select(TransformTerm));
+            return String.Join(" ", GetTerms(inputQuery, escape: false).Select(TransformTerm));
         }
 
         private static string TransformTerm(string term)
@@ -313,13 +315,13 @@ namespace NuGet.Indexing
             }
         }
 
-        private static List<string> GetTerms(string query)
+        private static List<string> GetTerms(string query, bool escape = true)
         {
             List<string> result = new List<string>();
 
             if (query.StartsWith("\"") && query.EndsWith("\""))
             {
-                result.Add(query);
+                result.Add(QueryParser.Escape(query));
             }
             else
             {
@@ -339,7 +341,7 @@ namespace NuGet.Indexing
                             string s = query.Substring(start, i - start);
                             if (!string.IsNullOrWhiteSpace(s))
                             {
-                                result.Add(s);
+                                result.Add(escape ? QueryParser.Escape(s) : s);
                             }
                             start = i + 1;
                         }
@@ -349,7 +351,7 @@ namespace NuGet.Indexing
                 string t = query.Substring(start, query.Length - start);
                 if (!string.IsNullOrWhiteSpace(t))
                 {
-                    result.Add(t);
+                    result.Add(escape ? QueryParser.Escape(t) : t);
                 }
             }
 
