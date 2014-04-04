@@ -94,11 +94,21 @@ namespace NuGet.Indexing
             // Colon in the middle of the string
             else if(colonIndex > 0 && colonIndex < (term.Length - 1))
             {
-                // Escape the parts before and after the colon, but otherwise leave it
-                return
-                    Escape(term.Substring(0, colonIndex)) +
-                    ":" +
-                    Escape(term.Substring(colonIndex + 1));
+                // Capture the field and value
+                string field = term.Substring(0, colonIndex);
+                string value = term.Substring(colonIndex + 1);
+                if (!AllowedNuGetFields.Contains(field))
+                {
+                    // Field is invalid, discard it
+                    return Escape(value);
+                }
+                else
+                {
+                    return
+                        Escape(field) +
+                        ":" +
+                        Escape(value);
+                }
             }
             // Leading/Trailing Colon or no colon, and unquoted.
             else
