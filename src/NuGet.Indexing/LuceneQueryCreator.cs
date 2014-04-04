@@ -384,7 +384,10 @@ namespace NuGet.Indexing
         private static string Escape(string term)
         {
             term = QueryParser.Escape(term);
+            
+            // Unescape quotes because we want them to be handled by Lucene
             term = term.Replace("\\\"", "\"");
+
             return term;
         }
     }
