@@ -1,6 +1,6 @@
-NuGet.Services.Work
-===================
+NuGet.Services.Search
+=====================
 
-Worker that executes queued jobs for the various NuGet Services
+[Lucene.Net](https://lucenenet.apache.org)-powered Search Service using Azure Storage as a backing store.
 
 Got bugs? File them here: https://github.com/NuGet/NuGetGallery/issues
