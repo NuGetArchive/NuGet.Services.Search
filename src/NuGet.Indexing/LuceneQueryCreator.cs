@@ -96,15 +96,15 @@ namespace NuGet.Indexing
             {
                 // Escape the parts before and after the colon, but otherwise leave it
                 return
-                    QueryParser.Escape(term.Substring(0, colonIndex)) +
+                    Escape(term.Substring(0, colonIndex)) +
                     ":" +
-                    QueryParser.Escape(term.Substring(colonIndex + 1));
+                    Escape(term.Substring(colonIndex + 1));
             }
             // Leading/Trailing Colon or no colon, and unquoted.
             else
             {
                 // Escape the whole dang thing
-                return QueryParser.Escape(term);
+                return Escape(term);
             }
         }
 
@@ -174,7 +174,16 @@ namespace NuGet.Indexing
                 {
                     // Ignore fields we don't accept in NuGet-style queries
                     // And, add in terms that aren't labelled with a field.
+                    bool containsWhitespace = tq.Term.Text.Any(Char.IsWhiteSpace);
+                    if (containsWhitespace)
+                    {
+                        nugetQuery.Append("\"");
+                    }
                     nugetQuery.Append(tq.Term.Text);
+                    if (containsWhitespace)
+                    {
+                        nugetQuery.Append("\"");
+                    }
                     nugetQuery.Append(" ");
                     handledQuery = true;
                 }
@@ -326,7 +335,7 @@ namespace NuGet.Indexing
 
             if (query.StartsWith("\"") && query.EndsWith("\""))
             {
-                result.Add(QueryParser.Escape(query));
+                result.Add(Escape(query));
             }
             else
             {
@@ -341,12 +350,12 @@ namespace NuGet.Indexing
                     }
                     if (!literal)
                     {
-                        if (ch == ' ')
+                        if (Char.IsWhiteSpace(ch))
                         {
                             string s = query.Substring(start, i - start);
                             if (!string.IsNullOrWhiteSpace(s))
                             {
-                                result.Add(escape ? QueryParser.Escape(s) : s);
+                                result.Add(escape ? Escape(s) : s);
                             }
                             start = i + 1;
                         }
@@ -356,7 +365,7 @@ namespace NuGet.Indexing
                 string t = query.Substring(start, query.Length - start);
                 if (!string.IsNullOrWhiteSpace(t))
                 {
-                    result.Add(escape ? QueryParser.Escape(t) : t);
+                    result.Add(escape ? Escape(t) : t);
                 }
             }
 
@@ -370,6 +379,16 @@ namespace NuGet.Indexing
                 return term;
             }
             return string.Format("\"{0}\"", term);
+        }
+
+        private static string Escape(string term)
+        {
+            term = QueryParser.Escape(term);
+            
+            // Unescape quotes because we want them to be handled by Lucene
+            term = term.Replace("\\\"", "\"");
+
+            return term;
         }
     }
 }
