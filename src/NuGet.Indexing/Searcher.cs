@@ -30,9 +30,17 @@ namespace NuGet.Indexing
             {
                 NumericRangeQuery<int> numericRangeQuery = NumericRangeQuery.NewIntRange("Key", minKey, maxKey, true, true);
 
-                JObject keys = new JObject();
-                searcher.Search(numericRangeQuery, new KeyCollector(keys));
+                List<DocumentKey> pairs = new List<DocumentKey>();
+                searcher.Search(numericRangeQuery, new KeyCollector(pairs));
 
+                // Group by key
+                IEnumerable<IGrouping<int, DocumentKey>> groups = pairs.GroupBy(p => p.PackageKey);
+
+                // De-duplicate
+                IEnumerable<DocumentKey> deduped = groups.Select(g => g.First());
+                
+                JObject keys = new JObject();
+                keys.Add(deduped.Select(p => new JProperty(p.PackageKey.ToString(), p.Checksum)));
                 return keys.ToString();
             }
             finally
