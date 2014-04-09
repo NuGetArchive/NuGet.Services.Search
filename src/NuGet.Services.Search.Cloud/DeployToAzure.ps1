@@ -74,8 +74,8 @@ function CreateOrUpdate()
     # Get the current number of instances and poke it in to the config if we're updating an existing deployment
     #  (Octopus can do this automatically but we are already messing with CSCFG :))
     Write-Host "Reading existing Instance Count for $($deployment.ServiceName)"
-    $xml = [xml](cat $OctopusAzureConfigurationFile)
-    $deployment.RolesConfiguration.Keys | {
+    $xml = [xml](cat $OctopusAzureConfigurationFile);
+    $deployment.RolesConfiguration.Keys | ForEach {
         # Find the role node affected
         $roleName = $_
         $roleXml = $xml.ServiceConfiguration.Role | where {$_.name -eq $roleName} | select -first 1
