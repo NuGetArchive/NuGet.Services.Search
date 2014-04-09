@@ -34,7 +34,7 @@ function CreateOrUpdate()
     $environment = $matches["env"]
 
     # Locate the config file
-    $config = Join-Path $env:NuDeployCodeRoot "Deployment\Config\$environment\$OctopusAzureServiceName.cscfg"
+    $config = Join-Path $env:NuDeployCode "Deployment\Config\$environment\$OctopusAzureServiceName.cscfg"
     if(!(Test-Path $config)) 
     {
         throw "Missing Deployment Config File! Expected it at: $config. Check the NuDeployCodeRoot environment variable on your Tentacle!"
