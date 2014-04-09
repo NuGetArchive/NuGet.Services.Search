@@ -225,7 +225,17 @@ namespace NuGet.Indexing
 
             StringBuilder strBldr = new StringBuilder();
 
+            string timestamp;
+            if (!searcher.IndexReader.CommitUserData.TryGetValue("commit-time-stamp", out timestamp))
+            {
+                timestamp = null;
+            }
+
             strBldr.AppendFormat("{{\"totalHits\":{0},\"timeTakenInMs\":{1}", topDocs.TotalHits, elapsed);
+            if (!String.IsNullOrEmpty(timestamp))
+            {
+                strBldr.AppendFormat(",\"indexTimestamp\":\"{0}\"", timestamp);
+            }
             if (includeExplanation)
             {
                 // JsonConvert.Serialize does escaping and quoting.
