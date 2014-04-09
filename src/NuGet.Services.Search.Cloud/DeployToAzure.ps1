@@ -26,6 +26,8 @@
 
 function CreateOrUpdate() 
 {
+    $OctopusAzureDeploymentLabel = $OctopusParameters["Octopus.Release.Number"] + " " + ([DateTime]::Now.ToString("dd MMM yyyy @ HHmm"))
+
     # Parse out the environment name
     if($OctopusAzureServiceName -notmatch "nuget-(?<env>[A-Za-z]+)-\d+-[A-Z0-9a-z]+") 
     {
@@ -99,7 +101,7 @@ function SwapDeployment()
 function UpdateDeployment()
 {
     Write-Host "A deployment already exists in $OctopusAzureServiceName for slot $OctopusAzureSlot. Upgrading deployment..."
-    Set-AzureDeployment -Upgrade -ServiceName $OctopusAzureServiceName -Package $OctopusAzurePackageUri -Configuration $OctopusAzureConfigurationFile -Slot $OctopusAzureSlot -Mode Auto -label $OctopusAzureDeploymentLabel -Force
+    Set-AzureDeployment -Upgrade -ServiceName $OctopusAzureServiceName -Package $OctopusAzurePackageUri -Configuration $OctopusAzureConfigurationFile -Slot $OctopusAzureSlot -Mode Simultaneous -label $OctopusAzureDeploymentLabel -Force
 }
  
 function CreateNewDeployment()
