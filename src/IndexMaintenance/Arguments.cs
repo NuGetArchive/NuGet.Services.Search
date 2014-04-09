@@ -71,44 +71,38 @@ namespace IndexMaintainance
         [ArgActionMethod]
         public void Query(QueryArgs args)
         {
-            // Load index
-            Directory dir = null;
-            Rankings rank = null;
-            if (!String.IsNullOrEmpty(args.Folder))
-            {
-                rank = new FolderRankings(args.Folder);
-                dir = new SimpleFSDirectory(new System.IO.DirectoryInfo(args.Folder));
-            }
-            else
-            {
-                CloudStorageAccount acct = CloudStorageAccount.Parse(args.StorageAccountConnectionString);
-                CloudBlobContainer container = acct.CreateCloudBlobClient().GetContainerReference(args.Container ?? "ng-search");
-                rank = new StorageRankings(container);
-                dir = new AzureDirectory(acct, container.Name, new RAMDirectory());
-            }
-
-            // Load Searcher Manager
-            PackageSearcherManager manager = new PackageSearcherManager(dir, rank);
+            // Open client
+            var client = new SearchClient(new Uri(args.ServiceUrl));
 
             // Perform the query
-            string result = Searcher.Search(
-                manager, 
-                LuceneQueryCreator.Parse(args.Query, args.IsLuceneQuery),
-                args.CountOnly, 
-                args.ProjectType ?? String.Empty, 
-                args.IncludePrerelease, 
-                args.Feed ?? "none",
+            var result = client.Search(
+                args.Query,
+                args.ProjectType ?? String.Empty,
+                args.IncludePrerelease,
+                args.Feed,
                 args.SortOrder,
                 args.Skip,
                 args.Take, 
-                args.IncludeExplanation, 
-                args.IgnoreFilter);
-            dynamic json = JObject.Parse(result);
-
-            Console.WriteLine("{0} hits", (int)json.totalHits);
-            foreach (dynamic hit in json.data)
+                args.IsLuceneQuery,
+                args.CountOnly,
+                args.IncludeExplanation,
+                args.IgnoreFilter).Result;
+            if (!result.IsSuccessStatusCode)
             {
-                Console.WriteLine(" {0} {1} (Published: {2})", hit.Title ?? hit.PackageRegistration.Id, hit.Version, hit.Published);
+                Console.WriteLine("{0} from service!", (int)result.StatusCode);
+            }
+            else
+            {
+                var content = result.ReadContent().Result;
+                Console.WriteLine("Hits: {0}", content.TotalHits);
+                if (content.IndexTimestamp != null)
+                {
+                    Console.WriteLine("Index Timestamp: {0}", content.IndexTimestamp.Value.ToLocalTime());
+                }
+                foreach (dynamic hit in content.Data)
+                {
+                    Console.WriteLine(" {0} {1} (Published: {2})", hit.Title ?? hit.PackageRegistration.Id, hit.Version, hit.Published);
+                }
             }
         }
 

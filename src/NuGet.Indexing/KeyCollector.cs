@@ -8,11 +8,11 @@ namespace NuGet.Indexing
     {
         private int[] _keys;
         private int[] _checksums;
-        private JObject _result;
+        private IList<DocumentKey> _pairs;
 
-        public KeyCollector(JObject result)
+        public KeyCollector(IList<DocumentKey> pairs)
         {
-            _result = result;
+            _pairs = pairs;
         }
 
         public override bool AcceptsDocsOutOfOrder
@@ -22,7 +22,7 @@ namespace NuGet.Indexing
 
         public override void Collect(int docID)
         {
-            _result.Add(_keys[docID].ToString(), _checksums[docID]);
+            _pairs.Add(new DocumentKey(_keys[docID], docID, _checksums[docID]));
         }
 
         public override void SetNextReader(Lucene.Net.Index.IndexReader reader, int docBase)
@@ -33,6 +33,20 @@ namespace NuGet.Indexing
 
         public override void SetScorer(Scorer scorer)
         {
+        }
+    }
+
+    public class DocumentKey
+    {
+        public int PackageKey { get; private set; }
+        public int DocumentId { get; private set; }
+        public int Checksum { get; private set; }
+
+        public DocumentKey(int packageKey, int documentId, int checksum)
+        {
+            PackageKey = packageKey;
+            DocumentId = documentId;
+            Checksum = checksum;
         }
     }
 }
