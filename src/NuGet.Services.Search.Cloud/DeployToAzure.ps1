@@ -110,9 +110,26 @@ function CreateNewDeployment()
 
 function WaitForComplete() 
 {
-    $completeDeployment = Get-AzureDeployment -ServiceName $OctopusAzureServiceName -Slot $OctopusAzureSlot
+    $dep = Get-AzureDeployment -ServiceName $OctopusAzureServiceName -Slot $OctopusAzureSlot
 
-    $completeDeploymentID = $completeDeployment.DeploymentId
+    $ready = $false
+    while(!$ready) {
+        Write-Host "Checking if deployment is ready yet"
+        $ready = $true
+        $dep.RoleInstanceList | ForEach-Object {
+            Write-Host " $($_.InstanceName) = $($_.InstanceStatus)"
+            if($_.InstanceStatus -ne "ReadyRole") {
+                $ready = $false
+            }
+        }
+        if(!$ready) {
+            Write-Host "Sleeping for 10 seconds..."
+            Start-Sleep -Seconds 10
+            $dep = Get-AzureDeployment -ServiceName $OctopusAzureServiceName -Slot $OctopusAzureSlot
+        }
+    }
+
+    $completeDeploymentID = $dep.DeploymentId
     Write-Host "Deployment complete; Deployment ID: $completeDeploymentID"
 }
 
