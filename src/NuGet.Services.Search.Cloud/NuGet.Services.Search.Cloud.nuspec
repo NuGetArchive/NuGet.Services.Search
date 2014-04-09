@@ -14,6 +14,7 @@
     </releaseNotes>
   </metadata>
   <files>
+    <file src="DeployToAzure.ps1" />
     <file src="bin\$configuration$\app.publish\NuGet.Services.Search.Cloud.cspkg" />
     <file src="bin\$configuration$\app.publish\ServiceConfiguration.Cloud.cscfg" />
   </files>

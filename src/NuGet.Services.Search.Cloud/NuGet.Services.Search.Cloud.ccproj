@@ -34,6 +34,8 @@
   </PropertyGroup>
   <!-- Items for the project -->
   <ItemGroup>
+    <None Include="DeployToAzure.ps1" />
+    <None Include="NuGet.Services.Search.Cloud.nuspec" />
     <ServiceDefinition Include="ServiceDefinition.csdef" />
     <ServiceConfiguration Include="ServiceConfiguration.Local.cscfg" />
     <ServiceConfiguration Include="ServiceConfiguration.Cloud.cscfg" />
