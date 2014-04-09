@@ -83,7 +83,7 @@ function CreateOrUpdate()
         # Put the current value in the xml
         $instanceCount = $deployment.RolesConfiguration[$roleName].InstanceCount;
         Write-Host " Setting $roleName instance count to $instanceCount"
-        $roleXml.Instances.count = $instanceCount
+        $roleXml.Instances.count = $instanceCount.ToString()
     }
     Write-Host "Saving config file..."
     $xml.Save($OctopusAzureConfigurationFile)
