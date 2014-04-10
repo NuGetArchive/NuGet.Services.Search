@@ -26,7 +26,9 @@
 
 function CreateOrUpdate() 
 {
-    $OctopusAzureDeploymentLabel = $OctopusParameters["Octopus.Release.Number"] + " " + ([DateTime]::Now.ToString("dd MMM yyyy @ HHmm"))
+    $releaseNumber = $OctopusParameters["Octopus.Release.Number"]
+    $OctopusAzureDeploymentLabel = $releaseNumber + " (" + ([DateTime]::Now.ToString("dd MMM yyyy @ HHmm")) + ")"
+    Write-Host "Deploying `"$OctopusAzureDeploymentLabel`""
 
     # Parse out the environment name
     if($OctopusAzureServiceName -notmatch "nuget-(?<env>[A-Za-z]+)-\d+-[A-Z0-9a-z]+") 
@@ -66,7 +68,11 @@ function CreateOrUpdate()
         else 
         {
             Write-Host ("Current staging deployment: " + $staging.Label)
-            if ($staging.Label -eq $OctopusAzureDeploymentLabel) {
+
+            # Parse the release number out
+            $splat = $staging.Label.Split();
+            if(($splat.Length -gt 0) -and ($staging.Label.Split()[0] -eq $releaseNumber))
+                # We can swap! The existing deployment label matches this release!
                 SwapDeployment
                 return
             }
