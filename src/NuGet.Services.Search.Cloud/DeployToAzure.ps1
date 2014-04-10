@@ -72,6 +72,7 @@ function CreateOrUpdate()
             # Parse the release number out
             $splat = $staging.Label.Split();
             if(($splat.Length -gt 0) -and ($staging.Label.Split()[0] -eq $releaseNumber))
+            {
                 # We can swap! The existing deployment label matches this release!
                 SwapDeployment
                 return
