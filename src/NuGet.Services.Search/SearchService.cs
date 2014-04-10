@@ -138,6 +138,7 @@ namespace NuGet.Services.Search
                     JObject resources = new JObject();
                     response.Add("resources", resources);
 
+                    resources.Add("hello", "world");
                     resources.Add("range", MakeUri(context, "/range"));
                     resources.Add("fields", MakeUri(context, "/fields"));
                     resources.Add("console", MakeUri(context, "/console"));
