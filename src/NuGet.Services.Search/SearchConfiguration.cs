@@ -9,5 +9,6 @@ namespace NuGet.Services.Search
     public class SearchConfiguration
     {
         public string IndexPath { get; set; }
+        public string StorageContainerName { get; set; }
     }
 }

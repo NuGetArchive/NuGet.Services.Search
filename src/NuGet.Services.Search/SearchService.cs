@@ -21,6 +21,7 @@ using NuGet.Indexing;
 using NuGet.Services.Http;
 using NuGet.Services.ServiceModel;
 using Owin;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace NuGet.Services.Search
 {
@@ -185,22 +186,22 @@ namespace NuGet.Services.Search
             Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
 
             SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
-            Lucene.Net.Store.Directory directory = GetDirectory(config.IndexPath);
-            Rankings rankings = GetRankings(config.IndexPath);
+            Lucene.Net.Store.Directory directory = GetDirectory(config.IndexPath,config.StorageContainerName);
+            Rankings rankings = GetRankings(config.IndexPath,config.StorageContainerName);
             var searcher = new PackageSearcherManager(directory, rankings);
             searcher.MaybeReopen(); // Ensure the index is initially opened.
             return searcher;
         }
 
-        private Lucene.Net.Store.Directory GetDirectory(string localPath)
+        private Lucene.Net.Store.Directory GetDirectory(string localPath,string containerName)
         {
             if (String.IsNullOrEmpty(localPath))
             {
                 CloudStorageAccount storageAccount = Configuration.Storage.Primary;
 
-                Trace.TraceInformation("GetDirectory using storage. Container: {0}", "ng-search");
+                Trace.TraceInformation("GetDirectory using storage. Container: {0}", containerName);
 
-                return new AzureDirectory(storageAccount, "ng-search", new RAMDirectory());
+                return new AzureDirectory(storageAccount, containerName, new RAMDirectory());
             }
             else
             {
@@ -210,15 +211,16 @@ namespace NuGet.Services.Search
             }
         }
 
-        private Rankings GetRankings(string localPath)
+        private Rankings GetRankings(string localPath,string containerName)
         {
             if (String.IsNullOrEmpty(localPath))
             {
                 CloudStorageAccount storageAccount = Configuration.Storage.Primary;
+                CloudBlobContainer container = storageAccount.CreateCloudBlobClient().GetContainerReference(containerName);
 
                 Trace.TraceInformation("Rankings from storage.");
 
-                return new StorageRankings(storageAccount);
+                return new StorageRankings(container);
             }
             else
             {
