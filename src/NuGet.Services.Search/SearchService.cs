@@ -67,7 +67,7 @@ namespace NuGet.Services.Search
             return base.OnStart();
         }
 
-        protected override IEnumerable<EventSource> GetTraceEventSources()
+        public override IEnumerable<EventSource> GetEventSources()
         {
             yield return SearchServiceEventSource.Log;
         }
@@ -98,6 +98,24 @@ namespace NuGet.Services.Search
             };
 
             Func<PackageSearcherManager> searcherManagerThunk = () => SearcherManager;
+
+            // Just a little bit of rewriting. Not the full UseDefaultFiles middleware, just a quick hack
+            app.Use(async (context, next) =>
+            {
+                if (String.Equals(context.Request.Path.Value, "/console", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Redirect to trailing slash to maintain relative links
+                    context.Response.Redirect(context.Request.PathBase + context.Request.Path + "/");
+                    context.Response.StatusCode = 301;
+                    return;
+                }
+                else if (String.Equals(context.Request.Path.Value, "/console/", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Request.Path = new PathString("/console/Index.html");
+                }
+                await next();
+            });
+            app.UseStaticFiles(new StaticFileOptions(sharedStaticFileOptions));
             
             // Public endpoint(s)
             app.Use(typeof(QueryMiddleware), "/query", searcherManagerThunk);
@@ -107,24 +125,6 @@ namespace NuGet.Services.Search
             app.Use(typeof(FieldsMiddleware), "/fields", searcherManagerThunk);
             app.Use(typeof(RangeMiddleware), "/range", searcherManagerThunk);
             app.Use(typeof(SegmentsMiddleware), "/segments", searcherManagerThunk);
-
-            // Just a little bit of rewriting. Not the full UseDefaultFiles middleware, just a quick hack
-            app.Use((context, next) =>
-            {
-                if (String.Equals(context.Request.Path.Value, "/console", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Redirect to trailing slash to maintain relative links
-                    context.Response.StatusCode = 301;
-                    context.Response.Headers["Location"] = context.Request.PathBase + context.Request.Path + "/";
-                    return Task.FromResult(0);
-                }
-                else if (String.Equals(context.Request.Path.Value, "/console/", StringComparison.OrdinalIgnoreCase))
-                {
-                    context.Request.Path = new PathString("/console/Index.html");
-                }
-                return next();
-            });
-            app.UseStaticFiles(new StaticFileOptions(sharedStaticFileOptions));
 
             app.Use(async (context, next) =>
             {
