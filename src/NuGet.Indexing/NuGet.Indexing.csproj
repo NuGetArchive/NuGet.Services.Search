@@ -14,7 +14,7 @@
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <BuildPackage>true</BuildPackage>
-    <NuGetPackageImportStamp>39900f9f</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>17a1e6e8</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
