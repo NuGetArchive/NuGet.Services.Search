@@ -183,14 +183,27 @@ namespace NuGet.Services.Search
 
         private PackageSearcherManager CreateSearcherManager()
         {
-            Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
+            try
+            {
 
-            SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
-            Lucene.Net.Store.Directory directory = GetDirectory(config.IndexPath,config.StorageContainerName);
-            Rankings rankings = GetRankings(config.IndexPath,config.StorageContainerName);
-            var searcher = new PackageSearcherManager(directory, rankings);
-            searcher.MaybeReopen(); // Ensure the index is initially opened.
-            return searcher;
+                Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
+                SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
+                Lucene.Net.Store.Directory directory = GetDirectory(config.IndexPath, "ng-search");
+                Rankings rankings = GetRankings(config.IndexPath, "ng-search");
+                var searcher = new PackageSearcherManager(directory, rankings);
+                searcher.MaybeReopen(); // Ensure the index is initially opened.
+                return searcher;
+            }catch(Exception e)
+            {
+                Trace.TraceInformation("Exception thrown while loading index. Message : {0}.Falling back to secondary index",e.Message);
+                SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
+                Lucene.Net.Store.Directory directory = GetDirectory(config.IndexPath, config.StorageContainerName);
+                Rankings rankings = GetRankings(config.IndexPath, config.StorageContainerName);
+                var searcher = new PackageSearcherManager(directory, rankings);
+                searcher.MaybeReopen(); // Ensure the index is initially opened.
+                return searcher;
+            }
+            
         }
 
         private Lucene.Net.Store.Directory GetDirectory(string localPath,string containerName)
