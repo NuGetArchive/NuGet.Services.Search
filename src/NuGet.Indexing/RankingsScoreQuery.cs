@@ -47,14 +47,14 @@ namespace NuGet.Indexing
                 int ranking = 0;
                 _rankings.TryGetValue(id, out ranking);
 
-                const int Range = 200;
-
-                if (ranking == 0 || ranking > Range)
+                if (ranking == 0)
                 {
                     return subQueryScore;
                 }
 
-                float boost = (float)Math.Pow(10.0, (1.0 - ((double)ranking / ((double)Range + 1.0))));
+                int range = _rankings.Count;
+
+                float boost = (float)Math.Pow(10.0, (1.0 - ((double)ranking / ((double)range + 1.0))));
                 float adjustedScore = subQueryScore * boost;
                 return adjustedScore;
             }
