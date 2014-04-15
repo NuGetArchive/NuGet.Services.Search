@@ -6,11 +6,11 @@ namespace NuGet.Indexing
     {
         public override float LengthNorm(string fieldName, int numTerms)
         {
-            if (fieldName == "TokenizedId" || fieldName == "ShingledId" || fieldName == "Owners")
+            if (fieldName == "TokenizedId" || fieldName == "ShingledId" || fieldName == "Owners" || fieldName == "Title")
             {
                 return 1;
             }
-            else if (fieldName == "Tags" && numTerms <= 9)
+            else if (fieldName == "Tags" && numTerms <= 15)
             {
                 return 1;
             }
