@@ -30,7 +30,7 @@ namespace NuGet.Services.Search
             {
                 UseStorage = true;
                 StorageAccount = _config.Storage.Primary;
-                StorageContainer = section.StorageContainerName;              
+                StorageContainer = "ng-search";              
                 LocalIndexPath = null;
             }
             else
