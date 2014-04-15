@@ -12,6 +12,10 @@
 
             <!-- Set this to the location of a local file-system-based search index. -->
             <Setting name="Search.IndexPath" value="" />
+            
+            <!-- Set this to a non-empty value to CHANGE the container name used for storing the index -->
+            <!-- The default value, if this is empty, is 'ng-search' -->
+            <Setting name="Search.IndexContainer" value="" />
 
             <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="" />
             <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="" />
