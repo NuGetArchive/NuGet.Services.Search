@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Lucene.Net.Index;
+using Lucene.Net.Search;
 using Microsoft.Owin;
 using NuGet.Indexing;
 
@@ -21,6 +22,8 @@ namespace NuGet.Services.Search
             string q = context.Request.Query["q"] ?? String.Empty;
 
             string projectType = context.Request.Query["projectType"] ?? String.Empty;
+
+            string sortBy = context.Request.Query["sortBy"] ?? String.Empty;
 
             bool luceneQuery;
             if (!bool.TryParse(context.Request.Query["luceneQuery"], out luceneQuery))
@@ -54,11 +57,8 @@ namespace NuGet.Services.Search
                 take = 20;
             }
 
-            // Ignore explanation field if not an admin
-            // It's not really secret, but it's internal for now at least
             bool includeExplanation = false;
-            if (!(await SearchService.IsAdmin(context, challenge: false)) &&
-                !bool.TryParse(context.Request.Query["explanation"], out includeExplanation))
+            if (!bool.TryParse(context.Request.Query["explanation"], out includeExplanation))
             {
                 includeExplanation = false;
             }
@@ -69,15 +69,21 @@ namespace NuGet.Services.Search
                 ignoreFilter = false;
             }
 
-            string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9})", q, countOnly, projectType, includePrerelease, feed, skip, take, includeExplanation, ignoreFilter, luceneQuery);
+            string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
             Trace.TraceInformation(args);
 
-            if (!luceneQuery)
-            {
-                q = LuceneQueryCreator.Parse(q);
-            }
-
-            string content = Searcher.Search(SearcherManager, q, countOnly, projectType, includePrerelease, feed, skip, take, includeExplanation, ignoreFilter);
+            string content = NuGet.Indexing.Searcher.Search(
+                SearcherManager, 
+                LuceneQueryCreator.Parse(q, luceneQuery), 
+                countOnly, 
+                projectType, 
+                includePrerelease, 
+                feed, 
+                sortBy, 
+                skip, 
+                take, 
+                includeExplanation, 
+                ignoreFilter);
 
             await WriteResponse(context, content);
         }

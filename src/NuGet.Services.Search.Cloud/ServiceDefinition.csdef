@@ -1,5 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ServiceDefinition name="NuGet.Services.Search.Cloud" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2013-10.2.2">
+    <LoadBalancerProbes>
+        <LoadBalancerProbe name="Query" path="/search/query" protocol="http" port="80" />
+    </LoadBalancerProbes>
     <WorkerRole name="NuGet.Services.Search" vmsize="Medium">
         <!-- Must be elevated to bind to ports under 1024 -->
         <Runtime executionContext="elevated" />
@@ -28,8 +31,8 @@
             <LocalStorage name="Temp" cleanOnRoleRecycle="true" sizeInMB="2048" />
         </LocalResources>
         <Endpoints>
-            <InputEndpoint name="http" protocol="http" port="80" localPort="80" />
-            <InputEndpoint name="https" protocol="https" port="443" localPort="443" certificate="SSL" />
+            <InputEndpoint name="http" protocol="http" port="80" localPort="80" loadBalancerProbe="Query" />
+            <InputEndpoint name="https" protocol="https" port="443" localPort="443" certificate="SSL" loadBalancerProbe="Query" />
             <InstanceInputEndpoint name="https-instance" protocol="tcp" localPort="443">
                 <AllocatePublicPortFrom>
                     <FixedPortRange max="44399" min="44300" />

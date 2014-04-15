@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Lucene.Net.Store;
@@ -70,54 +71,46 @@ namespace IndexMaintainance
         [ArgActionMethod]
         public void Query(QueryArgs args)
         {
-            // Load index
-            Directory dir = null;
-            Rankings rank = null;
-            if (!String.IsNullOrEmpty(args.Folder))
+            // Open client
+            var client = new SearchClient(new Uri(args.ServiceUrl));
+
+            // Perform the query
+            var result = client.Search(
+                args.Query,
+                args.ProjectType ?? String.Empty,
+                args.IncludePrerelease,
+                args.Feed,
+                args.SortOrder,
+                args.Skip,
+                args.Take, 
+                args.IsLuceneQuery,
+                args.CountOnly,
+                args.IncludeExplanation,
+                args.IgnoreFilter).Result;
+            if (!result.IsSuccessStatusCode)
             {
-                rank = new FolderRankings(args.Folder);
-                dir = new SimpleFSDirectory(new System.IO.DirectoryInfo(args.Folder));
+                Console.WriteLine("{0} from service!", (int)result.StatusCode);
             }
             else
             {
-                CloudStorageAccount acct = CloudStorageAccount.Parse(args.StorageAccountConnectionString);
-                CloudBlobContainer container = acct.CreateCloudBlobClient().GetContainerReference(args.Container ?? "ng-search");
-                rank = new StorageRankings(container);
-                dir = new AzureDirectory(acct, container.Name, new RAMDirectory());
-            }
-
-            if (!args.IsLuceneQuery && !String.IsNullOrEmpty(args.Query))
-            {
-                args.Query = LuceneQueryCreator.Parse(args.Query);
-            }
-
-            // Load Searcher Manager
-            PackageSearcherManager manager = new PackageSearcherManager(dir, rank);
-
-            // Perform the query
-            string result = Searcher.Search(
-                manager, 
-                args.Query ?? String.Empty, 
-                args.CountOnly, 
-                args.ProjectType ?? String.Empty, 
-                args.IncludePrerelease, 
-                args.Feed ?? "none",
-                args.Skip, 
-                args.Take, 
-                args.IncludeExplanation, 
-                args.IgnoreFilter);
-            dynamic json = JObject.Parse(result);
-
-            Console.WriteLine("{0} hits", (int)json.totalHits);
-            foreach (dynamic hit in json.data)
-            {
-                Console.WriteLine(" {0} {1} ", hit.PackageRegistration.Id, hit.Version);
+                var content = result.ReadContent().Result;
+                Console.WriteLine("Hits: {0}", content.TotalHits);
+                if (content.IndexTimestamp != null)
+                {
+                    Console.WriteLine("Index Timestamp: {0}", content.IndexTimestamp.Value.ToLocalTime());
+                }
+                foreach (dynamic hit in content.Data)
+                {
+                    Console.WriteLine(" {0} {1} (Published: {2})", hit.Title ?? hit.PackageRegistration.Id, hit.Version, hit.Published);
+                }
             }
         }
 
         [ArgActionMethod]
         public void PerfTest(PerfTestArgs args)
         {
+            ServicePointManager.ServerCertificateValidationCallback = (_, __, ___, ____) => true;
+
             // Load the query file
             IList<string> queries = (args.Queries ?? System.IO.File.ReadAllLines(args.QueryList)).ToList();
 
@@ -152,13 +145,21 @@ namespace IndexMaintainance
             // Calculate aggregate warm time
             var maxAgg = TupleAggregate(max: true);
             var minAgg = TupleAggregate(max: false);
-            var warmMax = data.Select(d => d.Aggregate(maxAgg)).Aggregate(maxAgg);
-            var warmMin = data.Select(d => d.Aggregate(minAgg)).Aggregate(minAgg);
-            var warmAvg = data.SelectMany(run => run).Average(t => t.Item2);
+            var warmMax = data.Skip(1).Select(d => d.Aggregate(maxAgg)).Aggregate(maxAgg);
+            var warmMin = data.Skip(1).Select(d => d.Aggregate(minAgg)).Aggregate(minAgg);
+            var warmAvg = data.Skip(1).SelectMany(run => run).Average(t => t.Item2);
             Console.WriteLine("-- Warm Run Aggregates --");
             Console.WriteLine("Maximum: {0:0.00}ms for {1}", warmMax.Item2, warmMax.Item1);
             Console.WriteLine("Minimum: {0:0.00}ms for {1}", warmMin.Item2, warmMin.Item1);
             Console.WriteLine("Average: {0:0.00}ms", warmAvg);
+        }
+
+        [ArgActionMethod]
+        public void ParseQuery(ParseQueryArgs args)
+        {
+            Console.WriteLine("---- Converted Lucene Query ----");
+            Console.WriteLine(LuceneQueryCreator.Parse(args.Query, args.IsLuceneQuery));
+            Console.WriteLine("-- End Converted Lucene Query --");
         }
 
         private void RenderRunData(IList<Tuple<string, double>> run)

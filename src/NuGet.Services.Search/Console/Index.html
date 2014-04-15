@@ -12,21 +12,29 @@
         <div style="margin:6px">
             <span style="font-size:large;font-weight:bold;color:black">Test</span>
             <div id="query-div" style="display:inline-block;text-align:center;width:720px">
-                <input id="query" size="25" type="text">
-                <button id="go">Go</button>
+                <form id="search" action="#">
+                    <input id="query" size="25" type="text">
+                    <button id="go" type="submit">Go</button>
+                </form>
                 &nbsp;&nbsp;&nbsp;
                 &nbsp;&nbsp;&nbsp;
                 <select id="prerelease">
                     <option value="false" selected>Stable Only</option>
                     <option value="true">Include Prerelease</option>
                 </select>
+                Sort By:
+                <select id="sortBy">
+                    <option value="" selected>Relevance</option>
+                    <option value="lastEdited">Recently Edited</option>
+                    <option value="published">Recently Published</option>
+                    <option value="title-asc">Title: Ascending</option>
+                    <option value="title-desc">Title: Descending</option>
+                </select>
             </div>
         </div>
     </div>
 
-    <button id="show-diagnostics">Diagnostics</button>
-
-    <div id="diagnostics" style="border-width:3px;border-style:solid;border-color:green;display:none;margin:4px">
+    <div id="diagnostics" style="border-width:3px;border-style:solid;border-color:green;margin:4px">
         <div style="margin:4px">
 
             <span style="font-size:large;font-weight:bold;color:green">Diagnostics</span>
@@ -53,11 +61,9 @@
 
             <div style="width:360px;display:inline-block;">
                 ProjectType:&nbsp;<input id="projectType" type="text" size="40">
-                (see Stored Fields for VS Project guid sets)
             </div>
 
             <div style="width:100px;display:inline-block;">
-                <input id="explanation" type="checkbox">Explanation
                 <input id="ignore-filter" type="checkbox">No Filter&nbsp;&nbsp;
                 <input id="send-query" type="checkbox" checked>Send Raw
             </div>
@@ -101,23 +107,24 @@
             alert("An error occurred!");
         });
 
-        var displayPackage = function (data, i, skip) {
+        var displayPackage = function (data, i, query) {
 
-            var number = (skip * 20) + (i + 1);
+            var number = (query.skip * 20) + (i + 1);
 
-            var html = '';
+            var html = '<div class="package-entry">';
 
             var title = data[i].Title;
             if (title === null || title === '') {
                 title = data[i].PackageRegistration.Id;
             }
-
             html += '<p>';
             html += '<span class="result-number">' + number + '</span>&nbsp;<span class="result-title">' + title + '</span>';
-            html += '&nbsp;&nbsp;<button id="result-index-' + i + '" class="result-json">JSON</button>'
+            html += '<button class="result-button result-json">JSON</button>';
+            html += '<button class="result-button result-explain">Explain</button>';
             html += '</p>';
 
-            html += '<div class="json-display"><div class="json-display-content" id="result-display-json-' + i + '"></div></div>';
+            html += '<div class="json-display">' + displayJson(data[i]) + '</div>';
+            html += '<div class="explanation">' + displayExplanation(data, i) + '</div>';
 
             html += '<div class="result-details-div">';
 
@@ -133,6 +140,7 @@
                 html += '<p><span class="result-tags">' + data[i].Tags + '</span></p>';
             }
 
+            html += '</div>';
             html += '</div>';
 
             return html;
@@ -155,7 +163,6 @@
 
             var html = '';
 
-            html += '<div class="explanation">'
             html += '<div style="margin-left:20px">';
             html += '<p>';
             html += ' <span style="color:black">Rank:</span>';
@@ -186,7 +193,6 @@
             html += '<p><span class="term-name">ProjectGuidRankings:</span> <div class="term-value">' + displayArray(data[i].diagnostics.ProjectGuidRankings) + '</div></p>';
 
             html += '<pre style="color:blue">' + data[i].diagnostics.Explanation + '</pre>';
-            html += '</div>';
             html += '</div>';
 
             return html;
@@ -229,8 +235,8 @@
                     ignoreFilter: query.ignoreFilter,
                     luceneQuery: query.luceneQuery
                 };
-                $.get('search', navQuery, function (data, status) {
-                    updateResultsDiv(navQuery, total, data.data);
+                $.get('/search/query', navQuery, function (data, status) {
+                    updateResultsDiv(navQuery, total, data.data, data.query);
                 });
             };
         }
@@ -243,7 +249,7 @@
             if (skip > 0) {
                 html += '<button id="prev">Prev</button>'
             }
-            if ((total - ((skip + 1) * 20)) > 0) {
+            if ((total - (skip + 20)) > 0) {
                 html += '<button id="next">Next</button>'
             }
             html += '</div>';
@@ -251,52 +257,46 @@
             return html;
         }
 
-        var showJson = function (data) {
-            return function () {
-                var id = $(this).attr('Id');
-                var i = parseInt(id.substr(13));
-                if ($('#result-display-json-' + i).text() === '') {
-                    var resultObj = JSON.parse(JSON.stringify(data[i]));
-                    delete resultObj['diagnostics'];
-                    var div = $('#result-display-json-' + i);
-                    div.html(json2html(resultObj));
-                    div.parent().css('display', 'block');
-                }
-                else {
-                    var div = $('#result-display-json-' + i);
-                    div.html('')
-                    div.parent().css('display', 'none');
-                }
-            };
+        var displayJson = function (data) {
+            var resultObj = JSON.parse(JSON.stringify(data));
+            delete resultObj['diagnostics'];
+            return json2html(resultObj);
         }
 
-        var updateResultsDiv = function (query, total, data) {
+        var updateResultsDiv = function (query, total, data, executedQuery) {
 
             var html = '';
 
             html += '<p>Total: ' + total + '</p>';
 
+            if (executedQuery) {
+                html += '<p class="executedQuery">Query: <span>' + executedQuery + '</span></p>';
+            }
+
             for (var i = 0; i < data.length; i += 1) {
-                html += displayPackage(data, i, query.skip);
-                if (query.explanation) {
-                    html += displayExplanation(data, i);
-                }
+                html += displayPackage(data, i, query);
             }
 
             html += displayNavigationButtons(total, query.skip);
 
             $('#results-div').html(html);
 
-            $('#prev').click(createNavigationFunction(query, total, query.skip - 1));
-            $('#next').click(createNavigationFunction(query, total, query.skip + 1));
-
-            $('.result-json').click(showJson(data));
+            $('#prev').click(createNavigationFunction(query, total, query.skip - 10));
+            $('#next').click(createNavigationFunction(query, total, query.skip + 10));
         }
 
-        var createFieldClause = function (field, query) {
+        var addBoost = function(term, boost)
+        {
+            if (boost !== undefined && boost !== 1) {
+                term += '^' + boost;
+            }
+            return term;
+        }
+
+        var createFieldClause = function (field, query, boost) {
 
             if (query[0] === '"' && query[query.length - 1] === '"') {
-                return field + ':' + query;
+                return addBoost(field + ':' + query, boost);
             }
 
             var t = query.split(' ');
@@ -313,16 +313,16 @@
             }
 
             if (subterms.length === 1) {
-                return field + ':' + '"' + subterms[0] + '"';
+                return addBoost(field + ':' + subterms[0], boost);
             }
 
-            var clause = '(' + field + ':' + '"' + subterms[0] + '"';
+            var clause = '(' + field + ':' + subterms[0];
             for (var i = 1; i < subterms.length; i += 1) {
-                clause += ' OR ' + field + ':' + '"' + subterms[i] + '"';
+                clause += ' OR ' + field + ':' + subterms[i];
             }
             clause += ')';
 
-            return clause;
+            return addBoost(clause, boost);
         }
 
         var createFieldClauseAND = function (field, query, boost) {
@@ -344,17 +344,13 @@
                 return '';
             }
 
-            var clause = '(' + field + ':' + '"' + subterms[0] + '"';
+            var clause = '(' + field + ':' + subterms[0];
             for (var i = 1; i < subterms.length; i += 1) {
-                clause += ' AND ' + field + ':' + '"' + subterms[i] + '"';
+                clause += ' AND ' + field + ':' + subterms[i];
             }
             clause += ')';
 
-            if (boost !== 1) {
-                clause += '^' + boost;
-            }
-
-            return clause;
+            return addBoost(clause, boost);
         }
 
         var createLuceneQuery = function (query) {
@@ -374,7 +370,7 @@
             luceneQuery += ' ' + createFieldClause('TokenizedId', query);
             luceneQuery += ' ' + createFieldClauseAND('TokenizedId', query, 4);
             luceneQuery += ' ' + createFieldClause('ShingledId', query);
-            luceneQuery += ' ' + createFieldClause('Title', query);
+            luceneQuery += ' ' + createFieldClause('Title', query, 2);
             luceneQuery += ' ' + createFieldClauseAND('Title', query, 4);
             luceneQuery += ' ' + createFieldClause('Tags', query);
             luceneQuery += ' ' + createFieldClause('Description', query);
@@ -394,7 +390,6 @@
             var prerelease = $('#prerelease').val();
             var sortBy = $('#sortBy').val();
             var feed = $('#feed').val();
-            var explanation = $('#explanation').is(':checked');
             var ignoreFilter = $('#ignore-filter').is(':checked');
 
             var query = {
@@ -405,7 +400,7 @@
                 sortBy: sortBy,
                 skip: 0,
                 take: 20,
-                explanation: explanation,
+                explanation: true,
                 ignoreFilter: ignoreFilter
             };
 
@@ -425,11 +420,11 @@
 
                     if (status === 'success') {
 
-                        $.get('search', query, function (data, status) {
+                        $.get('/search/query', query, function (data, status) {
 
                             if (status === 'success') {
 
-                                updateResultsDiv(query, totalHits, data.data);
+                                updateResultsDiv(query, totalHits, data.data, data.executedQuery);
                             }
                         });
                     }
@@ -441,7 +436,7 @@
 
                     if (status === 'success') {
 
-                        updateResultsDiv(query, data.totalHits, data.data);
+                        updateResultsDiv(query, data.totalHits, data.data, data.executedQuery);
                     }
                 });
             }
@@ -462,7 +457,7 @@
             var query = {
                 query: $('#query').val(),
                 prerelease: $('#prerelease').val(),
-                sortBy: 'NA',
+                sortBy: $('#sortBy').val(),
                 expectedPackageId: $('#expectedPackageId').val(),
                 contactDetails: $('#contactDetails').val()
             };
@@ -484,19 +479,6 @@
             console.log(expectedPackageId + ' ' + contactDetails);
         }
 
-        var diagnosticsVisible = false;
-
-        var toggleDiagnostics = function () {
-            if (diagnosticsVisible === false) {
-                $('#diagnostics').css('display', 'block');
-                diagnosticsVisible = true;
-            }
-            else {
-                $('#diagnostics').css('display', 'none');
-                diagnosticsVisible = false;
-            }
-        }
-
         $(document).ready(function () {
 
             $('#query').keyup(function () {
@@ -510,13 +492,18 @@
                 }
             });
 
-            $('#go').click(go);
+            $('#search').submit(go);
 
             $('#expectedPackageId').val(defaultExpectedPackageId);
             $('#contactDetails').val(defaultContactDetails);
             $('#submitFeedback').click(submitFeedback);
 
-            $('#show-diagnostics').click(toggleDiagnostics)
+            $('#results-div').on('click', '.result-explain', function () {
+                $(this).parent().siblings('.explanation').slideToggle();
+            });
+            $('#results-div').on('click', '.result-json', function () {
+                $(this).parent().siblings('.json-display').slideToggle();
+            });
         });
     </script>
 </body>

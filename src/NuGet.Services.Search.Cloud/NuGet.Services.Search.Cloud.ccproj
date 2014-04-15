@@ -34,8 +34,11 @@
   </PropertyGroup>
   <!-- Items for the project -->
   <ItemGroup>
+    <None Include="DeployToAzure.ps1" />
+    <None Include="NuGet.Services.Search.Cloud.nuspec" />
     <ServiceDefinition Include="ServiceDefinition.csdef" />
     <ServiceConfiguration Include="ServiceConfiguration.Local.cscfg" />
+    <ServiceConfiguration Include="ServiceConfiguration.Cloud.cscfg" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NuGet.Services.Search\NuGet.Services.Search.csproj">
@@ -61,5 +64,5 @@
     <CloudExtensionsDir Condition=" '$(CloudExtensionsDir)' == '' ">$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Windows Azure Tools\2.2\</CloudExtensionsDir>
   </PropertyGroup>
   <Import Project="$(CloudExtensionsDir)Microsoft.WindowsAzure.targets" />
-  <Import Project="$(BuildToolsDirectory)\NuGet.Cloud.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\NuGet.Cloud.targets" />
 </Project>

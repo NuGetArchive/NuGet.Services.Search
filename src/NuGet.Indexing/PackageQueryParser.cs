@@ -2,6 +2,7 @@
 using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
 using System.Collections.Generic;
+using System;
 
 namespace NuGet.Indexing
 {
@@ -12,6 +13,7 @@ namespace NuGet.Indexing
             { "id", "Id" },
             { "version", "Version" },
             { "tokenizedid", "TokenizedId" },
+            { "shingledid", "ShingledId" },
             { "title", "Title" },
             { "description", "Description" },
             { "tag", "Tags" },
@@ -29,22 +31,22 @@ namespace NuGet.Indexing
 
         protected override Query GetPrefixQuery(string field, string termStr)
         {
-            return base.GetPrefixQuery(Substitute(field), termStr);
+            return BuildQuery(field, termStr, base.GetPrefixQuery);
         }
 
         protected override Query GetWildcardQuery(string field, string termStr)
         {
-            return base.GetWildcardQuery(Substitute(field), termStr);
+            return BuildQuery(field, termStr, base.GetWildcardQuery);
         }
 
         protected override Query GetFieldQuery(string field, string queryText, int slop)
         {
-            return base.GetFieldQuery(Substitute(field), queryText, slop);
+            return BuildQuery(field, queryText, (f, q) => base.GetFieldQuery(f, q, slop));
         }
 
         protected override Query GetFieldQuery(string field, string queryText)
         {
-            return base.GetFieldQuery(Substitute(field), queryText);
+            return BuildQuery(field, queryText, base.GetFieldQuery);
         }
 
         private string Substitute(string fieldName)
@@ -57,6 +59,12 @@ namespace NuGet.Indexing
                 return subStitutedFieldName;
             }
             return fieldName;
+        }
+
+        private Query BuildQuery(string field, string termStr, Func<string, string, Query> baseQueryBuilder)
+        {
+            // Just rewrite the field name
+            return baseQueryBuilder(Substitute(field), termStr);
         }
     }
 }

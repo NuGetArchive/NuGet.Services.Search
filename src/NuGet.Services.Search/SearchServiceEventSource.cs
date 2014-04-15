@@ -24,9 +24,17 @@ namespace NuGet.Services.Search
         [NonEvent]
         public void StartupError(Exception ex) { StartupError(ex.ToString()); }
 
+        [Event(
+            eventId: 2,
+            Level = EventLevel.Critical,
+            Task = Tasks.Request,
+            Message = "Error during request to '{0}': {1}")]
+        public void RequestError(string url, string exception) { WriteEvent(2, url, exception); }
+
         public static class Tasks
         {
             public const EventTask Startup = (EventTask)1;
+            public const EventTask Request = (EventTask)2;
         }
     }
 }

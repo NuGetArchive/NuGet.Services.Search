@@ -1,1 +1,1 @@
-@%~dp0src\IndexMaintainance\bin\Debug\IndexMaintainance.exe %*
+@%~dp0src\IndexMaintenance\bin\Debug\IndexMaintenance.exe %*

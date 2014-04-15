@@ -2,12 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using NuGet.Services.Search.Models;
 using PowerArgs;
 
 namespace IndexMaintainance
 {
-    public class QueryArgs : IndexArgs
+    public class QueryArgs
     {
+        [ArgPosition(0)]
+        [ArgShortcut("-url")]
+        [ArgDescription("The service URL to query")]
+        public string ServiceUrl { get; set; }
+
         [ArgShortcut("-q")]
         [ArgDescription("The query to execute")]
         public string Query { get; set; }
@@ -48,5 +54,9 @@ namespace IndexMaintainance
         [ArgShortcut("-if")]
         [ArgDescription("Ignores filters")]
         public bool IgnoreFilter { get; set; }
+
+        [ArgShortcut("-sort")]
+        [ArgDescription("Specifies an order in which to sort the results")]
+        public SortOrder SortOrder { get; set; }
     }
 }
