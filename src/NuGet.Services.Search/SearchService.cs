@@ -185,46 +185,54 @@ namespace NuGet.Services.Search
             Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
 
             SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
-            Lucene.Net.Store.Directory directory = GetDirectory(config.IndexPath);
-            Rankings rankings = GetRankings(config.IndexPath);
+            Lucene.Net.Store.Directory directory = GetDirectory(config);
+            Rankings rankings = GetRankings(config);
             var searcher = new PackageSearcherManager(directory, rankings);
             searcher.MaybeReopen(); // Ensure the index is initially opened.
             return searcher;
         }
 
-        private Lucene.Net.Store.Directory GetDirectory(string localPath)
+        private Lucene.Net.Store.Directory GetDirectory(SearchConfiguration config)
         {
-            if (String.IsNullOrEmpty(localPath))
+            if (String.IsNullOrEmpty(config.IndexPath))
             {
                 CloudStorageAccount storageAccount = Configuration.Storage.Primary;
 
-                Trace.TraceInformation("GetDirectory using storage. Container: {0}", "ng-search");
+                config.IndexContainer = String.IsNullOrEmpty(config.IndexContainer) ?
+                    "ng-search" :
+                    config.IndexContainer;
 
-                return new AzureDirectory(storageAccount, "ng-search", new RAMDirectory());
+                Trace.TraceInformation("GetDirectory using storage. Container: {0}", config.IndexContainer);
+
+                return new AzureDirectory(storageAccount, config.IndexContainer, new RAMDirectory());
             }
             else
             {
-                Trace.TraceInformation("GetDirectory using filesystem. Folder: {0}", localPath);
+                Trace.TraceInformation("GetDirectory using filesystem. Folder: {0}", config.IndexPath);
 
-                return new SimpleFSDirectory(new DirectoryInfo(localPath));
+                return new SimpleFSDirectory(new DirectoryInfo(config.IndexPath));
             }
         }
 
-        private Rankings GetRankings(string localPath)
+        private Rankings GetRankings(SearchConfiguration config)
         {
-            if (String.IsNullOrEmpty(localPath))
+            if (String.IsNullOrEmpty(config.IndexPath))
             {
                 CloudStorageAccount storageAccount = Configuration.Storage.Primary;
 
+                config.IndexContainer = String.IsNullOrEmpty(config.IndexContainer) ?
+                    "ng-search" :
+                    config.IndexContainer;
+
                 Trace.TraceInformation("Rankings from storage.");
 
-                return new StorageRankings(storageAccount);
+                return new StorageRankings(storageAccount, config.IndexContainer);
             }
             else
             {
                 Trace.TraceInformation("Rankings from folder.");
 
-                return new FolderRankings(localPath);
+                return new FolderRankings(config.IndexPath);
             }
         }
 

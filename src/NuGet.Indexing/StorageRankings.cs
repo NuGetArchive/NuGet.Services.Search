@@ -17,8 +17,12 @@ namespace NuGet.Indexing
         {
         }
 
-        public StorageRankings(CloudStorageAccount storageAccount) : this(
-            storageAccount.CreateCloudBlobClient().GetContainerReference("ng-search"))
+        public StorageRankings(CloudStorageAccount storageAccount) : this(storageAccount, "ng-search")
+        {
+        }
+
+        public StorageRankings(CloudStorageAccount storageAccount, string containerName)
+            : this(storageAccount.CreateCloudBlobClient().GetContainerReference(containerName))
         {
         }
 
