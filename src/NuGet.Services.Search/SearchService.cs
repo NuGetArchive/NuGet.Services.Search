@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -70,6 +69,7 @@ namespace NuGet.Services.Search
         public override IEnumerable<EventSource> GetEventSources()
         {
             yield return SearchServiceEventSource.Log;
+            yield return IndexingEventSource.Log;
         }
 
         protected override Task OnRun()
@@ -98,6 +98,25 @@ namespace NuGet.Services.Search
             };
 
             Func<PackageSearcherManager> searcherManagerThunk = () => SearcherManager;
+
+            app.Use(async (context, next) =>
+            {
+                if (String.Equals(context.Request.Path.Value, "/reloadIndex", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (context.Request.User == null || !context.Request.User.IsInRole(Roles.Admin))
+                    {
+                        context.Authentication.Challenge();
+                    }
+                    else
+                    {
+                        ReloadIndex();
+                        context.Response.StatusCode = 200;
+                        await context.Response.WriteAsync("Reload started.");
+                        return;
+                    }
+                }
+                await next();
+            });
 
             // Just a little bit of rewriting. Not the full UseDefaultFiles middleware, just a quick hack
             app.Use(async (context, next) =>
@@ -145,6 +164,11 @@ namespace NuGet.Services.Search
                     resources.Add("segments", MakeUri(context, "/segments"));
                     resources.Add("query", MakeUri(context, "/query"));
 
+                    if (context.Request.User != null && context.Request.User.IsInRole(Roles.Admin))
+                    {
+                        resources.Add("reloadIndex", MakeUri(context, "/reloadIndex"));
+                    }
+
                     await SearchMiddleware.WriteResponse(context, response.ToString());
                 }
             });
@@ -185,15 +209,17 @@ namespace NuGet.Services.Search
             Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
 
             SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
-            Lucene.Net.Store.Directory directory = GetDirectory(config);
-            Rankings rankings = GetRankings(config);
-            var searcher = new PackageSearcherManager(directory, rankings);
-            searcher.MaybeReopen(); // Ensure the index is initially opened.
+            var searcher = GetSearcherManager(config);
+            searcher.Open(); // Ensure the index is initially opened.
+            IndexingEventSource.Log.LoadedSearcherManager();
             return searcher;
         }
 
-        private Lucene.Net.Store.Directory GetDirectory(SearchConfiguration config)
+        private PackageSearcherManager GetSearcherManager(SearchConfiguration config)
         {
+            Directory dir;
+            Rankings rankings;
+            DownloadCounts downloadCounts;
             if (String.IsNullOrEmpty(config.IndexPath))
             {
                 CloudStorageAccount storageAccount = Configuration.Storage.Primary;
@@ -202,44 +228,31 @@ namespace NuGet.Services.Search
                     "ng-search" :
                     config.IndexContainer;
 
-                Trace.TraceInformation("GetDirectory using storage. Container: {0}", config.IndexContainer);
+                string url = storageAccount.CreateCloudBlobClient().GetContainerReference(config.IndexContainer).Uri.AbsoluteUri;
 
-                return new AzureDirectory(storageAccount, config.IndexContainer, new RAMDirectory());
+                IndexingEventSource.Log.LoadingSearcherManager(url);
+
+                dir = new AzureDirectory(storageAccount, config.IndexContainer, new RAMDirectory());
+                rankings = new StorageRankings(storageAccount, config.IndexContainer);
+                downloadCounts = new StorageDownloadCounts(storageAccount, config.IndexContainer);
             }
             else
             {
-                Trace.TraceInformation("GetDirectory using filesystem. Folder: {0}", config.IndexPath);
+                IndexingEventSource.Log.LoadingSearcherManager(config.IndexPath);
 
-                return new SimpleFSDirectory(new DirectoryInfo(config.IndexPath));
+                dir = new SimpleFSDirectory(new System.IO.DirectoryInfo(config.IndexPath));
+                rankings = new FolderRankings(config.IndexPath);
+                downloadCounts = new FolderDownloadCounts(config.IndexPath);
             }
-        }
-
-        private Rankings GetRankings(SearchConfiguration config)
-        {
-            if (String.IsNullOrEmpty(config.IndexPath))
-            {
-                CloudStorageAccount storageAccount = Configuration.Storage.Primary;
-
-                config.IndexContainer = String.IsNullOrEmpty(config.IndexContainer) ?
-                    "ng-search" :
-                    config.IndexContainer;
-
-                Trace.TraceInformation("Rankings from storage.");
-
-                return new StorageRankings(storageAccount, config.IndexContainer);
-            }
-            else
-            {
-                Trace.TraceInformation("Rankings from folder.");
-
-                return new FolderRankings(config.IndexPath);
-            }
+            return new PackageSearcherManager(dir, rankings, downloadCounts);
         }
 
         private void ReloadIndex()
         {
+            SearchServiceEventSource.Log.ReloadingIndex();
             PackageSearcherManager newIndex = CreateSearcherManager();
             Interlocked.Exchange(ref _searcherManager, newIndex);
+            SearchServiceEventSource.Log.ReloadedIndex();
         }
     }
 }

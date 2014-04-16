@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using Newtonsoft.Json;
 
 namespace NuGet.Indexing
 {
@@ -110,7 +111,7 @@ namespace NuGet.Indexing
                 {
                     IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
 
-                    return ListDocumentsImpl(searcher, q, rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter);
+                    return ListDocumentsImpl(searcher, q, rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, searcherManager);
                 }
             }
             finally
@@ -130,7 +131,7 @@ namespace NuGet.Indexing
             return MakeCountResult(topDocs.TotalHits, sw.ElapsedMilliseconds);
         }
 
-        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter, PackageSearcherManager manager)
         {
             Filter filter = ignoreFilter ? null : GetFilter(includePrerelease, feed);
 
@@ -147,7 +148,7 @@ namespace NuGet.Indexing
             sw.Stop();
             
             sw.Stop();
-            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds, rankings);
+            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds, rankings, manager);
         }
 
         private static readonly Dictionary<string, Func<Sort>> _sorts = new Dictionary<string, Func<Sort>>(StringComparer.OrdinalIgnoreCase) {
@@ -219,7 +220,7 @@ namespace NuGet.Indexing
             return (new JObject { { "totalHits", totalHits }, { "timeTakenInMs", elapsed } }).ToString();
         }
 
-        private static string MakeResults(IndexSearcher searcher, TopDocs topDocs, int skip, int take, bool includeExplanation, Query query, long elapsed, IDictionary<string, int> rankings)
+        private static string MakeResults(IndexSearcher searcher, TopDocs topDocs, int skip, int take, bool includeExplanation, Query query, long elapsed, IDictionary<string, int> rankings, PackageSearcherManager manager)
         {
             //  note the use of a StringBuilder because we have the response data already formatted as JSON in the fields in the index
 
@@ -251,6 +252,23 @@ namespace NuGet.Indexing
 
                 Document doc = searcher.Doc(scoreDoc.Doc);
                 string data = doc.Get("Data");
+
+                string key = doc.Get("Key");
+                int keyVal;
+                if (!String.IsNullOrEmpty(key) && Int32.TryParse(key, out keyVal))
+                {
+                    DownloadCountRecord countRecord = manager.GetDownloadCounts(keyVal);
+                    if (countRecord != null)
+                    {
+                        // Patch the data in to the JSON
+                        JObject parsed = JObject.Parse(data);
+                        parsed["DownloadCount"] = countRecord.Downloads;
+                        parsed["PackageRegistration"]["DownloadCount"] = countRecord.RegistrationDownloads;
+                        parsed.Add("Installs", countRecord.Installs);
+                        parsed.Add("Updates", countRecord.Updates);
+                        data = parsed.ToString(Formatting.None);
+                    }
+                }
 
                 if (includeExplanation)
                 {

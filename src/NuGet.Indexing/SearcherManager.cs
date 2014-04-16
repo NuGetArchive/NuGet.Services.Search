@@ -14,7 +14,10 @@ namespace NuGet.Indexing
         public SearcherManager(Lucene.Net.Store.Directory directory)
         {
             _currentSearcher = new IndexSearcher(IndexReader.Open(directory, true));
+        }
 
+        public void Open()
+        {
             Warm(_currentSearcher);
         }
 
