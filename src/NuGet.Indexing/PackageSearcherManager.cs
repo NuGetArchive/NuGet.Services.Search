@@ -15,6 +15,8 @@ namespace NuGet.Indexing
         IndexData<IDictionary<string, IDictionary<string, int>>> _currentRankings;
         IndexData<IDictionary<int, DownloadCountRecord>> _currentDownloadCounts;
 
+        public DateTime DownloadCountsUpdatedUtc { get { return _currentDownloadCounts.LastUpdatedUtc; } }
+        public DateTime RankingsUpdatedUtc { get { return _currentRankings.LastUpdatedUtc; } }
         public Rankings Rankings { get; private set; }
         public DownloadCounts DownloadCounts { get; private set; }
         public Guid Id { get; private set; }

@@ -5,6 +5,8 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Lucene.Net.Store.Azure;
+using Lucene.Net.Store;
 
 namespace NuGet.Indexing
 {
@@ -24,6 +26,23 @@ namespace NuGet.Indexing
 
                 report.Add("NumDocs", indexReader.NumDocs());
                 report.Add("SearcherManagerIdentity", searcherManager.Id.ToString());
+
+                AzureDirectory azDir = indexReader.Directory() as AzureDirectory;
+                if (azDir != null)
+                {
+                    report.Add("Index", azDir.BlobContainer.Name);
+                }
+                else
+                {
+                    SimpleFSDirectory fsDir = indexReader.Directory() as SimpleFSDirectory;
+                    if (fsDir != null)
+                    {
+                        report.Add("Index", fsDir.Directory.Name);
+                    }
+                }
+
+                report.Add("RankingsUpdated", searcherManager.RankingsUpdatedUtc);
+                report.Add("DownloadCountsUpdated", searcherManager.DownloadCountsUpdatedUtc);
 
                 if (indexReader.CommitUserData != null)
                 {
