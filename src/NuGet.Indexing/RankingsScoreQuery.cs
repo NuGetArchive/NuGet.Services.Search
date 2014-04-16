@@ -44,20 +44,23 @@ namespace NuGet.Indexing
             {
                 string id = _ids[doc];
 
-                int ranking = 0;
-                _rankings.TryGetValue(id, out ranking);
-
-                if (ranking == 0)
-                {
+                float score = GetRankingScore(_rankings, id);
+                if(score == 0.0f) {
                     return subQueryScore;
                 }
 
-                int range = _rankings.Count;
-
-                float boost = (float)Math.Pow(10.0, (1.0 - ((double)ranking / ((double)range + 1.0))));
-                float adjustedScore = subQueryScore * boost;
+                float adjustedScore = subQueryScore * score;
                 return adjustedScore;
             }
+        }
+
+        public static float GetRankingScore(IDictionary<string, int> rankings, string id)
+        {
+            int ranking = 0;
+            if(!rankings.TryGetValue(id, out ranking)) {
+                return 0.0f;
+            }
+            return (float)Math.Pow(10.0, (1.0 - ((double)ranking / ((double)rankings.Count + 1.0))));
         }
     }
 }

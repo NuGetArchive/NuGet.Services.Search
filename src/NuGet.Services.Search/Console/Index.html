@@ -167,8 +167,9 @@
             html += '<p>';
             html += ' <span style="color:black">Rank:</span>';
             html += ' <span style="color:green;font-weight:bold">' + data[i].diagnostics.Rank + '</span>';
+            html += '</p><p>';
             html += ' <span style="color:black">Score:</span>';
-            html += ' <span style="color:green;font-weight:bold">' + data[i].diagnostics.Score + '</span>';
+            html += ' <span style="color:green;font-weight:bold">' + (data[i].diagnostics.RankScore || 1.0) + ' (ranking) * ' + data[i].diagnostics.LuceneScore + ' (relevance) = ' + data[i].diagnostics.Score + '</span>';
             html += '</p>';
 
             html += '<p><em><b>Analyzed Fields</b></em></p>';

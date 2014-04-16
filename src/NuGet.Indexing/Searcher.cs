@@ -147,7 +147,7 @@ namespace NuGet.Indexing
             sw.Stop();
             
             sw.Stop();
-            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds);
+            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds, rankings);
         }
 
         private static readonly Dictionary<string, Func<Sort>> _sorts = new Dictionary<string, Func<Sort>>(StringComparer.OrdinalIgnoreCase) {
@@ -219,7 +219,7 @@ namespace NuGet.Indexing
             return (new JObject { { "totalHits", totalHits }, { "timeTakenInMs", elapsed } }).ToString();
         }
 
-        private static string MakeResults(IndexSearcher searcher, TopDocs topDocs, int skip, int take, bool includeExplanation, Query query, long elapsed)
+        private static string MakeResults(IndexSearcher searcher, TopDocs topDocs, int skip, int take, bool includeExplanation, Query query, long elapsed, IDictionary<string, int> rankings)
         {
             //  note the use of a StringBuilder because we have the response data already formatted as JSON in the fields in the index
 
@@ -254,7 +254,7 @@ namespace NuGet.Indexing
 
                 if (includeExplanation)
                 {
-                    data = AddExplanation(searcher, data, query, scoreDoc);
+                    data = AddExplanation(searcher, data, query, scoreDoc, rankings);
                 }
 
                 strBldr.Append(data);
@@ -383,13 +383,21 @@ namespace NuGet.Indexing
             return result;
         }
 
-        private static string AddExplanation(IndexSearcher searcher, string data, Query query, ScoreDoc scoreDoc)
+        private static string AddExplanation(IndexSearcher searcher, string data, Query query, ScoreDoc scoreDoc, IDictionary<string, int> rankings)
         {
             Explanation explanation = searcher.Explain(query, scoreDoc.Doc);
-
+            
             JObject diagnostics = new JObject();
 
-            diagnostics.Add("Rank", GetInt(searcher, scoreDoc.Doc, "Rank"));
+            int rankVal;
+            string id = searcher.Doc(scoreDoc.Doc).Get("Id");
+            if (rankings.TryGetValue(id, out rankVal))
+            {
+                float rankingScore = RankingScoreQuery.GetRankingScore(rankings, id);
+                diagnostics.Add("Rank", rankVal);
+                diagnostics.Add("RankScore", rankingScore);
+                diagnostics.Add("LuceneScore", scoreDoc.Score / rankingScore);
+            }
             diagnostics.Add("Score", scoreDoc.Score.ToString());
             diagnostics.Add("Explanation", explanation.ToString());
 
@@ -410,6 +418,8 @@ namespace NuGet.Indexing
             diagnostics.Add("Key", GetInt(searcher, scoreDoc.Doc, "Key"));
             diagnostics.Add("Checksum", GetInt(searcher, scoreDoc.Doc, "Checksum"));
             diagnostics.Add("ProjectGuidRankings", GetProjectGuidRankings(searcher, scoreDoc.Doc));
+
+
 
             JObject obj = JObject.Parse(data);
             obj.Add("diagnostics", diagnostics);
