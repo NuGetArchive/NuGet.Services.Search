@@ -87,6 +87,7 @@ namespace NuGet.Indexing
             return null;
         }
 
+        // Little helper class to handle these "load async and swap" objects
         private class IndexData<T> where T : class
         {
             private Func<T> _loader;
