@@ -39,6 +39,9 @@
                     }
                     html += '<p>Searcher Manager Identity:&nbsp;<span id="searcherManagerId">' + data.SearcherManagerIdentity + '</span></p>';
                     html += '<p>Total Documents:&nbsp;<span id="totalDocuments">' + numberFormat(data.NumDocs) + '</span></p>';
+                    html += '<p>Index:&nbsp;<span id="index">' + data.Index + '</span></p>';
+                    html += '<p>Rankings Last Updated:&nbsp;<span id="index">' + new Date(data.RankingsUpdated).toString() + '</span></p>';
+                    html += '<p>Download Counts Last Updated:&nbsp;<span id="index">' + new Date(data.DownloadCountsUpdated).toString() + '</span></p>';
 
                     if (data.CommitUserData !== undefined) {
 
