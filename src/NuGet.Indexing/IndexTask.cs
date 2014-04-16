@@ -45,16 +45,17 @@ namespace NuGet.Indexing
 
         protected PackageSearcherManager GetSearcherManager()
         {
+            PackageSearcherManager manager;
             if (!string.IsNullOrEmpty(Container))
             {
-                return new PackageSearcherManager(
+                manager = new PackageSearcherManager(
                     GetDirectory(),
                     new StorageRankings(StorageAccount),
                     new StorageDownloadCounts(StorageAccount));
             }
             else if (!string.IsNullOrEmpty(Folder))
             {
-                return new PackageSearcherManager(
+                manager = new PackageSearcherManager(
                     GetDirectory(),
                     new FolderRankings(Folder),
                     new FolderDownloadCounts(Folder));
@@ -63,6 +64,9 @@ namespace NuGet.Indexing
             {
                 throw new Exception("You must specify either a folder or container");
             }
+
+            manager.Open();
+            return manager;
         }
     }
 }

@@ -99,6 +99,25 @@ namespace NuGet.Services.Search
 
             Func<PackageSearcherManager> searcherManagerThunk = () => SearcherManager;
 
+            app.Use(async (context, next) =>
+            {
+                if (String.Equals(context.Request.Path.Value, "/reloadIndex", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (context.Request.User == null || !context.Request.User.IsInRole(Roles.Admin))
+                    {
+                        context.Authentication.Challenge();
+                    }
+                    else
+                    {
+                        ReloadIndex();
+                        context.Response.StatusCode = 200;
+                        await context.Response.WriteAsync("Reload started.");
+                        return;
+                    }
+                }
+                await next();
+            });
+
             // Just a little bit of rewriting. Not the full UseDefaultFiles middleware, just a quick hack
             app.Use(async (context, next) =>
             {
@@ -145,6 +164,11 @@ namespace NuGet.Services.Search
                     resources.Add("segments", MakeUri(context, "/segments"));
                     resources.Add("query", MakeUri(context, "/query"));
 
+                    if (context.Request.User != null && context.Request.User.IsInRole(Roles.Admin))
+                    {
+                        resources.Add("reloadIndex", MakeUri(context, "/reloadIndex"));
+                    }
+
                     await SearchMiddleware.WriteResponse(context, response.ToString());
                 }
             });
@@ -186,7 +210,7 @@ namespace NuGet.Services.Search
 
             SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
             var searcher = GetSearcherManager(config);
-            searcher.MaybeReopen(); // Ensure the index is initially opened.
+            searcher.Open(); // Ensure the index is initially opened.
             IndexingEventSource.Log.LoadedSearcherManager();
             return searcher;
         }

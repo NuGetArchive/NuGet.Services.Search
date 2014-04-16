@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using Newtonsoft.Json;
 
 namespace NuGet.Indexing
 {
@@ -252,9 +253,11 @@ namespace NuGet.Indexing
                 Document doc = searcher.Doc(scoreDoc.Doc);
                 string data = doc.Get("Data");
 
-                NumericField keyField = doc.GetFieldable("Key") as NumericField;
-                if(keyField != null) {
-                    DownloadCountRecord countRecord = manager.GetDownloadCounts((int)keyField.NumericValue);
+                string key = doc.Get("Key");
+                int keyVal;
+                if (!String.IsNullOrEmpty(key) && Int32.TryParse(key, out keyVal))
+                {
+                    DownloadCountRecord countRecord = manager.GetDownloadCounts(keyVal);
                     if (countRecord != null)
                     {
                         // Patch the data in to the JSON
@@ -263,6 +266,7 @@ namespace NuGet.Indexing
                         parsed["PackageRegistration"]["DownloadCount"] = countRecord.RegistrationDownloads;
                         parsed.Add("Installs", countRecord.Installs);
                         parsed.Add("Updates", countRecord.Updates);
+                        data = parsed.ToString(Formatting.None);
                     }
                 }
 

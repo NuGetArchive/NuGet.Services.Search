@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace NuGet.Indexing
@@ -15,21 +16,7 @@ namespace NuGet.Indexing
         {
             JObject obj = LoadJson();
 
-            IDictionary<int, DownloadCountRecord> result = new Dictionary<int, DownloadCountRecord>();
-
-            foreach (JProperty prop in obj.Properties())
-            {
-                dynamic val = prop.Value;
-                result.Add(Int32.Parse(prop.Name), new DownloadCountRecord()
-                {
-                    Downloads = val.Dwn,
-                    RegistrationDownloads = val.AllDwn,
-                    Installs = val.Inst,
-                    Updates = val.Upd
-                });
-            }
-
-            return result;
+            return obj.ToObject<IDictionary<int, DownloadCountRecord>>();
         }
     }
 

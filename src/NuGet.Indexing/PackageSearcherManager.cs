@@ -12,10 +12,8 @@ namespace NuGet.Indexing
         public static readonly TimeSpan RankingRefreshRate = TimeSpan.FromHours(24);
         public static readonly TimeSpan DownloadCountRefreshRate = TimeSpan.FromMinutes(5);
 
-        IDictionary<string, IDictionary<string, int>> _currentRankings;
-        IDictionary<int, DownloadCountRecord> _currentDownloadCounts;
-        long _rankingsTimeStampUtcTicks;
-        long _downloadCountsTimeStampUtcTicks;
+        IndexData<IDictionary<string, IDictionary<string, int>>> _currentRankings;
+        IndexData<IDictionary<int, DownloadCountRecord>> _currentDownloadCounts;
 
         public Rankings Rankings { get; private set; }
         public DownloadCounts DownloadCounts { get; private set; }
@@ -26,6 +24,17 @@ namespace NuGet.Indexing
         {
             Rankings = rankings;
             DownloadCounts = downloadCounts;
+
+            _currentDownloadCounts = new IndexData<IDictionary<int, DownloadCountRecord>>(
+                "DownloadCounts",
+                DownloadCounts.Path,
+                DownloadCounts.Load,
+                DownloadCountRefreshRate);
+            _currentRankings = new IndexData<IDictionary<string, IDictionary<string, int>>>(
+                "Rankings",
+                Rankings.Path,
+                Rankings.Load,
+                RankingRefreshRate);
         
             Id = Guid.NewGuid(); // Used for identifying changes to the searcher manager at runtime.
         }
@@ -33,25 +42,18 @@ namespace NuGet.Indexing
         protected override void Warm(IndexSearcher searcher)
         {
             searcher.Search(new MatchAllDocsQuery(), 1);
+
+            // Reload download counts and rankings synchronously
+            _currentDownloadCounts.Reload();
+            _currentRankings.Reload();
         }
 
         public IDictionary<string, int> GetRankings(string context)
         {
-            if (_currentRankings == null || (DateTime.UtcNow.Ticks - _rankingsTimeStampUtcTicks) > RankingRefreshRate.Ticks)
-            {
-                IndexingEventSource.Log.DataExpiredReloading("Rankings", Rankings.Path);
-                Task.Factory.StartNew(() =>
-                {
-                    IndexingEventSource.Log.ReloadingData("Rankings", Rankings.Path);
-                    var newRankings = Rankings.Load();
-                    Interlocked.Exchange(ref _rankingsTimeStampUtcTicks, DateTime.UtcNow.Ticks);
-                    Interlocked.Exchange(ref _currentRankings, newRankings);
-                    IndexingEventSource.Log.ReloadedData("Rankings");
-                });
-            }
+            _currentRankings.MaybeReload();
 
             // Capture the current value
-            var tempRankings = _currentRankings;
+            var tempRankings = _currentRankings.Value;
 
             if (tempRankings == null)
             {
@@ -69,21 +71,10 @@ namespace NuGet.Indexing
 
         public DownloadCountRecord GetDownloadCounts(int packageKey)
         {
-            if (_currentDownloadCounts == null || (DateTime.UtcNow.Ticks - _downloadCountsTimeStampUtcTicks) > DownloadCountRefreshRate.Ticks)
-            {
-                IndexingEventSource.Log.DataExpiredReloading("DownloadCounts", DownloadCounts.Path);
-                Task.Factory.StartNew(() =>
-                {
-                    IndexingEventSource.Log.ReloadingData("DownloadCounts", DownloadCounts.Path);
-                    var newCounts = DownloadCounts.Load();
-                    Interlocked.Exchange(ref _downloadCountsTimeStampUtcTicks, DateTime.UtcNow.Ticks);
-                    Interlocked.Exchange(ref _currentDownloadCounts, newCounts);
-                    IndexingEventSource.Log.ReloadedData("DownloadCounts");
-                });
-            }
+            _currentDownloadCounts.MaybeReload();
 
             // Capture the current value and use it
-            var downloadCounts = _currentDownloadCounts;
+            var downloadCounts = _currentDownloadCounts.Value;
             if (downloadCounts != null)
             {
                 DownloadCountRecord record;
@@ -94,6 +85,59 @@ namespace NuGet.Indexing
             }
 
             return null;
+        }
+
+        private class IndexData<T> where T : class
+        {
+            private Func<T> _loader;
+            private object _lock = new object();
+            private T _value;
+
+            public string Name { get; private set; }
+            public string Path { get; private set; }
+            public T Value { get { return _value; } }
+            public DateTime LastUpdatedUtc { get; private set; }
+            public TimeSpan UpdateInterval { get; private set; }
+            public bool Updating { get; private set; }
+
+            public IndexData(string name, string path, Func<T> loader, TimeSpan updateInterval)
+            {
+                _loader = loader;
+
+                Name = name;
+                Path = path;
+                LastUpdatedUtc = DateTime.MinValue;
+                UpdateInterval = updateInterval;
+                Updating = false;
+            }
+
+            public void MaybeReload()
+            {
+                lock (_lock)
+                {
+                    if ((Value == null || ((DateTime.UtcNow - LastUpdatedUtc) > UpdateInterval)) && !Updating)
+                    {
+                        // Start updating
+                        Updating = true;
+                        Task.Factory.StartNew(Reload);
+                    }
+                }
+            }
+
+            public void Reload()
+            {
+                IndexingEventSource.Log.ReloadingData(Name, Path);
+                var newValue = _loader();
+                lock (_lock)
+                {
+                    Updating = false;
+                    LastUpdatedUtc = DateTime.UtcNow;
+
+                    // The lock doesn't cover Value, so we need to change it using Interlocked.Exchange.
+                    Interlocked.Exchange(ref _value, newValue);
+                }
+                IndexingEventSource.Log.ReloadedData(Name);
+            }
         }
     }
 }
