@@ -17,6 +17,10 @@ namespace NuGet.Indexing
         public IDictionary<string, IDictionary<string, int>> Load()
         {
             JObject obj = LoadJson();
+            if (obj == null)
+            {
+                return new Dictionary<string, IDictionary<string, int>>();
+            }
 
             IDictionary<string, IDictionary<string, int>> result = new Dictionary<string, IDictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
 

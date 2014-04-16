@@ -39,6 +39,10 @@ namespace NuGet.Indexing
 
         protected override JObject LoadJson()
         {
+            if (!_blob.Exists())
+            {
+                return null;
+            }
             string json = _blob.DownloadText();
             JObject obj = JObject.Parse(json);
             return obj;

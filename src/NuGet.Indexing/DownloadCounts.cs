@@ -15,7 +15,10 @@ namespace NuGet.Indexing
         public IDictionary<int, DownloadCountRecord> Load()
         {
             JObject obj = LoadJson();
-
+            if (obj == null)
+            {
+                return new Dictionary<int, DownloadCountRecord>();
+            }
             return obj.ToObject<IDictionary<int, DownloadCountRecord>>();
         }
     }
