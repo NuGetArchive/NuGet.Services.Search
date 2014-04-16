@@ -9,30 +9,30 @@ using System.Threading.Tasks;
 
 namespace NuGet.Indexing
 {
-    public class StorageRankings : Rankings
+    public class StorageDownloadCounts : DownloadCounts
     {
         CloudBlockBlob _blob;
-        
+
         public override string Path { get { return _blob.Uri.AbsoluteUri; } }
 
-        public StorageRankings(string connectionString) : this(CloudStorageAccount.Parse(connectionString))
+        public StorageDownloadCounts(string connectionString) : this(CloudStorageAccount.Parse(connectionString))
         {
         }
 
-        public StorageRankings(CloudStorageAccount storageAccount) : this(storageAccount, "ng-search")
+        public StorageDownloadCounts(CloudStorageAccount storageAccount) : this(storageAccount, "ng-search")
         {
         }
 
-        public StorageRankings(CloudStorageAccount storageAccount, string containerName)
+        public StorageDownloadCounts(CloudStorageAccount storageAccount, string containerName)
             : this(storageAccount.CreateCloudBlobClient().GetContainerReference(containerName))
         {
         }
 
-        public StorageRankings(CloudBlobContainer container) : this(container.GetBlockBlobReference(@"data/rankings.v1.json"))
+        public StorageDownloadCounts(CloudBlobContainer container) : this(container.GetBlockBlobReference(@"data/downloads.v1.json"))
         {
         }
 
-        public StorageRankings(CloudBlockBlob blob)
+        public StorageDownloadCounts(CloudBlockBlob blob)
         {
             _blob = blob;
         }

@@ -49,13 +49,15 @@ namespace NuGet.Indexing
             {
                 return new PackageSearcherManager(
                     GetDirectory(),
-                    new StorageRankings(StorageAccount));
+                    new StorageRankings(StorageAccount),
+                    new StorageDownloadCounts(StorageAccount));
             }
             else if (!string.IsNullOrEmpty(Folder))
             {
                 return new PackageSearcherManager(
                     GetDirectory(),
-                    new FolderRankings(Folder));
+                    new FolderRankings(Folder),
+                    new FolderDownloadCounts(Folder));
             }
             else
             {

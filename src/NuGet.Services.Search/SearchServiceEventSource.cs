@@ -31,10 +31,25 @@ namespace NuGet.Services.Search
             Message = "Error during request to '{0}': {1}")]
         public void RequestError(string url, string exception) { WriteEvent(2, url, exception); }
 
+        [Event(
+            eventId: 3,
+            Level = EventLevel.Informational,
+            Task = Tasks.ReloadingIndex,
+            Message = "Reloading Index")]
+        public void ReloadingIndex() { WriteEvent(3); }
+
+        [Event(
+            eventId: 4,
+            Level = EventLevel.Informational,
+            Task = Tasks.ReloadingIndex,
+            Message = "Reloaded Index")]
+        public void ReloadedIndex() { WriteEvent(4); }
+
         public static class Tasks
         {
             public const EventTask Startup = (EventTask)1;
             public const EventTask Request = (EventTask)2;
+            public const EventTask ReloadingIndex = (EventTask)3;
         }
     }
 }

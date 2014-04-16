@@ -11,6 +11,7 @@ namespace NuGet.Indexing
 {
     public abstract class Rankings
     {
+        public abstract string Path { get; }
         protected abstract JObject LoadJson();
 
         public IDictionary<string, IDictionary<string, int>> Load()

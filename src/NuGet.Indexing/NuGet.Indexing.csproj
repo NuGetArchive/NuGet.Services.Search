@@ -122,11 +122,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DownloadCounts.cs" />
+    <Compile Include="FolderDownloadCounts.cs" />
     <Compile Include="GalleryExport.cs" />
     <Compile Include="FullBuildTask.cs" />
     <Compile Include="IndexConsistencyReport.cs" />
     <Compile Include="IndexDocumentData.cs" />
+    <Compile Include="IndexingEventSource.cs" />
     <Compile Include="IndexTask.cs" />
+    <Compile Include="StorageDownloadCounts.cs" />
     <Compile Include="UpdateIndexTask.cs" />
     <Compile Include="PackageJson.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

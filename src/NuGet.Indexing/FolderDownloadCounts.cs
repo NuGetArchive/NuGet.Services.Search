@@ -10,13 +10,13 @@ using System.Threading.Tasks;
 
 namespace NuGet.Indexing
 {
-    public class FolderRankings : Rankings
+    public class FolderDownloadCounts : DownloadCounts
     {
         string _folder;
 
-        public override string Path { get { return _folder.Trim('\\') + "\\data\\rankings.v1.json"; } }
+        public override string Path { get { return _folder.Trim('\\') + "\\data\\downloads.v1.json"; } }
 
-        public FolderRankings(string folder)
+        public FolderDownloadCounts(string folder)
         {
             _folder = folder;
         }
