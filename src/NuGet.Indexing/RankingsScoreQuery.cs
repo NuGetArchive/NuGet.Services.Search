@@ -60,7 +60,7 @@ namespace NuGet.Indexing
             if(!rankings.TryGetValue(id, out ranking)) {
                 return 0.0f;
             }
-            return (float)Math.Pow(10.0, (1.0 - ((double)ranking / ((double)rankings.Count + 1.0))));
+            return (float)Math.Pow(10.0, (1.1 - ((double)ranking / ((double)rankings.Count + 1.0))));
         }
     }
 }
