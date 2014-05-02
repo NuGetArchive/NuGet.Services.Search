@@ -4,6 +4,9 @@ param(
     [Parameter(Mandatory=$false)][string]$OutputDir,
     [Parameter(Mandatory=$false)][switch]$Quiet)
 
+$tcFailed = [regex]"##teamcity\[testFailed name='(?<name>[^']*)' details='(?<detail>[^']*)'.*\]";
+$tcComplete = [regex]"##teamcity\[testFinished name='(?<name>[^']*)' duration='(?<duration>\d+)'.*\]";
+
 $TestProjects = @(
     "NuGet.Services.Search.Test")
 
@@ -17,64 +20,63 @@ else {
     & "$PSScriptRoot\Build.ps1" -Configuration $Configuration
 }
 
-# Find xunit runner
-$packagesConfigPath = "$PSScriptRoot\.nuget\packages.config"
-if(!(Test-Path $packagesConfigPath)) {
-    throw "Could not find packages config at $packagesConfigPath!"
-}
-$packagesConfig = [xml](cat "$PSScriptRoot\.nuget\packages.config")
-$version = $packagesConfig.packages.package | where{ $_.id -eq "xunit.runners" } | select -ExpandProperty version
-if(!$version) {
-    throw "Could not identify installed version of xunit.runners!"
-}
-$xunitRoot = "$PSScriptRoot\packages\xunit.runners.$version\tools"
-
 # Define Environment Variables
 $oldVal = $env:NUGET_TEST_SERVICEROOT
 $env:NUGET_TEST_SERVICEROOT=$ServiceRoot
 
 # Run Tests
 $TestProjects | ForEach-Object {
-    Write-Host -ForegroundColor Green "** Running Tests in $_ **"
+    $proj = $_
+    Write-Host -ForegroundColor Green "** Running Tests in $proj **"
     $additionalArgs = @()
-    $reportOutput = $null;
-    $outputTemp = $false;
     if($OutputDir) {
         if(!(Test-Path $OutputDir)) {
             mkdir $OutputDir | Out-Null
         }
-        $reportOutput = "$OutputDir\$_.xml"
         $additionalArgs += "-xml"
-        $additionalArgs += $reportOutput
+        $additionalArgs += "$OutputDir\$proj.xml"
         $additionalArgs += "-html"
-        $additionalArgs += "$OutputDir\$_.html"
-    } else {
-        $reportOutput = [System.IO.Path]::GetTempFileName()
-        $outputTemp = $true;
-        $additionalArgs += "-xml"
-        $additionalArgs += $reportOutput
-    }
-
-    if($Quiet) {
-        & "$xunitRoot\xunit.console.exe" "$PSScriptRoot\$_\bin\$Configuration\$_.dll" @additionalArgs | Out-Null
-    } else {
-        & "$xunitRoot\xunit.console.exe" "$PSScriptRoot\$_\bin\$Configuration\$_.dll" @additionalArgs
-    }
-
-    $report = [xml](cat $reportOutput)
-    if($outputTemp) {
-        del $reportOutput;
+        $additionalArgs += "$OutputDir\$proj.html"
     }
 
     $psstandardmembers = [System.Management.Automation.PSMemberInfo[]](New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet,([string[]]@("Test","Result","Time","Failure")))
 
-    $report.assemblies.assembly.collection.test | foreach {
-        [PSCustomObject]@{
-            Test = $_.name;
-            Result = $_.result;
-            Time = [System.TimeSpan]::FromSeconds($_.time);
-            Failure = $_.failure.message.InnerText;
-        } | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $psstandardmembers -PassThru
+    $failures = @{};
+    & "$PSScriptRoot\xunit.console.ps1" "$PSScriptRoot\$_\bin\$Configuration\$_.dll" @additionalArgs -teamcity | ForEach-Object {
+        # If not quiet, output to host
+        if(!$Quiet) {
+            $_ | Out-Host
+        }
+
+        # Process Lines starting "##teamcity"
+        $match = $tcFailed.Match($_)
+        if($match.Success) {
+            $failures[$match.Groups["name"].Value] = $match.Groups["detail"].Value.Replace("|r", "`r").Replace("|n", "`n")
+        }
+        else {
+            $match = $tcComplete.Match($_)
+            if($match.Success) {
+                $fullName = $match.Groups["name"].Value
+                $shortName = $fullName;
+                if($fullName.StartsWith("$proj.")) {
+                    $shortName = $fullName.Substring($proj.Length + 1)
+                }
+                $duration = [int]$match.Groups["duration"].Value
+                $failure = $failures[$fullName]
+                $result = "Pass"
+                if($failure) {
+                    $result = "Fail"
+                    $failures.Remove($fullName)
+                }
+                [PSCustomObject]@{
+                    Test = $shortName;
+                    FullTestName = $fullName;
+                    Result = $result;
+                    Time = [System.TimeSpan]::FromMilliseconds($duration);
+                    Failure = $failure;
+                } | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $psstandardmembers -PassThru
+            }
+        }
     }
 }
 

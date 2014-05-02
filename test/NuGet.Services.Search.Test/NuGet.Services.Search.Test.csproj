@@ -62,6 +62,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="QueryTests.cs" />
     <Compile Include="SegmentsTests.cs" />
     <Compile Include="DiagnosticsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
