@@ -108,7 +108,6 @@ function SwapDeployment()
 function UpdateDeployment($deployment)
 {
     Write-Host "A deployment already exists in $OctopusAzureServiceName for slot $OctopusAzureSlot. Upgrading deployment..."
-    Write-Host ">> Set-AzureDeployment -Upgrade -ServiceName $OctopusAzureServiceName -Package $OctopusAzurePackageUri -Configuration $OctopusAzureConfigurationFile -Slot $OctopusAzureSlot -Mode Simultaneous -label $OctopusAzureDeploymentLabel -Force"
     Set-AzureDeployment -Upgrade -ServiceName $OctopusAzureServiceName -Package $OctopusAzurePackageUri -Configuration $OctopusAzureConfigurationFile -Slot $OctopusAzureSlot -Mode Simultaneous -label $OctopusAzureDeploymentLabel -Force
 }
  
