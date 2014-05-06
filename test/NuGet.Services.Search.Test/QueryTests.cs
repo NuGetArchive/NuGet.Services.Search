@@ -155,5 +155,93 @@ namespace NuGet.Services.Search.Test
                 previous = title;
             }
         }
+
+        [Fact]
+        public async Task GivenPrereleaseIsFalse_ItNeverReturnsAnyPrereleaseResults()
+        {
+            var result = await Context.GetJson<JObject>("/search/query?q=version:0.1.0-beta&prerelease=false");
+
+            Assert.Equal(0, result.Value<int>("totalHits"));
+            Assert.Equal(0, result.Value<JArray>("data").Count);
+        }
+
+        [Fact]
+        public async Task GivenPrereleaseIsTrue_ItReturnsPrereleaseResults()
+        {
+            var result = await Context.GetJson<JObject>("/search/query?q=version:0.1.0-beta&prerelease=true");
+
+            Assert.True(result.Value<int>("totalHits") > 0);
+            Assert.True(result.Value<JArray>("data").Count > 0);
+        }
+
+        [Fact]
+        public async Task GivenCountOnly_ItReturnsHitCountButNoData()
+        {
+            var result = await Context.GetJson<JObject>("/search/query?countOnly=true");
+
+            Assert.True(result.Value<int>("totalHits") > 0);
+            Assert.Null(result.Property("data"));
+        }
+
+        [Fact]
+        public async Task GivenFeed_ItDoesNotReturnPackagesThatAreNotPartOfThatFeed()
+        {
+            var result = await Context.GetJson<JObject>("/search/query?q=id:ps-vsvars&feed=WebMatrix");
+
+            Assert.Equal(0, result.Value<int>("totalHits"));
+            Assert.Empty(result.Value<JArray>("data"));
+        }
+
+        [Fact]
+        public async Task GivenSkip_ItSkipsThatManyItemsInTheResults()
+        {
+            // Do an empty query
+            var result = await Context.GetJson<JObject>("/search/query");
+
+            // Get the second item
+            Assert.True(result.Value<int>("totalHits") > 0);
+            var second = result.Value<JArray>("data").Skip(1).First().Value<JObject>();
+
+            // Do a query with skip=1
+            result = await Context.GetJson<JObject>("/search/query?skip=1");
+
+            // First item should be second item
+            Assert.True(result.Value<int>("totalHits") > 0);
+            var first = result.Value<JArray>("data").First().Value<JObject>();
+            Assert.Equal(second, first);
+        }
+
+        [Fact]
+        public async Task GivenTake_ItReturnsNoMoreThanTheSpecifiedNumberOfItems()
+        {
+            var result = await Context.GetJson<JObject>("/search/query?take=2");
+
+            Assert.True(result.Value<int>("totalHits") > 0);
+            Assert.Equal(2, result.Value<JArray>("data").Count);
+        }
+
+        [Fact]
+        public async Task GivenNoIgnoreFilter_ItReturnsLatestVersionOfTheSamePackage()
+        {
+            var result = await Context.GetJson<JObject>("/search/query?q=id:jquery");
+
+            Assert.Equal(1, result.Value<int>("totalHits"));
+
+            var hit = result.Value<JArray>("data").First().Value<JObject>();
+            Assert.Equal("jQuery", hit["PackageRegistration"].Value<string>("Id"));
+            Assert.True(hit.Value<bool>("IsLatest"));
+            Assert.True(hit.Value<bool>("IsLatestStable"));
+        }
+
+        [Fact]
+        public async Task GivenIgnoreFilter_ItReturnsMultipleVersionsOfTheSamePackage()
+        {
+            var result = await Context.GetJson<JObject>("/search/query?q=id:jquery&ignoreFilter=true");
+
+            Assert.True(result.Value<int>("totalHits") > 1);
+
+            Assert.True(result.Value<JArray>("data").Select(j => j.Value<JObject>()).All(j =>
+                String.Equals("jquery", (string)j["PackageRegistration"]["Id"], StringComparison.OrdinalIgnoreCase)));
+        }
     }
 }

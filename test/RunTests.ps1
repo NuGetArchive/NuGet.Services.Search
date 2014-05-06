@@ -13,11 +13,15 @@ $TestProjects = @(
 
 Write-Host -ForegroundColor Green "** Building **"
 # Build first
-if($Quiet) {
-    & "$PSScriptRoot\Build.ps1" -Configuration $Configuration | Out-Null
-}
-else {
-    & "$PSScriptRoot\Build.ps1" -Configuration $Configuration
+try {
+    if($Quiet) {
+        & "$PSScriptRoot\Build.ps1" -Configuration $Configuration | Out-Null
+    }
+    else {
+        & "$PSScriptRoot\Build.ps1" -Configuration $Configuration
+    }
+} catch {
+    throw "Build Failed"
 }
 
 # Define Environment Variables
@@ -25,6 +29,7 @@ $oldVal = $env:NUGET_TEST_SERVICEROOT
 $env:NUGET_TEST_SERVICEROOT=$ServiceRoot
 
 # Run Tests
+$failures = @{};
 $TestProjects | ForEach-Object {
     $proj = $_
     Write-Host -ForegroundColor Green "** Running Tests in $proj **"
@@ -41,13 +46,7 @@ $TestProjects | ForEach-Object {
 
     $psstandardmembers = [System.Management.Automation.PSMemberInfo[]](New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet,([string[]]@("Test","Result","Time","Failure")))
 
-    $failures = @{};
     & "$PSScriptRoot\xunit.console.ps1" "$PSScriptRoot\$_\bin\$Configuration\$_.dll" @additionalArgs -teamcity | ForEach-Object {
-        # If not quiet, output to host
-        if(!$Quiet) {
-            $_ | Out-Host
-        }
-
         # Process Lines starting "##teamcity"
         $match = $tcFailed.Match($_)
         if($match.Success) {
@@ -66,7 +65,6 @@ $TestProjects | ForEach-Object {
                 $result = "Pass"
                 if($failure) {
                     $result = "Fail"
-                    $failures.Remove($fullName)
                 }
                 [PSCustomObject]@{
                     Test = $shortName;
@@ -76,8 +74,16 @@ $TestProjects | ForEach-Object {
                     Failure = $failure;
                 } | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $psstandardmembers -PassThru
             }
+            elseif (!$Quiet -and !($_.StartsWith("##teamcity"))) {
+                # Not a ##teamcity line
+                $_ | Out-Host
+            }
         }
     }
+}
+
+if($failures.Count -gt 0) {
+    throw "Test failures encountered!"
 }
 
 # Clean up environment

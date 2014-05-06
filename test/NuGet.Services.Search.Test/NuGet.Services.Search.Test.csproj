@@ -37,6 +37,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -62,7 +63,9 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="QuerySyntaxTests.cs" />
     <Compile Include="QueryTests.cs" />
+    <Compile Include="RelevanceTests.cs" />
     <Compile Include="SegmentsTests.cs" />
     <Compile Include="DiagnosticsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
