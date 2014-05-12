@@ -78,11 +78,11 @@ $TestProjects | ForEach-Object {
                     Failure = $failure;
                 } | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $psstandardmembers -PassThru
             }
-            
-            if ($TeamCity -or (!$Quiet -and !$_.StartsWith("##teamcity"))) {
-                # Not a ##teamcity line
-                $_ | Out-Host
-            }
+        }
+        
+        if ($TeamCity -or (!$Quiet -and !$_.StartsWith("##teamcity"))) {
+            # Write the line out
+            $_ | Out-Host
         }
     }
 }
