@@ -23,12 +23,6 @@ if($slns.Count -eq 0) {
 }
 $sln = $slns[0];
 
-# NuGet Restore!
-if(!(Get-Command nuget -ErrorAction SilentlyContinue)) {
-    throw "Couldn't find nuget.exe"
-}
-& nuget restore $sln
-
 # Build the solution
 &$msbuild $sln.FullName /p:Configuration=$Configuration /p:Platform="Any CPU" /m
 if($LASTEXITCODE -gt 0) {
