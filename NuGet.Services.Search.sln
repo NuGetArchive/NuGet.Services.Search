@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30324.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "NuGet.Services.Search.Cloud", "src\NuGet.Services.Search.Cloud\NuGet.Services.Search.Cloud.ccproj", "{12CB66A2-0203-4263-B817-6813AB3C335C}"
 EndProject
