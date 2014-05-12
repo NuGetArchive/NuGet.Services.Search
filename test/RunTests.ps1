@@ -3,7 +3,8 @@ param(
     [Parameter(Mandatory=$false)][string]$Configuration = "Debug",
     [Parameter(Mandatory=$false)][string]$OutputDir,
     [Parameter(Mandatory=$false)][switch]$Quiet,
-    [Parameter(Mandatory=$false)][switch]$TeamCity)
+    [Parameter(Mandatory=$false)][switch]$TeamCity,
+    [Parameter(Mandatory=$false)][switch]$SkipBuild)
 
 $tcFailed = [regex]"##teamcity\[testFailed name='(?<name>[^']*)' details='(?<detail>[^']*)'.*\]";
 $tcComplete = [regex]"##teamcity\[testFinished name='(?<name>[^']*)' duration='(?<duration>\d+)'.*\]";
@@ -12,17 +13,19 @@ $TestProjects = @(
     "NuGet.Services.Search.Test")
 
 
-Write-Host -ForegroundColor Green "** Building **"
-# Build first
-try {
-    if($Quiet) {
-        & "$PSScriptRoot\Build.ps1" -Configuration $Configuration | Out-Null
+if(!$SkipBuild) {
+    Write-Host -ForegroundColor Green "** Building **"
+    # Build first
+    try {
+        if($Quiet) {
+            & "$PSScriptRoot\Build.ps1" -Configuration $Configuration | Out-Null
+        }
+        else {
+            & "$PSScriptRoot\Build.ps1" -Configuration $Configuration
+        }
+    } catch {
+        throw "Build Failed"
     }
-    else {
-        & "$PSScriptRoot\Build.ps1" -Configuration $Configuration
-    }
-} catch {
-    throw "Build Failed"
 }
 
 # Define Environment Variables
