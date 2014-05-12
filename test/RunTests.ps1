@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory=$true)][string]$ServiceRoot,
     [Parameter(Mandatory=$false)][string]$Configuration = "Debug",
     [Parameter(Mandatory=$false)][string]$OutputDir,
-    [Parameter(Mandatory=$false)][switch]$Quiet)
+    [Parameter(Mandatory=$false)][switch]$Quiet,
+    [Parameter(Mandatory=$false)][switch]$TeamCity)
 
 $tcFailed = [regex]"##teamcity\[testFailed name='(?<name>[^']*)' details='(?<detail>[^']*)'.*\]";
 $tcComplete = [regex]"##teamcity\[testFinished name='(?<name>[^']*)' duration='(?<duration>\d+)'.*\]";
@@ -74,7 +75,8 @@ $TestProjects | ForEach-Object {
                     Failure = $failure;
                 } | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $psstandardmembers -PassThru
             }
-            elseif (!$Quiet -and !($_.StartsWith("##teamcity"))) {
+            
+            if ($TeamCity -or (!$Quiet -and !$_.StartsWith("##teamcity"))) {
                 # Not a ##teamcity line
                 $_ | Out-Host
             }
