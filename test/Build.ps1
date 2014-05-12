@@ -24,7 +24,7 @@ if($slns.Count -eq 0) {
 $sln = $slns[0];
 
 # Build the solution
-&$msbuild $sln.FullName /p:Configuration=$Configuration /p:Platform="Any CPU" /m
+&$msbuild $sln.FullName /p:Configuration=$Configuration /p:Platform="Any CPU" /m | Out-Host
 if($LASTEXITCODE -gt 0) {
     throw "Build failed"
 }
