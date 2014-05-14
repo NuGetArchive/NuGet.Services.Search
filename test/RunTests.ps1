@@ -1,5 +1,5 @@
 param(
-    [Parameter(Mandatory=$true)][string]$ServiceRoot,
+    [Parameter(Mandatory=$false)][string]$ServiceRoot,
     [Parameter(Mandatory=$false)][string]$Configuration = "Debug",
     [Parameter(Mandatory=$false)][string]$OutputDir,
     [Parameter(Mandatory=$false)][switch]$Quiet,
@@ -29,8 +29,11 @@ if(!$SkipBuild) {
 }
 
 # Define Environment Variables
-$oldVal = $env:NUGET_TEST_SERVICEROOT
-$env:NUGET_TEST_SERVICEROOT=$ServiceRoot
+$oldVal = $null;
+if ($ServiceRoot) {
+    $oldVal = $env:NUGET_TEST_SERVICEROOT
+    $env:NUGET_TEST_SERVICEROOT=$ServiceRoot
+}
 
 # Run Tests
 $failures = @{};
@@ -92,4 +95,6 @@ if($failures.Count -gt 0) {
 }
 
 # Clean up environment
-$env:NUGET_TEST_SERVICEROOT = $oldVal
+if($oldVal) {
+    $env:NUGET_TEST_SERVICEROOT = $oldVal
+}
