@@ -1,10 +1,72 @@
+[CmdletBinding(DefaultParameterSetName="RootUrl")]
 param(
-    [Parameter(Mandatory=$false)][string]$ServiceRoot,
-    [Parameter(Mandatory=$false)][string]$Configuration = "Debug",
-    [Parameter(Mandatory=$false)][string]$OutputDir,
-    [Parameter(Mandatory=$false)][switch]$Quiet,
-    [Parameter(Mandatory=$false)][switch]$TeamCity,
-    [Parameter(Mandatory=$false)][switch]$SkipBuild)
+    [Parameter(Mandatory, Position=0, ParameterSetName="RootUrl")]
+    [string]$ServiceRoot,
+    
+    [Parameter(Mandatory, ParameterSetName="ServiceAndSlot")]
+    [Parameter(Mandatory, ParameterSetName="ServiceAndSlotAndSub")]
+    [string]$ServiceName,
+    
+    [Parameter(Mandatory, ParameterSetName="ServiceAndSlot")]
+    [Parameter(Mandatory, ParameterSetName="ServiceAndSlotAndSub")]
+    [string]$DeploymentSlot,
+    
+    [Parameter(Mandatory, ParameterSetName="ServiceAndSlotAndSub")]
+    [string]$SubscriptionId,
+    
+    [Parameter(Mandatory, ParameterSetName="ServiceAndSlotAndSub")]
+    [string]$SubscriptionName,
+    
+    [Parameter(Mandatory, ParameterSetName="ServiceAndSlotAndSub")]
+    [string]$SubscriptionCertThumbprint,
+
+    [Parameter()]
+    [string]$Configuration = "Debug",
+    
+    [Parameter()]
+    [string]$OutputDir,
+
+    [Parameter()]
+    [switch]$Quiet,
+    
+    [Parameter()]
+    [switch]$TeamCity,
+    
+    [Parameter()]
+    [switch]$SkipBuild)
+
+# Check for Azure PowerShell
+if($PSCmdlet.ParameterSetName.StartsWith("ServiceAndSlot")) {
+    if(!(Get-Module -ErrorAction SilentlyContinue Azure)) {
+        if(!(Get-Module -ListAvailable Azure)) {
+            throw "Couldn't find Azure"
+        }
+        Import-Module Azure
+    }
+}
+
+# If we're in service/slot mode, look up the ServiceRoot
+if($PSCmdlet.ParameterSetName -eq "ServiceAndSlotAndSub") {
+    # Load and select the subscription
+    $cert = dir "cert:\CurrentUser\My\$SubscriptionCertThumbprint"
+    if(!$cert) {
+        $cert = dir "cert:\LocalMachine\My\$SubscriptionCertThumbprint"
+    }
+    if(!$cert) {
+        throw "Could not find certificate: $SubscriptionCertThumbprint"
+    }
+    Set-AzureSubscription -SubscriptionName $SubscriptionName -SubscriptionId $SubscriptionId -Certificate $cert
+    Select-AzureSubscription $SubscriptionName
+}
+
+if($PSCmdlet.ParameterSetName.StartsWith("ServiceAndSlot")) {
+    $ServiceRoot = (Get-AzureDeployment -ServiceName $ServiceName -Slot $DeploymentSlot).Url
+    Write-Host "Using Service Root: $ServiceRoot"
+}
+
+if(!$ServiceRoot) {
+    throw "Service Root was not specified or could not be located"
+}
 
 $tcFailed = [regex]"##teamcity\[testFailed name='(?<name>[^']*)' details='(?<detail>[^']*)'.*\]";
 $tcComplete = [regex]"##teamcity\[testFinished name='(?<name>[^']*)' duration='(?<duration>\d+)'.*\]";
