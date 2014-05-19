@@ -37,15 +37,18 @@ namespace NuGet.Services.Search
             get { return _searcherManager; }
         }
 
+        public SearchServiceApplication App { get; private set; }
+
         public SearchService(ServiceName name, ServiceHost host)
             : base(name, host)
         {
+            App = new SearchServiceApplication(name, CreateSearcherManager);
         }
 
         protected override Task<bool> OnStart()
         {
             // Load the index
-            ReloadIndex();
+            App.ReloadIndex();
 
             // Set up reloading
             try
@@ -54,7 +57,7 @@ namespace NuGet.Services.Search
                 {
                     RoleEnvironment.Changing += (_, __) =>
                     {
-                        ReloadIndex();
+                        App.ReloadIndex();
                     };
                 }
             }
@@ -88,120 +91,7 @@ namespace NuGet.Services.Search
 
         protected override void Configure(IAppBuilder app)
         {
-            // Configure the app
-            app.UseErrorPage();
-            
-            SharedOptions sharedStaticFileOptions = new SharedOptions()
-            {
-                RequestPath = new PathString("/console"),
-                FileSystem = new EmbeddedResourceFileSystem("NuGet.Services.Search.Console")
-            };
-
-            Func<PackageSearcherManager> searcherManagerThunk = () => SearcherManager;
-
-            app.Use(async (context, next) =>
-            {
-                if (String.Equals(context.Request.Path.Value, "/reloadIndex", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (context.Request.User == null || !context.Request.User.IsInRole(Roles.Admin))
-                    {
-                        context.Authentication.Challenge();
-                    }
-                    else
-                    {
-                        ReloadIndex();
-                        context.Response.StatusCode = 200;
-                        await context.Response.WriteAsync("Reload started.");
-                        return;
-                    }
-                }
-                await next();
-            });
-
-            // Just a little bit of rewriting. Not the full UseDefaultFiles middleware, just a quick hack
-            app.Use(async (context, next) =>
-            {
-                if (String.Equals(context.Request.Path.Value, "/console", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Redirect to trailing slash to maintain relative links
-                    context.Response.Redirect(context.Request.PathBase + context.Request.Path + "/");
-                    context.Response.StatusCode = 301;
-                    return;
-                }
-                else if (String.Equals(context.Request.Path.Value, "/console/", StringComparison.OrdinalIgnoreCase))
-                {
-                    context.Request.Path = new PathString("/console/Index.html");
-                }
-                await next();
-            });
-            app.UseStaticFiles(new StaticFileOptions(sharedStaticFileOptions));
-            
-            // Public endpoint(s)
-            app.Use(typeof(QueryMiddleware), "/query", searcherManagerThunk);
-               
-            // Admin endpoints
-            app.Use(typeof(DiagMiddleware), "/diag", searcherManagerThunk);
-            app.Use(typeof(FieldsMiddleware), "/fields", searcherManagerThunk);
-            app.Use(typeof(RangeMiddleware), "/range", searcherManagerThunk);
-            app.Use(typeof(SegmentsMiddleware), "/segments", searcherManagerThunk);
-
-            app.Use(async (context, next) =>
-            {
-                // Handle root requests
-                if (!context.Request.Path.HasValue)
-                {
-                    JObject response = new JObject();
-                    response.Add("name", ServiceName.ToString());
-                    response.Add("service", ServiceName.Name);
-
-                    JObject resources = new JObject();
-                    response.Add("resources", resources);
-
-                    resources.Add("range", MakeUri(context, "/range"));
-                    resources.Add("fields", MakeUri(context, "/fields"));
-                    resources.Add("console", MakeUri(context, "/console"));
-                    resources.Add("diagnostics", MakeUri(context, "/diag"));
-                    resources.Add("segments", MakeUri(context, "/segments"));
-                    resources.Add("query", MakeUri(context, "/query"));
-
-                    if (context.Request.User != null && context.Request.User.IsInRole(Roles.Admin))
-                    {
-                        resources.Add("reloadIndex", MakeUri(context, "/reloadIndex"));
-                    }
-
-                    await SearchMiddleware.WriteResponse(context, response.ToString());
-                }
-            });
-        }
-
-        public static Task<bool> IsAdmin(IOwinContext context)
-        {
-            return IsAdmin(context, challenge: true);
-        }
-
-        public static async Task<bool> IsAdmin(IOwinContext context, bool challenge)
-        {
-            await context.Authentication.AuthenticateAsync("AdminKey");
-            if (context.Request.User != null && context.Request.User.IsInRole(Roles.Admin))
-            {
-                return true;
-            }
-            else
-            {
-                if (challenge)
-                {
-                    context.Authentication.Challenge("AdminKey");
-                }
-                return false;
-            }
-        }
-
-        private string MakeUri(IOwinContext context, string path)
-        {
-            return new UriBuilder(context.Request.Uri)
-            {
-                Path = (context.Request.PathBase + new PathString(path)).Value
-            }.Uri.AbsoluteUri;
+            App.Configure(app);
         }
 
         private PackageSearcherManager CreateSearcherManager()
@@ -245,14 +135,6 @@ namespace NuGet.Services.Search
                 downloadCounts = new FolderDownloadCounts(config.IndexPath);
             }
             return new PackageSearcherManager(dir, rankings, downloadCounts);
-        }
-
-        private void ReloadIndex()
-        {
-            SearchServiceEventSource.Log.ReloadingIndex();
-            PackageSearcherManager newIndex = CreateSearcherManager();
-            Interlocked.Exchange(ref _searcherManager, newIndex);
-            SearchServiceEventSource.Log.ReloadedIndex();
         }
     }
 }

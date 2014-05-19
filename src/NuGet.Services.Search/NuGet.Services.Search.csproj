@@ -195,6 +195,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SearchServiceApplication.cs" />
     <Compile Include="SegmentsMiddleware.cs" />
     <Compile Include="DiagMiddleware.cs" />
     <Compile Include="FieldsMiddleware.cs" />
