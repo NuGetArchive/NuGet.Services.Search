@@ -24,7 +24,11 @@ namespace NuGet.Services.Search.MiniTester
                     "search"),
                 CreateSearcherManager);
             search.ReloadIndex();
-            search.Configure(app);
+            app.Map(new PathString("/search"), search.Configure);
+            app.Use(async (ctx, next) =>
+            {
+                await ctx.Response.WriteAsync("{ search: '/search' }");
+            });
         }
 
         private PackageSearcherManager CreateSearcherManager()

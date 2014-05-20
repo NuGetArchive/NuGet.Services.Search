@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Lucene.Net.Index;
+using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
 using Microsoft.Owin;
 using NuGet.Indexing;
@@ -72,20 +73,38 @@ namespace NuGet.Services.Search
             string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
             Trace.TraceInformation(args);
 
-            string content = NuGet.Indexing.Searcher.Search(
-                SearcherManager, 
-                LuceneQueryCreator.Parse(q, luceneQuery), 
-                countOnly, 
-                projectType, 
-                includePrerelease, 
-                feed, 
-                sortBy, 
-                skip, 
-                take, 
-                includeExplanation, 
-                ignoreFilter);
+            bool parseError = false;
+            string content = null;
+            try
+            {
+                content = NuGet.Indexing.Searcher.Search(
+                    SearcherManager,
+                    LuceneQueryCreator.Parse(q, luceneQuery),
+                    countOnly,
+                    projectType,
+                    includePrerelease,
+                    feed,
+                    sortBy,
+                    skip,
+                    take,
+                    includeExplanation,
+                    ignoreFilter);
+            } catch(ParseException)
+            {
+                parseError = true; // Can't await in catch block :(
+            }
 
-            await WriteResponse(context, content);
+            if (parseError)
+            {
+                context.Response.StatusCode = 400;
+                context.Response.ContentType = "text/plain";
+                await context.Response.WriteAsync("Invalid Query Syntax");
+            }
+            else
+            {
+                Debug.Assert(content != null);
+                await WriteResponse(context, content);
+            }
         }
     }
 }

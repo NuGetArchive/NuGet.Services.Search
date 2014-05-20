@@ -63,6 +63,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="LuceneSyntaxTests.cs" />
     <Compile Include="QuerySyntaxTests.cs" />
     <Compile Include="QueryTests.cs" />
     <Compile Include="RelevanceTests.cs" />
