@@ -212,13 +212,21 @@ namespace NuGet.Indexing
             Add(doc, name, value.ToString(CultureInfo.InvariantCulture), store, index, termVector, boost);
         }
 
-        private static float DetermineLanguageBoost(string language)
+        private static float DetermineLanguageBoost(string id, string language)
         {
-            if (string.IsNullOrWhiteSpace(language) || language.TrimStart().StartsWith("en", StringComparison.InvariantCultureIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(language))
             {
-                return 1.0f;
+                int suffixIndex = id.LastIndexOf('.') + 1;
+                if (suffixIndex < id.Length)
+                {
+                    string suffix = id.Substring(suffixIndex);
+                    if (suffix.Trim().Equals(language.Trim(), StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        return 0.1f;
+                    }
+                }
             }
-            return 0.1f;
+            return 1.0f;
         }
 
         // ----------------------------------------------------------------------------------------------------------------------------------------
@@ -300,7 +308,7 @@ namespace NuGet.Indexing
 
             Add(doc, "Data", data, Field.Store.YES, Field.Index.NO, Field.TermVector.NO);
 
-            doc.Boost = DetermineLanguageBoost(package.Language);
+            doc.Boost = DetermineLanguageBoost(package.PackageRegistration.Id, package.Language);
 
             return doc;
         }
