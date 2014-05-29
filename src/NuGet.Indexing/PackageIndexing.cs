@@ -216,14 +216,10 @@ namespace NuGet.Indexing
         {
             if (!string.IsNullOrWhiteSpace(language))
             {
-                int suffixIndex = id.LastIndexOf('.') + 1;
-                if (suffixIndex < id.Length)
+                string languageSuffix = "." + language.Trim();
+                if (id.EndsWith(languageSuffix, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    string suffix = id.Substring(suffixIndex);
-                    if (suffix.Trim().Equals(language.Trim(), StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        return 0.1f;
-                    }
+                    return 0.1f;
                 }
             }
             return 1.0f;
