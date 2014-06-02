@@ -22,6 +22,11 @@ namespace NuGet.Indexing
         public string SqlConnectionString { get; set; }
         public bool WhatIf { get; set; }
 
+        public IndexTask()
+        {
+            Log = Console.Out;
+        }
+
         protected Lucene.Net.Store.Directory GetDirectory()
         {
             Lucene.Net.Store.Directory directory = null;

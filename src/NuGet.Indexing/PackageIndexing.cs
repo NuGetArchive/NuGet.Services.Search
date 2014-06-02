@@ -212,6 +212,19 @@ namespace NuGet.Indexing
             Add(doc, name, value.ToString(CultureInfo.InvariantCulture), store, index, termVector, boost);
         }
 
+        private static float DetermineLanguageBoost(string id, string language)
+        {
+            if (!string.IsNullOrWhiteSpace(language))
+            {
+                string languageSuffix = "." + language.Trim();
+                if (id.EndsWith(languageSuffix, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return 0.1f;
+                }
+            }
+            return 1.0f;
+        }
+
         // ----------------------------------------------------------------------------------------------------------------------------------------
 
         private static Document CreateLuceneDocument(IndexDocumentData documentData)
@@ -290,6 +303,8 @@ namespace NuGet.Indexing
             string data = obj.ToString();
 
             Add(doc, "Data", data, Field.Store.YES, Field.Index.NO, Field.TermVector.NO);
+
+            doc.Boost = DetermineLanguageBoost(package.PackageRegistration.Id, package.Language);
 
             return doc;
         }

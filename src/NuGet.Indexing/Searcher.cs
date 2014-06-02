@@ -9,7 +9,6 @@ using System.Text;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Diagnostics;
 using Newtonsoft.Json;
 
 namespace NuGet.Indexing
