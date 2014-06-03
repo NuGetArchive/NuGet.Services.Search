@@ -25,16 +25,9 @@ namespace NuGet.Services.Search
 {
     public class SearchService : NuGetHttpService
     {
-        private PackageSearcherManager _searcherManager;
-
         public override PathString BasePath
         {
             get { return new PathString("/search"); }
-        }
-
-        public PackageSearcherManager SearcherManager
-        {
-            get { return _searcherManager; }
         }
 
         public SearchServiceApplication App { get; private set; }
@@ -107,34 +100,64 @@ namespace NuGet.Services.Search
 
         private PackageSearcherManager GetSearcherManager(SearchConfiguration config)
         {
+            Directory dir = CreateDirectory(config);
+            Rankings rankings = CreateRankings(config);
+            DownloadCounts downloadCounts = CreateDownloadCounts(config);
+            return new PackageSearcherManager(dir, rankings, downloadCounts);
+        }
+
+        private Rankings CreateRankings(SearchConfiguration config)
+        {
+            if (!String.IsNullOrEmpty(config.StatsContainer))
+            {
+                return new StorageRankings(Configuration.Storage.Primary, config.StatsContainer);
+            }
+            else if(String.IsNullOrEmpty(config.IndexPath))
+            {
+                return new StorageRankings(Configuration.Storage.Primary, config.IndexContainer, "data");
+            } 
+            else 
+            {
+                return new FolderRankings(config.IndexPath);
+            }
+        }
+
+        private DownloadCounts CreateDownloadCounts(SearchConfiguration config)
+        {
+            if (!String.IsNullOrEmpty(config.StatsContainer))
+            {
+                return new StorageDownloadCounts(Configuration.Storage.Primary, config.StatsContainer);
+            }
+            else if(String.IsNullOrEmpty(config.IndexPath))
+            {
+                return new StorageDownloadCounts(Configuration.Storage.Primary, config.IndexContainer, "data");
+            } 
+            else
+            {
+                return new FolderDownloadCounts(config.IndexPath);
+            }
+        }
+
+        private Directory CreateDirectory(SearchConfiguration config)
+        {
             Directory dir;
-            Rankings rankings;
-            DownloadCounts downloadCounts;
             if (String.IsNullOrEmpty(config.IndexPath))
             {
                 CloudStorageAccount storageAccount = Configuration.Storage.Primary;
-
-                config.IndexContainer = String.IsNullOrEmpty(config.IndexContainer) ?
-                    "ng-search" :
-                    config.IndexContainer;
 
                 string url = storageAccount.CreateCloudBlobClient().GetContainerReference(config.IndexContainer).Uri.AbsoluteUri;
 
                 IndexingEventSource.Log.LoadingSearcherManager(url);
 
                 dir = new AzureDirectory(storageAccount, config.IndexContainer, new RAMDirectory());
-                rankings = new StorageRankings(storageAccount, config.IndexContainer);
-                downloadCounts = new StorageDownloadCounts(storageAccount, config.IndexContainer);
             }
             else
             {
                 IndexingEventSource.Log.LoadingSearcherManager(config.IndexPath);
 
                 dir = new SimpleFSDirectory(new System.IO.DirectoryInfo(config.IndexPath));
-                rankings = new FolderRankings(config.IndexPath);
-                downloadCounts = new FolderDownloadCounts(config.IndexPath);
             }
-            return new PackageSearcherManager(dir, rankings, downloadCounts);
+            return dir;
         }
     }
 }

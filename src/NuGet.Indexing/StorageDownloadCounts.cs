@@ -13,24 +13,13 @@ namespace NuGet.Indexing
     {
         CloudBlockBlob _blob;
 
-        public override string Path { get { return _blob.Uri.AbsoluteUri; } }
+        public override string Path
+        { get { return _blob.Uri.AbsoluteUri; } }
 
-        public StorageDownloadCounts(string connectionString) : this(CloudStorageAccount.Parse(connectionString))
-        {
-        }
-
-        public StorageDownloadCounts(CloudStorageAccount storageAccount) : this(storageAccount, "ng-search")
-        {
-        }
-
-        public StorageDownloadCounts(CloudStorageAccount storageAccount, string containerName)
-            : this(storageAccount.CreateCloudBlobClient().GetContainerReference(containerName))
-        {
-        }
-
-        public StorageDownloadCounts(CloudBlobContainer container) : this(container.GetBlockBlobReference(@"data/downloads.v1.json"))
-        {
-        }
+        public StorageDownloadCounts(CloudStorageAccount account, string container)
+            : this(GetBlob(account, container, folder: null)) { }
+        public StorageDownloadCounts(CloudStorageAccount account, string container, string folder)
+            : this(GetBlob(account, container, folder)) { }
 
         public StorageDownloadCounts(CloudBlockBlob blob)
         {
@@ -46,6 +35,15 @@ namespace NuGet.Indexing
             string json = _blob.DownloadText();
             JObject obj = JObject.Parse(json);
             return obj;
+        }
+
+        private static CloudBlockBlob GetBlob(CloudStorageAccount account, string containerName, string folder)
+        {
+            var container = account.CreateCloudBlobClient().GetContainerReference(containerName);
+            return container.GetBlockBlobReference(
+                String.IsNullOrEmpty(folder) ?
+                    ReportName :
+                    (folder + "/" + ReportName));
         }
     }
 }

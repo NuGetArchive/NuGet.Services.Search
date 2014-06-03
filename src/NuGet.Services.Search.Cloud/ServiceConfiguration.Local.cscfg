@@ -16,6 +16,8 @@
             <!-- Set this to a non-empty value to CHANGE the container name used for storing the index -->
             <!-- The default value, if this is empty, is 'ng-search' -->
             <Setting name="Search.IndexContainer" value="" />
+            <!-- Set this to a non-empty value to use a separate container to hold the stats -->
+            <Setting name="Search.StatsContainer" value="" />
 
             <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="" />
             <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="" />

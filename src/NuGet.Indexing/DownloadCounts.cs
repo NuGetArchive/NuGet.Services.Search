@@ -9,6 +9,8 @@ namespace NuGet.Indexing
 {
     public abstract class DownloadCounts
     {
+        protected static readonly string ReportName = "downloads.v1.json";
+
         public abstract string Path { get; }
         protected abstract JObject LoadJson();
 

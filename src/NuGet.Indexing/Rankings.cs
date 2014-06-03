@@ -11,6 +11,8 @@ namespace NuGet.Indexing
 {
     public abstract class Rankings
     {
+        protected static readonly string ReportName = "rankings.v1.json";
+
         public abstract string Path { get; }
         protected abstract JObject LoadJson();
 

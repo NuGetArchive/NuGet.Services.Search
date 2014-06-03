@@ -15,22 +15,10 @@ namespace NuGet.Indexing
         
         public override string Path { get { return _blob.Uri.AbsoluteUri; } }
 
-        public StorageRankings(string connectionString) : this(CloudStorageAccount.Parse(connectionString))
-        {
-        }
-
-        public StorageRankings(CloudStorageAccount storageAccount) : this(storageAccount, "ng-search")
-        {
-        }
-
-        public StorageRankings(CloudStorageAccount storageAccount, string containerName)
-            : this(storageAccount.CreateCloudBlobClient().GetContainerReference(containerName))
-        {
-        }
-
-        public StorageRankings(CloudBlobContainer container) : this(container.GetBlockBlobReference(@"data/rankings.v1.json"))
-        {
-        }
+        public StorageRankings(CloudStorageAccount account, string container)
+            : this(GetBlob(account, container, folder: null)) { }
+        public StorageRankings(CloudStorageAccount account, string container, string folder)
+            : this(GetBlob(account, container, folder)) { }
 
         public StorageRankings(CloudBlockBlob blob)
         {
@@ -46,6 +34,15 @@ namespace NuGet.Indexing
             string json = _blob.DownloadText();
             JObject obj = JObject.Parse(json);
             return obj;
+        }
+
+        private static CloudBlockBlob GetBlob(CloudStorageAccount account, string containerName, string folder)
+        {
+            var container = account.CreateCloudBlobClient().GetContainerReference(containerName);
+            return container.GetBlockBlobReference(
+                String.IsNullOrEmpty(folder) ?
+                    ReportName :
+                    (folder + "/" + ReportName));
         }
     }
 }
