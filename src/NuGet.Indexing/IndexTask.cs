@@ -50,8 +50,8 @@ namespace NuGet.Indexing
             {
                 manager = new PackageSearcherManager(
                     GetDirectory(),
-                    new StorageRankings(StorageAccount),
-                    new StorageDownloadCounts(StorageAccount));
+                    new StorageRankings(StorageAccount, "ng-search", "data"),
+                    new StorageDownloadCounts(StorageAccount, "ng-search", "data"));
             }
             else if (!string.IsNullOrEmpty(Folder))
             {

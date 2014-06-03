@@ -23,6 +23,7 @@
 
             <Setting name="Search.IndexPath" />
             <Setting name="Search.IndexContainer" />
+            <Setting name="Search.StatsContainer" />
         </ConfigurationSettings>
         <Certificates>
             <Certificate name="SSL" permissionLevel="limitedOrElevated" storeLocation="LocalMachine" storeName="My" />
