@@ -155,7 +155,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
-    <Content Include="Console\README.md" />
+    <Content Include="Search\Console\README.md" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -164,16 +164,16 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Console\d3.v3.js" />
-    <EmbeddedResource Include="Console\Index.html" />
-    <EmbeddedResource Include="Console\jquery-1.8.2.js" />
-    <EmbeddedResource Include="Console\Json2Html.js" />
-    <EmbeddedResource Include="Console\Json2HtmlStyle.css" />
-    <EmbeddedResource Include="Console\Master.css" />
-    <EmbeddedResource Include="Console\RangeQuery.html" />
-    <EmbeddedResource Include="Console\Segments.html" />
-    <EmbeddedResource Include="Console\Status.html" />
-    <EmbeddedResource Include="Console\StoredFields.html" />
+    <EmbeddedResource Include="Search\Console\d3.v3.js" />
+    <EmbeddedResource Include="Search\Console\Index.html" />
+    <EmbeddedResource Include="Search\Console\jquery-1.8.2.js" />
+    <EmbeddedResource Include="Search\Console\Json2Html.js" />
+    <EmbeddedResource Include="Search\Console\Json2HtmlStyle.css" />
+    <EmbeddedResource Include="Search\Console\Master.css" />
+    <EmbeddedResource Include="Search\Console\RangeQuery.html" />
+    <EmbeddedResource Include="Search\Console\Segments.html" />
+    <EmbeddedResource Include="Search\Console\Status.html" />
+    <EmbeddedResource Include="Search\Console\StoredFields.html" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
