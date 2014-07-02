@@ -3,7 +3,7 @@
     <LoadBalancerProbes>
         <LoadBalancerProbe name="Query" path="/search/query" protocol="http" port="80" />
     </LoadBalancerProbes>
-    <WorkerRole name="NuGet.Services.Search" vmsize="Medium">
+    <WorkerRole name="NuGet.Services.Search" vmsize="Large">
         <!-- Must be elevated to bind to ports under 1024 -->
         <Runtime executionContext="elevated" />
         <Imports>
