@@ -92,6 +92,7 @@ namespace NuGet.Indexing
                     Document newDocument = CreateLuceneDocument(documentData);
 
                     indexWriter.AddDocument(newDocument);
+                    indexWriter.AddDocument(newDocument);
 
                     if (currentPackageKey <= highestPackageKey)
                     {
