@@ -93,6 +93,7 @@ namespace NuGet.Indexing
 
                     indexWriter.AddDocument(newDocument);
                     indexWriter.AddDocument(newDocument);
+                    
 
                     if (currentPackageKey <= highestPackageKey)
                     {
@@ -102,6 +103,7 @@ namespace NuGet.Indexing
                     highestPackageKey = currentPackageKey;
                 }
 
+                log.WriteLine("total docs {0}", indexWriter.MaxDoc());
                 log.WriteLine("about to commit {0} packages", rangeToIndex.Count);
 
                 IDictionary<string, string> commitUserData = indexWriter.GetReader().CommitUserData;
