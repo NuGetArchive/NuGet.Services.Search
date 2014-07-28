@@ -15,7 +15,7 @@ namespace NuGet.Indexing
 {
     public static class PackageIndexing
     {
-        const int MaxDocumentsPerCommit = 800;      //  The maximum number of Lucene documents in a single commit. The min size for a segment.
+        const int MaxDocumentsPerCommit = 200;      //  The maximum number of Lucene documents in a single commit. The min size for a segment.
         const int MergeFactor = 10;                 //  Define the size of a file in a level (exponentially) and the count of files that constitue a level
         const int MaxMergeDocs = 7999;              //  Except never merge segments that have more docs than this 
 
@@ -92,6 +92,10 @@ namespace NuGet.Indexing
                     Document newDocument = CreateLuceneDocument(documentData);
 
                     indexWriter.AddDocument(newDocument);
+                    indexWriter.AddDocument(newDocument);
+                    indexWriter.AddDocument(newDocument);
+                    indexWriter.AddDocument(newDocument);
+                    
 
                     if (currentPackageKey <= highestPackageKey)
                     {
@@ -101,6 +105,7 @@ namespace NuGet.Indexing
                     highestPackageKey = currentPackageKey;
                 }
 
+                log.WriteLine("total docs {0}", indexWriter.MaxDoc());
                 log.WriteLine("about to commit {0} packages", rangeToIndex.Count);
 
                 IDictionary<string, string> commitUserData = indexWriter.GetReader().CommitUserData;
