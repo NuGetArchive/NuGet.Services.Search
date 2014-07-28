@@ -12,11 +12,25 @@ using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using NuGet.Services.Search.Client;
 using PowerArgs;
+using IndexMaintenance;
+using System.IO;
+using NuGet;
 
 namespace IndexMaintainance
 {
     public class Arguments
     {
+        [ArgActionMethod]
+        public void GenerateProfileTable(GenerateProfileTableArgs args)
+        {
+            Console.WriteLine("Saving portable profile table to {0}", args.Destination);
+            using (var stream = new FileStream(args.Destination, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            {
+                NetPortableProfileTable.Default.Serialize(stream);
+            }
+            Console.WriteLine("Saved portable profile table.");
+        }
+
         [ArgActionMethod]
         public void FullBuild(FullBuildArgs args)
         {
