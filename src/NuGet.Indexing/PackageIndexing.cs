@@ -288,8 +288,16 @@ namespace NuGet.Indexing
 
             foreach (PackageFramework packageFramework in package.SupportedFrameworks)
             {
-                Add(doc, "SupportedFramework", VersionUtility.ParseFrameworkName(packageFramework.TargetFramework).FullName, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
-                Add(doc, "OriginalFramework", packageFramework.TargetFramework, Field.Store.YES, Field.Index.NO, Field.TermVector.NO);
+                string targetFramework = packageFramework.TargetFramework;
+                try
+                {
+                    targetFramework = VersionUtility.ParseFrameworkName(targetFramework).FullName;
+                }
+                catch (ArgumentException)
+                {
+                    // Invalid framework name
+                }
+                Add(doc, "SupportedFramework", targetFramework, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS, Field.TermVector.NO);
             }
 
             //  Add Package Key so we can quickly retrieve ranges of packages (in order to support the synchronization with the gallery)

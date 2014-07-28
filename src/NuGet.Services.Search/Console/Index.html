@@ -13,8 +13,10 @@
             <span style="font-size:large;font-weight:bold;color:black">Test</span>
             <div id="query-div" style="display:inline-block;text-align:center;width:720px">
                 <form id="search" action="#">
-                    <input id="query" size="25" type="text">
+                    <input id="query" size="25" type="text" />
                     <button id="go" type="submit">Go</button>
+                    <label for="targetFramework">Target Framework:</label>
+                    <input id="targetFramework" size="25" type="text" />
                 </form>
                 &nbsp;&nbsp;&nbsp;
                 &nbsp;&nbsp;&nbsp;
@@ -135,6 +137,12 @@
             html += '<p><span class="result-description">' + data[i].Description + '</span></p>';
 
             html += '<p><span class="result-published">' + data[i].Published + '</span></p>';
+
+            var supportedFx = '';
+            if(data[i].SupportedFrameworks) {
+                supportedFx = data[i].SupportedFrameworks.join(',');
+            }
+            html += '<p><span class="result-fx">Supported Frameworks: ' + supportedFx + '</span></p>';
 
             if (data[i].Tags != undefined || data[i].Tags != null) {
                 html += '<p><span class="result-tags">' + data[i].Tags + '</span></p>';
@@ -392,6 +400,7 @@
             var sortBy = $('#sortBy').val();
             var feed = $('#feed').val();
             var ignoreFilter = $('#ignore-filter').is(':checked');
+            var targetFramework = $('#targetFramework').val();
 
             var query = {
                 q: q,
@@ -402,7 +411,8 @@
                 skip: 0,
                 take: 20,
                 explanation: true,
-                ignoreFilter: ignoreFilter
+                ignoreFilter: ignoreFilter,
+                targetFramework: targetFramework
             };
 
             var sendQuery = $('#send-query').is(':checked');

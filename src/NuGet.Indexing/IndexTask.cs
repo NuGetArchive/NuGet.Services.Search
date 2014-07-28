@@ -53,17 +53,20 @@ namespace NuGet.Indexing
             PackageSearcherManager manager;
             if (!string.IsNullOrEmpty(Container))
             {
+                var container = StorageAccount.CreateCloudBlobClient().GetContainerReference(Container);
                 manager = new PackageSearcherManager(
                     GetDirectory(),
-                    new StorageRankings(StorageAccount),
-                    new StorageDownloadCounts(StorageAccount));
+                    new StorageRankings(container),
+                    new StorageDownloadCounts(container),
+                    PortableProfileHelper.FromStorage(container));
             }
             else if (!string.IsNullOrEmpty(Folder))
             {
                 manager = new PackageSearcherManager(
                     GetDirectory(),
                     new FolderRankings(Folder),
-                    new FolderDownloadCounts(Folder));
+                    new FolderDownloadCounts(Folder),
+                    PortableProfileHelper.FromFolder(Folder));
             }
             else
             {

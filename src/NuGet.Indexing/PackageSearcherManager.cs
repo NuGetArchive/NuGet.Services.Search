@@ -20,12 +20,14 @@ namespace NuGet.Indexing
         public Rankings Rankings { get; private set; }
         public DownloadCounts DownloadCounts { get; private set; }
         public Guid Id { get; private set; }
+        public NetPortableProfileTable PortableProfileTable { get; private set; }
 
-        public PackageSearcherManager(Lucene.Net.Store.Directory directory, Rankings rankings, DownloadCounts downloadCounts)
+        public PackageSearcherManager(Lucene.Net.Store.Directory directory, Rankings rankings, DownloadCounts downloadCounts, NetPortableProfileTable portableProfileTable)
             : base(directory)
         {
             Rankings = rankings;
             DownloadCounts = downloadCounts;
+            PortableProfileTable = portableProfileTable;
 
             _currentDownloadCounts = new IndexData<IDictionary<int, DownloadCountRecord>>(
                 "DownloadCounts",

@@ -10,13 +10,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
+using System.Runtime.Versioning;
 
 namespace NuGet.Indexing
 {
     public static class Searcher
     {
         static DateTime WarmTimeStampUtc = DateTime.UtcNow;
-        static IDictionary<string, Filter> _filters = new Dictionary<string, Filter>();
+        static ConcurrentDictionary<string, Filter> _filters = new ConcurrentDictionary<string, Filter>();
 
         public static string KeyRangeQuery(PackageSearcherManager searcherManager, int minKey, int maxKey)
         {
@@ -49,7 +51,7 @@ namespace NuGet.Indexing
             }
         }
 
-        public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter, FrameworkName targetFramework)
         {
             return Search(
                 searcherManager,
@@ -62,10 +64,11 @@ namespace NuGet.Indexing
                 skip,
                 take,
                 includeExplanation,
-                ignoreFilter);
+                ignoreFilter,
+                targetFramework);
         }
 
-        public static string Search(PackageSearcherManager searcherManager, Query q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        public static string Search(PackageSearcherManager searcherManager, Query q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter, FrameworkName targetFramework)
         {
             IndexSearcher searcher;
 
@@ -102,15 +105,18 @@ namespace NuGet.Indexing
 
             try
             {
+                // Get the filter
+                var filter = ignoreFilter ? null : GetFilter(includeExplanation, feed, targetFramework, searcherManager.PortableProfileTable);
+
                 if (countOnly)
                 {
-                    return DocumentCountImpl(searcher, q, includePrerelease, feed, ignoreFilter);
+                    return DocumentCountImpl(searcher, q, filter);
                 }
                 else
                 {
                     IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
 
-                    return ListDocumentsImpl(searcher, q, rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, searcherManager);
+                    return ListDocumentsImpl(searcher, q, rankings, filter, sortBy, skip, take, includeExplanation, searcherManager);
                 }
             }
             finally
@@ -119,10 +125,8 @@ namespace NuGet.Indexing
             }
         }
 
-        private static string DocumentCountImpl(IndexSearcher searcher, Query query, bool includePrerelease, string feed, bool ignoreFilter)
+        private static string DocumentCountImpl(IndexSearcher searcher, Query query, Filter filter)
         {
-            Filter filter = ignoreFilter ? null : GetFilter(includePrerelease, feed);
-
             Stopwatch sw = new Stopwatch();
             sw.Start();
             TopDocs topDocs = searcher.Search(query, filter, 1);
@@ -130,10 +134,8 @@ namespace NuGet.Indexing
             return MakeCountResult(topDocs.TotalHits, sw.ElapsedMilliseconds);
         }
 
-        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter, PackageSearcherManager manager)
+        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, Filter filter, string sortBy, int skip, int take, bool includeExplanation, PackageSearcherManager manager)
         {
-            Filter filter = ignoreFilter ? null : GetFilter(includePrerelease, feed);
-
             Query boostedQuery = new RankingScoreQuery(query, rankings);
             
             int nDocs = GetDocsCount(skip, take);
@@ -170,48 +172,46 @@ namespace NuGet.Indexing
             return sort();
         }
 
-        private static Filter GetFilter(bool includePrerelease, string feed)
+        private static Filter GetFilter(bool includePrerelease, string feed, FrameworkName targetFramework, NetPortableProfileTable portableProfileTable)
         {
-            string filterName = string.Format("{0}/{1}", includePrerelease ? "IsLatest" : "IsLatestStable", feed);
+            string filterName = GetFilterName(includePrerelease, feed, targetFramework);
 
-            Filter filter;
-            if (!_filters.TryGetValue(filterName, out filter))
-            {
-                lock (_filters)
-                {
-                    Filter filter2;
-                    if (!_filters.TryGetValue(filterName, out filter2))
-                    {
-                        filter2 = CreateFilter(includePrerelease, feed);
-                        _filters.Add(filterName, filter2);
-                    }
-
-                    return filter2;
-                }
-            }
-
-            return filter;
+            // According to MSDN, the "CreateFilter" call here will be run outside the lock on the filterName key. This
+            // is fine though because the worst case would be for two different threads to start running CreateFilter simultaneously for the same
+            // filterName. When they come back to "GetOrAdd" the resulting value, the first one will win and the other threads will throw away
+            // their created value and use the one in the dictionary. This means the worst case is that the other threads waste a tiny amount of
+            // time during the initialization of this filter dictionary by creating Filters they will later throw away if they lose the race. Meh.
+            //  -anurse
+            return _filters.GetOrAdd(filterName, _ => CreateFilter(includePrerelease, feed, targetFramework, portableProfileTable));
         }
 
-        private static string GetFilterName(bool includePrerelease, string feed)
+        private static string GetFilterName(bool includePrerelease, string feed, FrameworkName targetFramework)
         {
-            return string.Format("{0}/{1}", includePrerelease ? "IsLatest" : "IsLatestStable", feed);
+            string baseName = String.Format("{0}/{1}", includePrerelease ? "IsLatest" : "IsLatestStable", feed);
+            return targetFramework == null ?
+                baseName :
+                (baseName + "/" + targetFramework.FullName);
         }
 
-        private static Filter CreateFilter(bool includePrerelease, string feed)
+        private static Filter CreateFilter(bool includePrerelease, string feed, FrameworkName targetFramework, NetPortableProfileTable portableProfileTable)
         {
-            if (feed == "none")
+            BooleanQuery filterQuery = new BooleanQuery();
+
+            // Handle feed
+            if (!String.Equals(feed, "none", StringComparison.OrdinalIgnoreCase))
             {
-                TermQuery filterQuery = new TermQuery(new Term(includePrerelease ? "IsLatest" : "IsLatestStable", "1"));
-                return new CachingWrapperFilter(new QueryWrapperFilter(filterQuery));
-            }
-            else
-            {
-                BooleanQuery filterQuery = new BooleanQuery();
-                filterQuery.Add(new TermQuery(new Term(includePrerelease ? "IsLatest" : "IsLatestStable", "1")), Occur.MUST);
                 filterQuery.Add(new TermQuery(new Term("CuratedFeed", feed)), Occur.MUST);
-                return new CachingWrapperFilter(new QueryWrapperFilter(filterQuery));
             }
+
+            // Handle includePrerelease
+            filterQuery.Add(new TermQuery(new Term(includePrerelease ? "IsLatest" : "IsLatestStable", "1")), Occur.MUST);
+
+            Filter filter = new QueryWrapperFilter(filterQuery);
+            if (targetFramework != null)
+            {
+                filter = new TargetFrameworkFilter(targetFramework, portableProfileTable, filter);
+            }
+            return new CachingWrapperFilter(filter);
         }
 
         private static string MakeCountResult(int totalHits, long elapsed)

@@ -131,7 +131,9 @@
     <Compile Include="IndexDocumentData.cs" />
     <Compile Include="IndexingEventSource.cs" />
     <Compile Include="IndexTask.cs" />
+    <Compile Include="PortableProfileHelper.cs" />
     <Compile Include="StorageDownloadCounts.cs" />
+    <Compile Include="TargetFrameworkFilter.cs" />
     <Compile Include="UpdateIndexTask.cs" />
     <Compile Include="PackageJson.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

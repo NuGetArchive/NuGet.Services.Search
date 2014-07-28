@@ -22,9 +22,21 @@ namespace NuGet.Services.Search.MiniTester
                 new ServiceName(
                     ServiceHostInstanceName.Parse("nuget-local-0-search_IN0"),
                     "search"),
-                CreateSearcherManager);
+                CreateSearcherManager,
+                includeConsole: false);
             search.ReloadIndex();
-            app.Map(new PathString("/search"), a => search.Configure(a));
+            app.Use(async (ctx, next) =>
+            {
+                if (String.Equals(ctx.Request.Path.Value, "/"))
+                {
+                    ctx.Response.Redirect("/Console/");
+                }
+                else
+                {
+                    await next();
+                }
+            });
+            search.Configure(app);
         }
 
         private PackageSearcherManager CreateSearcherManager()
@@ -37,7 +49,8 @@ namespace NuGet.Services.Search.MiniTester
             return new PackageSearcherManager(
                 new SimpleFSDirectory(new System.IO.DirectoryInfo(index)),
                 new FolderRankings(index),
-                new FolderDownloadCounts(index));
+                new FolderDownloadCounts(index),
+                PortableProfileHelper.FromFolder(index));
         }
     }
 }

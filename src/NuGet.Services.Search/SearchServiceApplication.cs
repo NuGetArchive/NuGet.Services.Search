@@ -18,14 +18,17 @@ namespace NuGet.Services.Search
     public class SearchServiceApplication
     {
         private PackageSearcherManager _searcherManager;
+        private bool _includeConsole;
 
         public Func<PackageSearcherManager> SearcherManagerBuilder { get; private set; }
         public ServiceName ServiceName { get; private set; }
 
-        public SearchServiceApplication(ServiceName serviceName, Func<PackageSearcherManager> searcherManagerBuilder)
+        public SearchServiceApplication(ServiceName serviceName, Func<PackageSearcherManager> searcherManagerBuilder) : this(serviceName, searcherManagerBuilder, includeConsole: true) { }
+        public SearchServiceApplication(ServiceName serviceName, Func<PackageSearcherManager> searcherManagerBuilder, bool includeConsole)
         {
             ServiceName = serviceName;
             SearcherManagerBuilder = searcherManagerBuilder;
+            _includeConsole = includeConsole;
         }
 
         public void Configure(IAppBuilder app)
