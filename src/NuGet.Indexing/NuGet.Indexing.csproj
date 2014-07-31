@@ -123,7 +123,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DownloadCounts.cs" />
+    <Compile Include="FacetedDocument.cs" />
+    <Compile Include="Facets.cs" />
     <Compile Include="FolderDownloadCounts.cs" />
+    <Compile Include="FrameworksList.cs" />
     <Compile Include="GalleryExport.cs" />
     <Compile Include="FullBuildTask.cs" />
     <Compile Include="IndexConsistencyReport.cs" />

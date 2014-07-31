@@ -6,41 +6,55 @@ using System.Text;
 using System.Threading.Tasks;
 using Lucene.Net.Store;
 using Lucene.Net.Store.Azure;
+using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
+using Microsoft.Practices.EnterpriseLibrary.SemanticLogging.Formatters;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using NuGet.Services.Search.Client;
 using PowerArgs;
+using IndexMaintenance;
+using System.IO;
+using System.Diagnostics.Tracing;
 
 namespace IndexMaintainance
 {
     public class Arguments
     {
+        [ArgShortcut("t")]
+        [ArgDescription("The level of tracing to display")]
+        [DefaultValue(EventLevel.Informational)]
+        public EventLevel TraceLevel { get; set; }
+
         [ArgActionMethod]
         public void FullBuild(FullBuildArgs args)
         {
-            if (!String.IsNullOrEmpty(args.LocalDbName))
+            using (StartTracing())
             {
-                args.ConnectionString = String.Format(@"Data Source=(LocalDB)\v11.0;Initial Catalog={0};Integrated Security=True", args.LocalDbName);
-            }
-            CloudStorageAccount acct = null;
-            if (!String.IsNullOrEmpty(args.StorageAccountConnectionString))
-            {
-                acct = CloudStorageAccount.Parse(args.StorageAccountConnectionString);
-            }
+                if (!String.IsNullOrEmpty(args.LocalDbName))
+                {
+                    args.ConnectionString = String.Format(@"Data Source=(LocalDB)\v11.0;Initial Catalog={0};Integrated Security=True", args.LocalDbName);
+                }
+                CloudStorageAccount acct = null;
+                if (!String.IsNullOrEmpty(args.StorageAccountConnectionString))
+                {
+                    acct = CloudStorageAccount.Parse(args.StorageAccountConnectionString);
+                }
 
-            FullBuildTask task = new FullBuildTask()
-            {
-                Container = args.Container,
-                Folder = args.Folder,
-                Force = args.Force,
-                Log = Console.Out,
-                SqlConnectionString = args.ConnectionString,
-                StorageAccount = acct,
-                WhatIf = args.WhatIf
-            };
-            task.Execute();
+                FullBuildTask task = new FullBuildTask()
+                {
+                    Container = args.Container,
+                    Folder = args.Folder,
+                    Force = args.Force,
+                    FrameworksFile = args.FrameworksFile,
+                    Log = TextWriter.Null,
+                    SqlConnectionString = args.ConnectionString,
+                    StorageAccount = acct,
+                    WhatIf = args.WhatIf
+                };
+                task.Execute();
+            }
         }
 
         [ArgActionMethod]
@@ -191,6 +205,15 @@ namespace IndexMaintainance
                     return l;
                 }
             };
+        }
+
+        private IDisposable StartTracing()
+        {
+            var listener = ConsoleLog.CreateListener(
+                new ConsoleEventFormatter(), new DefaultConsoleColorMapper());
+            listener.EnableEvents(IndexingEventSource.Log, TraceLevel);
+
+            return listener;
         }
     }
 }

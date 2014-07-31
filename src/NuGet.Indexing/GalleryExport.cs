@@ -16,6 +16,8 @@ namespace NuGet.Indexing
 
         public static List<Package> GetPublishedPackagesSince(string sqlConnectionString, int highestPackageKey, TextWriter log = null, bool verbose = false)
         {
+            IndexingEventSource.Log.FetchingPackageData(highestPackageKey, ChunkSize);
+
             log = log ?? DefaultTraceWriter;
 
             EntitiesContext context = new EntitiesContext(sqlConnectionString, readOnly: true);
@@ -44,7 +46,11 @@ namespace NuGet.Indexing
                 .Include(p => p.SupportedFrameworks)
                 .Include(p => p.Dependencies);
 
-            return ExecuteQuery(set, log, verbose);
+            var results = ExecuteQuery(set, log, verbose);
+            
+            IndexingEventSource.Log.FetchedPackageData();
+            
+            return results;
         }
 
         public static List<Package> GetEditedPackagesSince(string sqlConnectionString, int highestPackageKey, DateTime lastEditsIndexTime, TextWriter log = null, bool verbose = false)
@@ -97,6 +103,8 @@ namespace NuGet.Indexing
 
         public static IDictionary<int, IEnumerable<string>>  GetFeedsByPackageRegistration(string sqlConnectionString, TextWriter log, bool verbose)
         {
+            IndexingEventSource.Log.FetchingCuratedFeedMembership();
+
             log = log ?? DefaultTraceWriter;
 
             EntitiesContext context = new EntitiesContext(sqlConnectionString, readOnly: true);
@@ -122,6 +130,8 @@ namespace NuGet.Indexing
             DateTime after = DateTime.Now;
 
             log.WriteLine("Feeds: {0} rows returned, duration {1} seconds", feeds.Count, (after - before).TotalSeconds);
+
+            IndexingEventSource.Log.FetchedCuratedFeedMembership(feeds.Count);
 
             return feeds;
         }
@@ -281,6 +291,9 @@ namespace NuGet.Indexing
         public static IDictionary<int, int> FetchGalleryChecksums(string connectionString, int startKey = 0)
         {
             const int ChunkSize = 64000;
+
+            IndexingEventSource.Log.FetchingChecksums(startKey, ChunkSize);
+
             IDictionary<int, int> checksums = new Dictionary<int, int>();
             int rangeStartKey = startKey;
             int added = 0;
@@ -289,6 +302,9 @@ namespace NuGet.Indexing
                 added = GetRangeFromGallery(connectionString, ChunkSize, ref rangeStartKey, checksums);
             }
             while (added > 0);
+
+            IndexingEventSource.Log.FetchedChecksums();
+
             return checksums;
         }
 

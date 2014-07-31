@@ -25,16 +25,9 @@ namespace NuGet.Services.Search
 {
     public class SearchService : NuGetHttpService
     {
-        private PackageSearcherManager _searcherManager;
-
         public override PathString BasePath
         {
             get { return new PathString("/search"); }
-        }
-
-        public PackageSearcherManager SearcherManager
-        {
-            get { return _searcherManager; }
         }
 
         public SearchServiceApplication App { get; private set; }

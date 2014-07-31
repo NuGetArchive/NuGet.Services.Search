@@ -10,6 +10,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NuGetGallery;
+using System.Runtime.Versioning;
+using System.Data.SqlClient;
 
 namespace NuGet.Indexing
 {
@@ -29,22 +31,31 @@ namespace NuGet.Indexing
         //  this function will incrementally build an index from the gallery using a high water mark stored in the commit metadata
         //  this function is useful for building a fresh index as in that case it is more efficient than diff-ing approach
 
-        public static void BuildIndex(string sqlConnectionString, Lucene.Net.Store.Directory directory, TextWriter log = null)
+        public static void RebuildIndex(string sqlConnectionString, Lucene.Net.Store.Directory directory, FrameworksList frameworks, TextWriter log = null)
         {
-            log = log ?? DefaultTraceWriter;
+            var cstr = new SqlConnectionStringBuilder(sqlConnectionString);
+            IndexingEventSource.Log.RebuildingIndex(
+                cstr.DataSource,
+                cstr.InitialCatalog,
+                frameworks.Path);
 
+            // Empty the index, we're rebuilding
+            IndexingEventSource.Log.CreatingEmptyIndex(directory.GetType().Name);
+            CreateNewEmptyIndex(directory);
+            IndexingEventSource.Log.CreatedEmptyIndex();
+
+            var projectFxs = frameworks.Load();
+
+            log.WriteLine("get curated feeds by PackageRegistration");
+            IDictionary<int, IEnumerable<string>> feeds = GalleryExport.GetFeedsByPackageRegistration(sqlConnectionString, log, verbose: false);
+
+            int highestPackageKey = 0;
             while (true)
             {
-                DateTime indexTime = DateTime.UtcNow;
-                int highestPackageKey = GetHighestPackageKey(directory);
+                IndexingEventSource.Log.IndexingBatch(highestPackageKey, GalleryExport.ChunkSize);
 
                 log.WriteLine("get the checksums from the gallery");
                 IDictionary<int, int> checksums = GalleryExport.FetchGalleryChecksums(sqlConnectionString, highestPackageKey);
-
-                log.WriteLine("get curated feeds by PackageRegistration");
-                IDictionary<int, IEnumerable<string>> feeds = GalleryExport.GetFeedsByPackageRegistration(sqlConnectionString, log, verbose: false);
-
-                log.WriteLine("indexTime = {0} mostRecentPublished = {1}", indexTime, highestPackageKey);
 
                 log.WriteLine("get packages from gallery where the Package.Key > {0}", highestPackageKey);
                 List<Package> packages = GalleryExport.GetPublishedPackagesSince(sqlConnectionString, highestPackageKey, log, verbose: false);
@@ -57,13 +68,17 @@ namespace NuGet.Indexing
                 log.WriteLine("associate the feeds and checksum data with each packages");
                 List<IndexDocumentData> indexDocumentData = MakeIndexDocumentData(packages, feeds, checksums);
 
-                AddPackagesToIndex(indexDocumentData, directory, log);
+                AddPackagesToIndex(indexDocumentData, directory, log, projectFxs);
+
+                IndexingEventSource.Log.IndexedBatch();
             }
 
             log.WriteLine("all done");
+
+            IndexingEventSource.Log.RebuiltIndex();
         }
 
-        private static void AddPackagesToIndex(List<IndexDocumentData> indexDocumentData, Lucene.Net.Store.Directory directory, TextWriter log)
+        private static void AddPackagesToIndex(List<IndexDocumentData> indexDocumentData, Lucene.Net.Store.Directory directory, TextWriter log, IEnumerable<FrameworkName> projectFxs)
         {
             log.WriteLine("About to add {0} packages", indexDocumentData.Count);
 
@@ -71,13 +86,17 @@ namespace NuGet.Indexing
             {
                 int count = Math.Min(MaxDocumentsPerCommit, indexDocumentData.Count - index);
 
+                IndexingEventSource.Log.BuildingCommit(count);
+                
                 List<IndexDocumentData> rangeToIndex = indexDocumentData.GetRange(index, count);
 
-                AddToIndex(directory, rangeToIndex, log);
+                AddToIndex(directory, rangeToIndex, log, projectFxs);
+
+                IndexingEventSource.Log.BuiltCommit();
             }
         }
 
-        private static void AddToIndex(Lucene.Net.Store.Directory directory, List<IndexDocumentData> rangeToIndex, TextWriter log)
+        private static void AddToIndex(Lucene.Net.Store.Directory directory, List<IndexDocumentData> rangeToIndex, TextWriter log, IEnumerable<FrameworkName> projectFxs)
         {
             log.WriteLine("begin AddToIndex");
 
@@ -85,21 +104,54 @@ namespace NuGet.Indexing
             {
                 int highestPackageKey = -1;
 
-                foreach (IndexDocumentData documentData in rangeToIndex)
+                // Group by ID and grab all the documents we already have for each ID.
+                using (IndexReader reader = indexWriter.GetReader())
                 {
-                    int currentPackageKey = documentData.Package.Key;
+                    IndexingEventSource.Log.GroupingInputPackagesById();
+                    var groups = rangeToIndex.GroupBy(d => d.Package.PackageRegistration.Id).ToList();
+                    IndexingEventSource.Log.GroupedInputPackagesById();
 
-                    Document newDocument = CreateLuceneDocument(documentData);
-
-                    indexWriter.AddDocument(newDocument);
-
-                    if (currentPackageKey <= highestPackageKey)
+                    foreach (var group in groups)
                     {
-                        throw new Exception("(currentPackageKey <= highestPackageKey) the data must not be ordered correctly");
+                        IndexingEventSource.Log.IndexingIdGroup(group.Key);
+
+                        // Get all documents matching the ID of this group.
+                        IndexingEventSource.Log.RetrievingExistingDocumentsById(group.Key);
+                        var docs = reader.TermDocs(new Term("Id", group.Key.ToLowerInvariant()));
+                        var documents = new List<FacetedDocument>();
+                        while (docs.Next())
+                        {
+                            // Dirty = false because these came from the index so we only need to write them
+                            // if the facets changed.
+                            documents.Add(new FacetedDocument(reader.Document(docs.Doc), dirty: false));
+                        }
+                        IndexingEventSource.Log.RetrievedExistingDocumentsById();
+
+                        // Add the new documents
+                        foreach (var package in group)
+                        {
+                            // Dirty = true because these documents were never in the index in the first place
+                            // so they always need to be written
+                            documents.Add(new FacetedDocument(CreateLuceneDocument(package), dirty: true));
+                        }
+
+                        // Process the facets
+                        UpdateFacets(group.Key, documents, projectFxs);
+
+                        // Add any dirty documents to the index
+                        var dirtyDocs = documents.Where(d => d.Dirty).ToList();
+                        IndexingEventSource.Log.UpdatingDocuments(group.Key, dirtyDocs.Count);
+                        foreach (var dirtyDoc in dirtyDocs)
+                        {
+                            AddOrUpdate(indexWriter, dirtyDoc);
+                        }
+                        IndexingEventSource.Log.UpdatedDocuments();
+
+                        IndexingEventSource.Log.IndexedIdGroup();
                     }
-                    
-                    highestPackageKey = currentPackageKey;
                 }
+
+                highestPackageKey = rangeToIndex.Max(i => i.Package.Key);
 
                 log.WriteLine("about to commit {0} packages", rangeToIndex.Count);
 
@@ -113,12 +165,63 @@ namespace NuGet.Indexing
                     lastEditsIndexTime = DateTime.MinValue.ToString();
                 }
 
+                IndexingEventSource.Log.CommittingDocuments();
                 indexWriter.Commit(PackageIndexing.CreateCommitMetadata(lastEditsIndexTime, highestPackageKey, rangeToIndex.Count, "add"));
+                IndexingEventSource.Log.CommittedDocuments();
 
                 log.WriteLine("commit done");
             }
 
             log.WriteLine("end AddToIndex");
+        }
+
+        private static void AddOrUpdate(IndexWriter indexWriter, FacetedDocument dirtyDoc)
+        {
+            // PERF: If the retrieval of fields for tracing is a significant issue, we can use IndexingEventSource.Log.IsEnabled
+            // to determine if the trace is enabled before collecting the values.
+            string id = dirtyDoc.Doc.GetField("Id").StringValue;
+            string version = dirtyDoc.Doc.GetField("Version").StringValue;
+
+            IndexingEventSource.Log.UpdatingPackageDocument(id, version);
+
+            var query = dirtyDoc.GetQuery();
+            IndexingEventSource.Log.DeletingExistingDocument(id, version);
+            indexWriter.DeleteDocuments(query);
+            IndexingEventSource.Log.DeletedExistingDocument();
+
+            dirtyDoc.UpdateDocument();
+            IndexingEventSource.Log.AddingDocument(id, version);
+            indexWriter.AddDocument(dirtyDoc.Doc);
+            IndexingEventSource.Log.AddedDocument();
+
+            IndexingEventSource.Log.UpdatedPackageDocument();
+        }
+
+        private static void UpdateFacets(string packageId, IList<FacetedDocument> documents, IEnumerable<FrameworkName> projectFxs)
+        {
+            IndexingEventSource.Log.UpdatingFacets(packageId);
+
+            // For now, just add in compatible framework facets
+            foreach (var doc in documents)
+            {
+                var data = JObject.Parse(doc.Doc.GetField("Data").StringValue);
+                var packageFxs = data.Value<JArray>("SupportedFrameworks")
+                    .Select(name => VersionUtility.ParseFrameworkName(name.ToString()));
+
+                IndexingEventSource.Log.UpdatingCompatibilityFacets(
+                    doc.Doc.GetField("Id").StringValue,
+                    doc.Doc.GetField("Version").StringValue);
+
+                // Build facets and apply them
+                doc.AddFacets(
+                    projectFxs
+                        .Where(projectFx => VersionUtility.IsCompatible(projectFx, packageFxs))
+                        .Select(fx => Facets.Compatible(fx)));
+
+                IndexingEventSource.Log.UpdatedCompatibilityFacets();
+            }
+
+            IndexingEventSource.Log.UpdatedFacets();
         }
 
         public static void CreateNewEmptyIndex(Lucene.Net.Store.Directory directory)
@@ -155,7 +258,7 @@ namespace NuGet.Indexing
         {
             IDictionary<string, string> commitMetadata = new Dictionary<string, string>();
 
-            commitMetadata.Add("commit-time-stamp",  DateTime.UtcNow.ToString());
+            commitMetadata.Add("commit-time-stamp", DateTime.UtcNow.ToString());
             commitMetadata.Add("commit-description", description ?? string.Empty);
             commitMetadata.Add("commit-document-count", count.ToString());
 
@@ -165,7 +268,7 @@ namespace NuGet.Indexing
             commitMetadata.Add("MaxDocumentsPerCommit", MaxDocumentsPerCommit.ToString());
             commitMetadata.Add("MergeFactor", MergeFactor.ToString());
             commitMetadata.Add("MaxMergeDocs", MaxMergeDocs.ToString());
-            
+
             return commitMetadata;
         }
 
@@ -249,7 +352,7 @@ namespace NuGet.Indexing
             Add(doc, "Id", package.PackageRegistration.Id, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS, idBoost);
             Add(doc, "TokenizedId", package.PackageRegistration.Id, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS, idBoost);
             Add(doc, "ShingledId", package.PackageRegistration.Id, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS, idBoost);
-            Add(doc, "Version", package.Version, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS, idBoost);
+            Add(doc, "Version", package.Version, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS, idBoost);
             Add(doc, "Title", title, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS, titleBoost);
             Add(doc, "Tags", package.Tags, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS, 1.5f);
             Add(doc, "Description", package.Description, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
@@ -271,8 +374,6 @@ namespace NuGet.Indexing
             displayName = displayName.ToLower(CultureInfo.CurrentCulture);
             Add(doc, "DisplayName", displayName, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
 
-            //  Facets:
-
             Add(doc, "IsLatest", package.IsLatest ? 1 : 0, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
             Add(doc, "IsLatestStable", package.IsLatestStable ? 1 : 0, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
             Add(doc, "Listed", package.Listed ? 1 : 0, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
@@ -284,11 +385,6 @@ namespace NuGet.Indexing
                     //  Store this to aid with debugging
                     Add(doc, "CuratedFeed", feed, Field.Store.YES, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
                 }
-            }
-
-            foreach (PackageFramework packageFramework in package.SupportedFrameworks)
-            {
-                Add(doc, "SupportedFramework", packageFramework.TargetFramework, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
             }
 
             //  Add Package Key so we can quickly retrieve ranges of packages (in order to support the synchronization with the gallery)
@@ -367,7 +463,7 @@ namespace NuGet.Indexing
                 log.WriteLine("{0}", packageKey);
             }
         }
-        
+
         private static void ApplyAdds(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log)
         {
             log.WriteLine("ApplyAdds");
