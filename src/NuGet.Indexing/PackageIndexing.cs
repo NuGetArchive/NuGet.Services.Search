@@ -142,7 +142,7 @@ namespace NuGet.Indexing
                         {
                             while (docs.Next())
                             {
-                                documents.Add(new FacetedDocument(reader.Document(docs.Doc), isNew: false));
+                                documents.Add(new FacetedDocument(reader.Document(docs.Doc)));
                             }
                         }
 
@@ -151,7 +151,7 @@ namespace NuGet.Indexing
                         {
                             foreach (var package in group)
                             {
-                                documents.Add(new FacetedDocument(CreateLuceneDocument(package), isNew: true));
+                                documents.Add(new FacetedDocument(package));
                             }
                         }
 
@@ -161,19 +161,18 @@ namespace NuGet.Indexing
                             UpdateFacets(group.Key, documents, projectFxs, perfTracker);
                         }
 
-                        // Update any dirty documents in the index
+                        // (Re-)Add any dirty documents to the index
                         dirtyDocs.AddRange(documents.Where(d => d.Dirty));
                     }
                 }
             }
-
 
             using (IndexWriter indexWriter = CreateIndexWriter(directory, create: false))
             {
                 // Delete dirty documents and flush
                 foreach (var dirtyDoc in dirtyDocs.Where(d => d.Dirty))
                 {
-                    indexWriter.DeleteDocuments(new Term("Key", dirtyDoc.Key.ToString()));
+                    indexWriter.DeleteDocuments(dirtyDoc.GetQuery());
                 }
 
                 using (perfTracker.TrackEvent("FlushingDeletes", ""))
@@ -184,10 +183,9 @@ namespace NuGet.Indexing
                 // (Re-)add dirty documents
                 foreach (var dirtyDoc in dirtyDocs)
                 {
-                    dirtyDoc.UpdateDocument();
                     using (perfTracker.TrackEvent("AddDocument", "{0} v{1}", dirtyDoc.Id, dirtyDoc.Version))
                     {
-                        indexWriter.AddDocument(dirtyDoc.Doc);
+                        indexWriter.AddDocument(CreateLuceneDocument(dirtyDoc));
                     }
                 }
 
@@ -244,20 +242,12 @@ namespace NuGet.Indexing
                     {
                         doc.AddFacet(Facets.PrereleaseVersion);
                     }
-
-                    // Load data from the document
-                    JObject data;
-                    using (perfTracker.TrackEvent("ParseExistingDocument", "{0} v{1}", packageId, doc.Version))
-                    {
-                        data = JObject.Parse(doc.Doc.GetField("Data").StringValue);
-                    }
-                    var packageFxs = data.Value<JArray>("SupportedFrameworks")
-                        .Select(name =>
+                    var packageFxs = doc.Data.Package.SupportedFrameworks
+                        .Select(fx =>
                         {
-                            string val = name.ToString();
-                            using (perfTracker.TrackEvent("ParseFrameworkName", val))
+                            using (perfTracker.TrackEvent("ParseFrameworkName", fx.TargetFramework))
                             {
-                                return VersionUtility.ParseFrameworkName(val);
+                                return VersionUtility.ParseFrameworkName(fx.TargetFramework);
                             }
                         })
                         .ToList();
@@ -463,10 +453,9 @@ namespace NuGet.Indexing
         }
 
         // ----------------------------------------------------------------------------------------------------------------------------------------
-
-        private static Document CreateLuceneDocument(IndexDocumentData documentData)
+        private static Document CreateLuceneDocument(FacetedDocument documentData)
         {
-            Package package = documentData.Package;
+            Package package = documentData.Data.Package;
 
             Document doc = new Document();
 
@@ -512,9 +501,9 @@ namespace NuGet.Indexing
             Add(doc, "IsLatestStable", package.IsLatestStable ? 1 : 0, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
             Add(doc, "Listed", package.Listed ? 1 : 0, Field.Store.NO, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
 
-            if (documentData.Feeds != null)
+            if (documentData.Data.Feeds != null)
             {
-                foreach (string feed in documentData.Feeds)
+                foreach (string feed in documentData.Data.Feeds)
                 {
                     //  Store this to aid with debugging
                     Add(doc, "CuratedFeed", feed, Field.Store.YES, Field.Index.NOT_ANALYZED, Field.TermVector.NO);
@@ -525,7 +514,7 @@ namespace NuGet.Indexing
 
             doc.Add(new NumericField("Key", Field.Store.YES, true).SetIntValue(package.Key));
 
-            doc.Add(new NumericField("Checksum", Field.Store.YES, true).SetIntValue(documentData.Checksum));
+            doc.Add(new NumericField("Checksum", Field.Store.YES, true).SetIntValue(documentData.Data.Checksum));
 
             //  Data we want to store in index - these cannot be queried
 
@@ -533,6 +522,12 @@ namespace NuGet.Indexing
             string data = obj.ToString(Formatting.None);
 
             Add(doc, "Data", data, Field.Store.YES, Field.Index.NO, Field.TermVector.NO);
+
+            // Add facets
+            foreach (var facet in documentData.DocFacets)
+            {
+                Add(doc, "Facet", facet, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS, Field.TermVector.NO);
+            }
 
             doc.Boost = DetermineLanguageBoost(package.PackageRegistration.Id, package.Language);
 
@@ -609,7 +604,7 @@ namespace NuGet.Indexing
                 {
                     IndexDocumentData documentData = fetch(packageKey);
                     int currentPackageKey = documentData.Package.Key;
-                    Document newDocument = CreateLuceneDocument(documentData);
+                    Document newDocument = CreateLuceneDocument(new FacetedDocument(documentData));
                     indexWriter.AddDocument(newDocument);
                     if (currentPackageKey <= highestPackageKey)
                     {
@@ -648,7 +643,7 @@ namespace NuGet.Indexing
                     Query query = NumericRangeQuery.NewIntRange("Key", packageKey, packageKey, true, true);
                     indexWriter.DeleteDocuments(query);
 
-                    Document newDocument = PackageIndexing.CreateLuceneDocument(documentData);
+                    Document newDocument = PackageIndexing.CreateLuceneDocument(new FacetedDocument(documentData));
                     indexWriter.AddDocument(newDocument);
                 }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
 using Lucene.Net.Index;
@@ -69,6 +70,13 @@ namespace NuGet.Services.Search
                 ignoreFilter = false;
             }
 
+            string fxName = context.Request.Query["supportedFramework"];
+            FrameworkName supportedFramework = null;
+            if (!String.IsNullOrEmpty(fxName))
+            {
+                supportedFramework = VersionUtility.ParseFrameworkName(fxName);
+            }
+
             string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
             Trace.TraceInformation(args);
 
@@ -78,7 +86,8 @@ namespace NuGet.Services.Search
                 countOnly, 
                 projectType, 
                 includePrerelease, 
-                feed, 
+                supportedFramework,
+                feed,
                 sortBy, 
                 skip, 
                 take, 

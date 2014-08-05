@@ -4,28 +4,34 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Diagnostics;
+using System.Runtime.Versioning;
 
 namespace NuGet.Indexing
 {
     public class PackageSearcherManager : SearcherManager
     {
+        public static readonly TimeSpan FrameworksRefreshRate = TimeSpan.FromHours(24);
         public static readonly TimeSpan RankingRefreshRate = TimeSpan.FromHours(24);
         public static readonly TimeSpan DownloadCountRefreshRate = TimeSpan.FromMinutes(5);
 
         IndexData<IDictionary<string, IDictionary<string, int>>> _currentRankings;
         IndexData<IDictionary<int, DownloadCountRecord>> _currentDownloadCounts;
+        IndexData<IList<FrameworkName>> _currentFrameworkList;
 
         public DateTime DownloadCountsUpdatedUtc { get { return _currentDownloadCounts.LastUpdatedUtc; } }
         public DateTime RankingsUpdatedUtc { get { return _currentRankings.LastUpdatedUtc; } }
+        public DateTime FrameworkListUpdateUtc { get { return _currentFrameworkList.LastUpdatedUtc; } }
         public Rankings Rankings { get; private set; }
         public DownloadCounts DownloadCounts { get; private set; }
+        public FrameworksList Frameworks { get; private set; }
         public Guid Id { get; private set; }
 
-        public PackageSearcherManager(Lucene.Net.Store.Directory directory, Rankings rankings, DownloadCounts downloadCounts)
+        public PackageSearcherManager(Lucene.Net.Store.Directory directory, Rankings rankings, DownloadCounts downloadCounts, FrameworksList frameworks)
             : base(directory)
         {
             Rankings = rankings;
             DownloadCounts = downloadCounts;
+            Frameworks = frameworks;
 
             _currentDownloadCounts = new IndexData<IDictionary<int, DownloadCountRecord>>(
                 "DownloadCounts",
@@ -37,6 +43,11 @@ namespace NuGet.Indexing
                 Rankings.Path,
                 Rankings.Load,
                 RankingRefreshRate);
+            _currentFrameworkList = new IndexData<IList<FrameworkName>>(
+                "FrameworkList",
+                Frameworks.Path,
+                Frameworks.Load,
+                FrameworksRefreshRate);
         
             Id = Guid.NewGuid(); // Used for identifying changes to the searcher manager at runtime.
         }
@@ -87,6 +98,14 @@ namespace NuGet.Indexing
             }
 
             return null;
+        }
+
+        public IList<FrameworkName> GetFrameworks()
+        {
+            _currentFrameworkList.MaybeReload();
+
+            // Return the current value. It may be swapped out from under us but that's OK.
+            return _currentFrameworkList.Value;
         }
 
         // Little helper class to handle these "load async and swap" objects

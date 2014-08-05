@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Runtime.Versioning;
 
 namespace NuGet.Indexing
 {
@@ -49,7 +50,7 @@ namespace NuGet.Indexing
             }
         }
 
-        public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, FrameworkName supportedFramework, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
             return Search(
                 searcherManager,
@@ -57,6 +58,7 @@ namespace NuGet.Indexing
                 countOnly,
                 projectType,
                 includePrerelease,
+                supportedFramework,
                 feed,
                 sortBy,
                 skip,
@@ -65,9 +67,14 @@ namespace NuGet.Indexing
                 ignoreFilter);
         }
 
-        public static string Search(PackageSearcherManager searcherManager, Query q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        public static string Search(PackageSearcherManager searcherManager, Query q, bool countOnly, string projectType, bool includePrerelease, FrameworkName supportedFramework, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
             IndexSearcher searcher;
+
+            if (supportedFramework != null && !searcherManager.GetFrameworks().Contains(supportedFramework))
+            {
+                supportedFramework = null;
+            }
 
             try
             {
@@ -102,15 +109,35 @@ namespace NuGet.Indexing
 
             try
             {
+                // ignoreFilter = true, don't filter by framework, feed or latest(stable)
+                Filter filter = null;
+                if (!ignoreFilter)
+                {
+                    // So if false, set up the filter and adjust the query for the framework if needed
+                    filter = GetFilter(feed);
+
+                    if (supportedFramework != null)
+                    {
+                        string facet = includePrerelease ?
+                            Facets.LatestPrereleaseVersion(supportedFramework) :
+                            Facets.LatestStableVersion(supportedFramework);
+
+                        var newQuery = new BooleanQuery();
+                        newQuery.Clauses.Add(q, Occur.SHOULD);
+                        newQuery.Clauses.Add(new TermQuery("Facet", facet), Occur.MUST);
+                        q = newQuery;
+                    }
+                }
+
                 if (countOnly)
                 {
-                    return DocumentCountImpl(searcher, q, includePrerelease, feed, ignoreFilter);
+                    return DocumentCountImpl(searcher, q, filter);
                 }
                 else
                 {
                     IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
 
-                    return ListDocumentsImpl(searcher, q, rankings, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, searcherManager);
+                    return ListDocumentsImpl(searcher, q, rankings, filter, sortBy, skip, take, includeExplanation, searcherManager);
                 }
             }
             finally
@@ -119,10 +146,8 @@ namespace NuGet.Indexing
             }
         }
 
-        private static string DocumentCountImpl(IndexSearcher searcher, Query query, bool includePrerelease, string feed, bool ignoreFilter)
+        private static string DocumentCountImpl(IndexSearcher searcher, Query query, Filter filter)
         {
-            Filter filter = ignoreFilter ? null : GetFilter(includePrerelease, feed);
-
             Stopwatch sw = new Stopwatch();
             sw.Start();
             TopDocs topDocs = searcher.Search(query, filter, 1);
@@ -130,10 +155,8 @@ namespace NuGet.Indexing
             return MakeCountResult(topDocs.TotalHits, sw.ElapsedMilliseconds);
         }
 
-        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter, PackageSearcherManager manager)
+        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, Filter filter, string sortBy, int skip, int take, bool includeExplanation, PackageSearcherManager manager)
         {
-            Filter filter = ignoreFilter ? null : GetFilter(includePrerelease, feed);
-
             Query boostedQuery = new RankingScoreQuery(query, rankings);
             
             int nDocs = GetDocsCount(skip, take);
@@ -170,9 +193,9 @@ namespace NuGet.Indexing
             return sort();
         }
 
-        private static Filter GetFilter(bool includePrerelease, string feed)
+        private static Filter GetFilter(string feed)
         {
-            string filterName = string.Format("{0}/{1}", includePrerelease ? "IsLatest" : "IsLatestStable", feed);
+            string filterName = feed
 
             Filter filter;
             if (!_filters.TryGetValue(filterName, out filter))
@@ -182,7 +205,7 @@ namespace NuGet.Indexing
                     Filter filter2;
                     if (!_filters.TryGetValue(filterName, out filter2))
                     {
-                        filter2 = CreateFilter(includePrerelease, feed);
+                        filter2 = CreateFilter(feed);
                         _filters.Add(filterName, filter2);
                     }
 
@@ -193,24 +216,15 @@ namespace NuGet.Indexing
             return filter;
         }
 
-        private static string GetFilterName(bool includePrerelease, string feed)
-        {
-            return string.Format("{0}/{1}", includePrerelease ? "IsLatest" : "IsLatestStable", feed);
-        }
-
-        private static Filter CreateFilter(bool includePrerelease, string feed)
+        private static Filter CreateFilter(string feed)
         {
             if (feed == "none")
             {
-                TermQuery filterQuery = new TermQuery(new Term(includePrerelease ? "IsLatest" : "IsLatestStable", "1"));
-                return new CachingWrapperFilter(new QueryWrapperFilter(filterQuery));
+                return null;
             }
             else
             {
-                BooleanQuery filterQuery = new BooleanQuery();
-                filterQuery.Add(new TermQuery(new Term(includePrerelease ? "IsLatest" : "IsLatestStable", "1")), Occur.MUST);
-                filterQuery.Add(new TermQuery(new Term("CuratedFeed", feed)), Occur.MUST);
-                return new CachingWrapperFilter(new QueryWrapperFilter(filterQuery));
+                return new CachingWrapperFilter(new QueryWrapperFilter(new TermQuery(new Term("CuratedFeed", feed))));
             }
         }
 

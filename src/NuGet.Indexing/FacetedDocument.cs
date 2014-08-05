@@ -19,8 +19,8 @@ namespace NuGet.Indexing
         private SemanticVersion _version;
         private string _id;
         private int? _key = null;
-        
-        public Document Doc { get; private set; }
+
+        public IndexDocumentData Data { get; private set; }
         public IEnumerable<string> DocFacets { get { return _facets; } }
         public bool Dirty { get; private set; }
         public bool IsNew { get; private set; }
@@ -30,7 +30,7 @@ namespace NuGet.Indexing
             {
                 if (_version == null)
                 {
-                    _version = SemanticVersion.Parse(Doc.GetField("Version").StringValue);
+                    _version = SemanticVersion.Parse(Data.Package.NormalizedVersion);
                 }
                 return _version;
             }
@@ -39,32 +39,23 @@ namespace NuGet.Indexing
         {
             get
             {
-                if (_id == null)
-                {
-                    _id = Doc.GetField("Id").StringValue;
-                }
-                return _id;
+                return Data.Package.PackageRegistration.Id;
             }
         }
 
-        public int Key
+        public FacetedDocument(Document doc)
         {
-            get
-            {
-                if (_key == null)
-                {
-                    _key = Int32.Parse(Doc.GetFieldable("Key").StringValue);
-                }
-                return _key.Value;
-            }
-        }
-
-        public FacetedDocument(Document doc, bool isNew)
-        {
-            Doc = doc;
-            Dirty = IsNew = isNew;
-            
+            Data = IndexDocumentData.FromDocument(doc);
+            Dirty = IsNew = false;
             _facets = ParseFacets(doc);
+        }
+
+        public FacetedDocument(IndexDocumentData data)
+        {
+            Data = data;
+            Dirty = IsNew = true;
+            
+            _facets = new HashSet<string>();
         }
 
         public bool HasFacet(string facet)
@@ -98,20 +89,6 @@ namespace NuGet.Indexing
             }
         }
 
-        public void UpdateDocument()
-        {
-            if (Dirty)
-            {
-                _version = null;
-                _id = null;
-                Doc.RemoveFields(Facets.FieldName);
-                foreach (var facet in _facets)
-                {
-                    Doc.Add(new Field(Facets.FieldName, facet, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS, Field.TermVector.NO));
-                }
-            }
-        }
-
         private ISet<string> ParseFacets(Document doc)
         {
             var fields = doc.GetFields(Facets.FieldName);
@@ -130,21 +107,8 @@ namespace NuGet.Indexing
         // Gets a query that returns exactly this document
         public Query GetQuery()
         {
-            var keyField = Doc.GetFieldable("Key");
-            if (keyField != null)
-            {
-                int val = Int32.Parse(keyField.StringValue);
-                return NumericRangeQuery.NewIntRange("Key", val, val, minInclusive: true, maxInclusive: true);
-            }
-            else
-            {
-                string id = Doc.GetField("Id").StringValue.ToLowerInvariant();
-                string version = Doc.GetField("Version").StringValue;
-                var qry = new BooleanQuery();
-                qry.Add(new TermQuery(new Term("Id", id)), Occur.MUST);
-                qry.Add(new TermQuery(new Term("Version", version)), Occur.MUST);
-                return qry;
-            }
+            return NumericRangeQuery.NewIntRange(
+                "Key", Data.Package.Key, Data.Package.Key, minInclusive: true, maxInclusive: true);
         }
     }
 }
