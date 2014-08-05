@@ -9,23 +9,30 @@ namespace NuGet.Indexing
 {
     public static class Facets
     {
-        private const string CompatibleName = "Compatible";
-        private const string LatestStableVersionName = "LatestStableVersion";
-        private const string LatestPrereleaseVersionName = "LatestPrereleaseVersion";
+        public static readonly string FieldName = "Facet";
+
+        public static class Types
+        {
+            public static readonly string Compatible = "c";
+            public static readonly string LatestStableVersion = "l_s";
+            public static readonly string LatestPrereleaseVersion = "l_pre";
+        }
+
+        public static readonly string PrereleaseVersion = "pre";
 
         public static string Compatible(FrameworkName framework)
         {
-            return Create(CompatibleName, framework.FullName);
+            return Create(Types.Compatible, VersionUtility.GetShortFrameworkName(framework));
         }
 
         public static string LatestStableVersion(FrameworkName framework)
         {
-            return Create(LatestStableVersionName, framework.FullName);
+            return Create(Types.LatestStableVersion, VersionUtility.GetShortFrameworkName(framework));
         }
 
         public static string LatestPrereleaseVersion(FrameworkName framework)
         {
-            return Create(LatestPrereleaseVersionName, framework.FullName);
+            return Create(Types.LatestPrereleaseVersion, VersionUtility.GetShortFrameworkName(framework));
         }
 
         internal static string Create(string name, string parameter)

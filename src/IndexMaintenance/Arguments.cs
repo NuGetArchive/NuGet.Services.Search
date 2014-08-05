@@ -48,7 +48,7 @@ namespace IndexMaintainance
                     Folder = args.Folder,
                     Force = args.Force,
                     FrameworksFile = args.FrameworksFile,
-                    Log = TextWriter.Null,
+                    Log = Console.Out,
                     SqlConnectionString = args.ConnectionString,
                     StorageAccount = acct,
                     WhatIf = args.WhatIf

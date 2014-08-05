@@ -133,6 +133,7 @@
     <Compile Include="IndexDocumentData.cs" />
     <Compile Include="IndexingEventSource.cs" />
     <Compile Include="IndexTask.cs" />
+    <Compile Include="PerfEventTracker.cs" />
     <Compile Include="StorageDownloadCounts.cs" />
     <Compile Include="UpdateIndexTask.cs" />
     <Compile Include="PackageJson.cs" />
