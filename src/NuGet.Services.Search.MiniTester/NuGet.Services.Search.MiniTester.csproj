@@ -19,6 +19,7 @@
     <IISExpressAnonymousAuthentication />
     <IISExpressWindowsAuthentication />
     <IISExpressUseClassicPipelineMode />
+    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -170,7 +171,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
-    <Content Include="Console\README.md" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -179,16 +179,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Console\d3.v3.js" />
-    <EmbeddedResource Include="Console\Index.html" />
-    <EmbeddedResource Include="Console\jquery-1.8.2.js" />
-    <EmbeddedResource Include="Console\Json2Html.js" />
-    <EmbeddedResource Include="Console\Json2HtmlStyle.css" />
-    <EmbeddedResource Include="Console\Master.css" />
-    <EmbeddedResource Include="Console\RangeQuery.html" />
-    <EmbeddedResource Include="Console\Segments.html" />
-    <EmbeddedResource Include="Console\Status.html" />
-    <EmbeddedResource Include="Console\StoredFields.html" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -216,16 +206,19 @@
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
         <WebProjectProperties>
-          <UseIIS>True</UseIIS>
+          <UseIIS>False</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>54473</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
           <IISUrl>http://localhost:54473/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
-          <UseCustomServer>False</UseCustomServer>
+          <UseCustomServer>True</UseCustomServer>
           <CustomServerUrl>
           </CustomServerUrl>
           <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+          <servers defaultServer="OwinHost">
+            <server name="OwinHost" exePath="{solutiondir}\packages\OwinHost.3.0.0-rc2\tools\OwinHost.exe" cmdArgs="-u {url}" url="http://localhost:12345/" workingDir="{projectdir}" />
+          </servers>
         </WebProjectProperties>
       </FlavorProperties>
     </VisualStudio>

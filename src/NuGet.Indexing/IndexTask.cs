@@ -79,14 +79,16 @@ namespace NuGet.Indexing
                 manager = new PackageSearcherManager(
                     GetDirectory(),
                     new StorageRankings(StorageAccount, Container),
-                    new StorageDownloadCounts(StorageAccount, Container));
+                    new StorageDownloadCounts(StorageAccount, Container),
+                    GetFrameworksList());
             }
             else if (!string.IsNullOrEmpty(Folder))
             {
                 manager = new PackageSearcherManager(
                     GetDirectory(),
                     new FolderRankings(Folder),
-                    new FolderDownloadCounts(Folder));
+                    new FolderDownloadCounts(Folder),
+                    GetFrameworksList());
             }
             else
             {

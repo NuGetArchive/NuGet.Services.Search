@@ -123,8 +123,8 @@ namespace NuGet.Indexing
                             Facets.LatestStableVersion(supportedFramework);
 
                         var newQuery = new BooleanQuery();
-                        newQuery.Clauses.Add(q, Occur.SHOULD);
-                        newQuery.Clauses.Add(new TermQuery("Facet", facet), Occur.MUST);
+                        newQuery.Add(q, Occur.SHOULD);
+                        newQuery.Add(new TermQuery(new Term("Facet", facet)), Occur.MUST);
                         q = newQuery;
                     }
                 }
@@ -195,7 +195,7 @@ namespace NuGet.Indexing
 
         private static Filter GetFilter(string feed)
         {
-            string filterName = feed
+            string filterName = feed;
 
             Filter filter;
             if (!_filters.TryGetValue(filterName, out filter))
