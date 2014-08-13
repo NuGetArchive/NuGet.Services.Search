@@ -273,7 +273,9 @@
             html += '<p>Total: ' + total + '</p>';
 
             if (executedQuery) {
-                html += '<p class="executedQuery">Query: <span>' + executedQuery + '</span></p>';
+                // Html Encode the content (this is a known trick and the best way to do it: http://stackoverflow.com/questions/1219860/html-encoding-in-javascript-jquery)
+                executedQuery = $('<div/>').text(executedQuery).html()
+                html += '<p class="executedQuery">Query: <span>' + executedQuery  + '</span></p>';
             }
 
             for (var i = 0; i < data.length; i += 1) {

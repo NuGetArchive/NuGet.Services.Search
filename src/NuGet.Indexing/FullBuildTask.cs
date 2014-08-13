@@ -17,7 +17,7 @@ namespace NuGet.Indexing
         {
             // Check for the frameworks list
             FrameworksList frameworks = GetFrameworksList();
-
+            
             DateTime before = DateTime.Now;
 
             if (Force && StorageAccount != null && !string.IsNullOrEmpty(Container))

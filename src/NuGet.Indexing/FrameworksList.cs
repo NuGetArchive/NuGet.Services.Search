@@ -13,6 +13,8 @@ namespace NuGet.Indexing
 {
     public abstract class FrameworksList
     {
+        public static readonly FrameworkName AnyFramework = new FrameworkName("Any", new Version(0, 0));
+
         public static FrameworksList Empty = new EmptyFrameworksList();
 
         public abstract string Path { get; }
@@ -26,7 +28,9 @@ namespace NuGet.Indexing
                 return new List<FrameworkName>();
             }
             var data = obj.Value<JArray>("data");
-            return data.Select(t => new FrameworkName(t.ToString())).ToList();
+            var list = data.Select(t => new FrameworkName(t.ToString())).ToList();
+            list.Add(FrameworksList.AnyFramework);
+            return list;
         }
 
         private class EmptyFrameworksList : FrameworksList

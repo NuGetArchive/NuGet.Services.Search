@@ -11,16 +11,17 @@ namespace NuGet.Indexing
     public class PackageSearcherManager : SearcherManager
     {
         public static readonly TimeSpan FrameworksRefreshRate = TimeSpan.FromHours(24);
+        public static readonly TimeSpan PortableFrameworksRefreshRate = TimeSpan.FromHours(24);
         public static readonly TimeSpan RankingRefreshRate = TimeSpan.FromHours(24);
         public static readonly TimeSpan DownloadCountRefreshRate = TimeSpan.FromMinutes(5);
 
         IndexData<IDictionary<string, IDictionary<string, int>>> _currentRankings;
         IndexData<IDictionary<int, DownloadCountRecord>> _currentDownloadCounts;
         IndexData<IList<FrameworkName>> _currentFrameworkList;
-
+        
         public DateTime DownloadCountsUpdatedUtc { get { return _currentDownloadCounts.LastUpdatedUtc; } }
         public DateTime RankingsUpdatedUtc { get { return _currentRankings.LastUpdatedUtc; } }
-        public DateTime FrameworkListUpdateUtc { get { return _currentFrameworkList.LastUpdatedUtc; } }
+        public DateTime FrameworkListUpdatedUtc { get { return _currentFrameworkList.LastUpdatedUtc; } }
         public Rankings Rankings { get; private set; }
         public DownloadCounts DownloadCounts { get; private set; }
         public FrameworksList Frameworks { get; private set; }
@@ -59,6 +60,7 @@ namespace NuGet.Indexing
             // Reload download counts and rankings synchronously
             _currentDownloadCounts.Reload();
             _currentRankings.Reload();
+            _currentFrameworkList.Reload();
         }
 
         public IDictionary<string, int> GetRankings(string context)
@@ -105,7 +107,7 @@ namespace NuGet.Indexing
             _currentFrameworkList.MaybeReload();
 
             // Return the current value. It may be swapped out from under us but that's OK.
-            return _currentFrameworkList.Value;
+            return _currentFrameworkList.Value ?? new List<FrameworkName>();
         }
 
         // Little helper class to handle these "load async and swap" objects

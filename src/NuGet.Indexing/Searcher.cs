@@ -71,9 +71,9 @@ namespace NuGet.Indexing
         {
             IndexSearcher searcher;
 
-            if (supportedFramework != null && !searcherManager.GetFrameworks().Contains(supportedFramework))
+            if (supportedFramework == null || !searcherManager.GetFrameworks().Contains(supportedFramework))
             {
-                supportedFramework = null;
+                supportedFramework = FrameworksList.AnyFramework;
             }
 
             try
@@ -116,17 +116,14 @@ namespace NuGet.Indexing
                     // So if false, set up the filter and adjust the query for the framework if needed
                     filter = GetFilter(feed);
 
-                    if (supportedFramework != null)
-                    {
-                        string facet = includePrerelease ?
-                            Facets.LatestPrereleaseVersion(supportedFramework) :
-                            Facets.LatestStableVersion(supportedFramework);
+                    string facet = includePrerelease ?
+                        Facets.LatestPrereleaseVersion(supportedFramework) :
+                        Facets.LatestStableVersion(supportedFramework);
 
-                        var newQuery = new BooleanQuery();
-                        newQuery.Add(q, Occur.SHOULD);
-                        newQuery.Add(new TermQuery(new Term("Facet", facet)), Occur.MUST);
-                        q = newQuery;
-                    }
+                    var newQuery = new BooleanQuery();
+                    newQuery.Add(q, Occur.SHOULD);
+                    newQuery.Add(new TermQuery(new Term("Facet", facet)), Occur.MUST);
+                    q = newQuery;
                 }
 
                 if (countOnly)

@@ -49,7 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\packages\Newtonsoft.Json.4.5.11\lib\portable-net40+sl4+wp7+win8\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\packages\Newtonsoft.Json.6.0.1\lib\portable-net45+wp80+win8\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Services.Platform.Client">
       <HintPath>..\..\packages\NuGet.Services.Platform.Client.3.0.11-r-master\lib\portable-net45+wp80+win\NuGet.Services.Platform.Client.dll</HintPath>

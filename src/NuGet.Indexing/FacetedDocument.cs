@@ -17,9 +17,7 @@ namespace NuGet.Indexing
     {
         private readonly ISet<string> _facets;
         private SemanticVersion _version;
-        private string _id;
-        private int? _key = null;
-
+        
         public IndexDocumentData Data { get; private set; }
         public IEnumerable<string> DocFacets { get { return _facets; } }
         public bool Dirty { get; private set; }
@@ -47,15 +45,23 @@ namespace NuGet.Indexing
         {
             Data = IndexDocumentData.FromDocument(doc);
             Dirty = IsNew = false;
-            _facets = ParseFacets(doc);
+            _facets = ParseFacets(doc.GetFields(Facets.FieldName));
         }
 
         public FacetedDocument(IndexDocumentData data)
         {
             Data = data;
             Dirty = IsNew = true;
-            
+
             _facets = new HashSet<string>();
+        }
+
+        public FacetedDocument(IndexDocumentData data, IEnumerable<Field> existingFacets)
+        {
+            Data = data;
+            Dirty = IsNew = true;
+
+            _facets = ParseFacets(existingFacets);
         }
 
         public bool HasFacet(string facet)
@@ -89,9 +95,8 @@ namespace NuGet.Indexing
             }
         }
 
-        private ISet<string> ParseFacets(Document doc)
+        private ISet<string> ParseFacets(IEnumerable<Field> fields)
         {
-            var fields = doc.GetFields(Facets.FieldName);
             if (fields != null)
             {
                 return new HashSet<string>(
