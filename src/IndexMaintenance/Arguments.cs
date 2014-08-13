@@ -77,7 +77,8 @@ namespace IndexMaintainance
                 Log = Console.Out,
                 SqlConnectionString = args.ConnectionString,
                 StorageAccount = acct,
-                WhatIf = args.WhatIf
+                WhatIf = args.WhatIf,
+                FrameworksFile = args.FrameworksFile
             };
             task.Execute();
         }
