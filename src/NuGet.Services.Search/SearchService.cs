@@ -119,7 +119,15 @@ namespace NuGet.Services.Search
                 dir = new AzureDirectory(storageAccount, config.IndexContainer, new RAMDirectory());
                 rankings = new StorageRankings(storageAccount, config.IndexContainer);
                 downloadCounts = new StorageDownloadCounts(storageAccount, config.IndexContainer);
-                frameworksList = new StorageFrameworksList(storageAccount, config.IndexContainer);
+
+                string frameworksContainer = config.DataContainer;
+                string path = FrameworksList.FileName;
+                if (String.IsNullOrEmpty(frameworksContainer))
+                {
+                    frameworksContainer = config.IndexContainer;
+                    path = "data/" + path;
+                }
+                frameworksList = new StorageFrameworksList(storageAccount, frameworksContainer, path);
             }
             else
             {
