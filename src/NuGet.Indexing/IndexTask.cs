@@ -18,6 +18,7 @@ namespace NuGet.Indexing
 
         public CloudStorageAccount StorageAccount { get; set; }
         public string Container { get; set; }
+        public string DataContainer { get; set; }
         public string Folder { get; set; }
         public string FrameworksFile { get; set; }
         public string SqlConnectionString { get; set; }
@@ -67,7 +68,14 @@ namespace NuGet.Indexing
             }
             else
             {
-                return new StorageFrameworksList(StorageAccount, Container);
+                string path = FrameworksList.FileName;
+                string container = DataContainer;
+                if (String.IsNullOrEmpty(container))
+                {
+                    path = "data/" + path;
+                    container = Container;
+                }
+                return new StorageFrameworksList(StorageAccount, container, path);
             }
         }
 
