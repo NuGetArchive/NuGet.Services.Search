@@ -13,7 +13,9 @@
             <span style="font-size:large;font-weight:bold;color:black">Test</span>
             <div id="query-div" style="display:inline-block;text-align:center;width:720px">
                 <form id="search" action="#">
-                    <input id="query" size="25" type="text">
+                    <input id="query" size="25" type="text" />
+                    <label for="supportedFramework">Supported Framework:</label>
+                    <input id="supportedFramework" size="25" type="text" />
                     <button id="go" type="submit">Go</button>
                 </form>
                 &nbsp;&nbsp;&nbsp;
@@ -271,7 +273,9 @@
             html += '<p>Total: ' + total + '</p>';
 
             if (executedQuery) {
-                html += '<p class="executedQuery">Query: <span>' + executedQuery + '</span></p>';
+                // Html Encode the content (this is a known trick and the best way to do it: http://stackoverflow.com/questions/1219860/html-encoding-in-javascript-jquery)
+                executedQuery = $('<div/>').text(executedQuery).html()
+                html += '<p class="executedQuery">Query: <span>' + executedQuery  + '</span></p>';
             }
 
             for (var i = 0; i < data.length; i += 1) {
@@ -391,6 +395,7 @@
             var prerelease = $('#prerelease').val();
             var sortBy = $('#sortBy').val();
             var feed = $('#feed').val();
+            var supportedFramework = $('#supportedFramework').val();
             var ignoreFilter = $('#ignore-filter').is(':checked');
 
             var query = {
@@ -402,7 +407,8 @@
                 skip: 0,
                 take: 20,
                 explanation: true,
-                ignoreFilter: ignoreFilter
+                ignoreFilter: ignoreFilter,
+                supportedFramework: supportedFramework
             };
 
             var sendQuery = $('#send-query').is(':checked');

@@ -15,6 +15,9 @@ namespace NuGet.Indexing
         
         public override void Execute()
         {
+            // Check for the frameworks list
+            FrameworksList frameworks = GetFrameworksList();
+            
             DateTime before = DateTime.Now;
 
             if (Force && StorageAccount != null && !string.IsNullOrEmpty(Container))
@@ -24,10 +27,7 @@ namespace NuGet.Indexing
 
             Lucene.Net.Store.Directory directory = GetDirectory();
 
-            // Recreate the index
-            PackageIndexing.CreateNewEmptyIndex(directory);
-            
-            PackageIndexing.BuildIndex(SqlConnectionString, directory, Log);
+            PackageIndexing.RebuildIndex(SqlConnectionString, directory, frameworks, Log);
 
             DateTime after = DateTime.Now;
             Log.WriteLine("duration = {0} seconds", (after - before).TotalSeconds);

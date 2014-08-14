@@ -25,16 +25,9 @@ namespace NuGet.Services.Search
 {
     public class SearchService : NuGetHttpService
     {
-        private PackageSearcherManager _searcherManager;
-
         public override PathString BasePath
         {
             get { return new PathString("/search"); }
-        }
-
-        public PackageSearcherManager SearcherManager
-        {
-            get { return _searcherManager; }
         }
 
         public SearchServiceApplication App { get; private set; }
@@ -110,6 +103,7 @@ namespace NuGet.Services.Search
             Directory dir;
             Rankings rankings;
             DownloadCounts downloadCounts;
+            FrameworksList frameworksList;
             if (String.IsNullOrEmpty(config.IndexPath))
             {
                 CloudStorageAccount storageAccount = Configuration.Storage.Primary;
@@ -125,6 +119,7 @@ namespace NuGet.Services.Search
                 dir = new AzureDirectory(storageAccount, config.IndexContainer, new RAMDirectory());
                 rankings = new StorageRankings(storageAccount, config.IndexContainer);
                 downloadCounts = new StorageDownloadCounts(storageAccount, config.IndexContainer);
+                frameworksList = new StorageFrameworksList(storageAccount, config.IndexContainer);
             }
             else
             {
@@ -133,8 +128,9 @@ namespace NuGet.Services.Search
                 dir = new SimpleFSDirectory(new System.IO.DirectoryInfo(config.IndexPath));
                 rankings = new FolderRankings(config.IndexPath);
                 downloadCounts = new FolderDownloadCounts(config.IndexPath);
+                frameworksList = new LocalFrameworksList(LocalFrameworksList.GetFileName(config.IndexPath));
             }
-            return new PackageSearcherManager(dir, rankings, downloadCounts);
+            return new PackageSearcherManager(dir, rankings, downloadCounts, frameworksList);
         }
     }
 }

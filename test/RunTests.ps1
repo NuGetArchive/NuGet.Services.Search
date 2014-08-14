@@ -21,6 +21,9 @@ param(
     [string]$SubscriptionCertThumbprint,
 
     [Parameter()]
+    [string]$Category,
+
+    [Parameter()]
     [string]$Configuration = "Debug",
     
     [Parameter()]
@@ -111,6 +114,10 @@ $TestProjects | ForEach-Object {
         $additionalArgs += "$OutputDir\$proj.xml"
         $additionalArgs += "-html"
         $additionalArgs += "$OutputDir\$proj.html"
+    }
+    if($Category) {
+        $additionalArgs += "-trait"
+        $additionalArgs += "category=$Category"
     }
 
     $psstandardmembers = [System.Management.Automation.PSMemberInfo[]](New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet,([string[]]@("Test","Result","Time","Failure")))

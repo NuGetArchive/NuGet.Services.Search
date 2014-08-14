@@ -48,7 +48,8 @@ namespace NuGet.Indexing
 
             Lucene.Net.Store.Directory directory = GetDirectory();
 
-            PackageIndexing.UpdateIndex(WhatIf, adds, updates, deletes, (key) => { return packages[key]; }, directory, log: Log);
+            var perfTracker = new PerfEventTracker();
+            PackageIndexing.UpdateIndex(WhatIf, adds, updates, deletes, (key) => { return packages[key]; }, directory, Log, perfTracker, GetFrameworksList().Load());
         }
 
         private void SortIntoAddsUpdateDeletes(IDictionary<int, int> database, IDictionary<int, int> index, List<int> adds, List<int> updates, List<int> deletes)

@@ -52,8 +52,8 @@ namespace NuGet.Indexing
         public void LoadedSearcherManager() { WriteEvent(5); }
 
         public static class Tasks {
-            public const EventTask ReloadingData = (EventTask)0x1;
-            public const EventTask LoadingSearcherManager = (EventTask)0x2;
+            public const EventTask ReloadingData = (EventTask)1;
+            public const EventTask LoadingSearcherManager = (EventTask)2;
         }
     }
 }

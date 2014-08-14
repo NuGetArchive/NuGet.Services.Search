@@ -17,6 +17,7 @@ namespace NuGet.Indexing
             return new Dictionary<string, Analyzer>(StringComparer.OrdinalIgnoreCase)
             {
                 { "Id", new IdentifierKeywordAnalyzer() },
+                { "Facet", new IdentifierKeywordAnalyzer() },
                 { "TokenizedId", new IdentifierAnalyzer() },
                 { "ShingledId", new ShingledIdentifierAnalyzer() },
                 { "Version", new VersionAnalyzer() },

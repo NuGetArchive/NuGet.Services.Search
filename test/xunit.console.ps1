@@ -10,4 +10,6 @@ if(!$version) {
 }
 $xunitRoot = "$PSScriptRoot\packages\xunit.runners.$version\tools"
 
+Write-Host "> xunit.console.exe $args"
+
 & "$xunitRoot\xunit.console.exe" @args

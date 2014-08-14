@@ -44,7 +44,9 @@ namespace NuGet.Indexing
                 .Include(p => p.SupportedFrameworks)
                 .Include(p => p.Dependencies);
 
-            return ExecuteQuery(set, log, verbose);
+            var results = ExecuteQuery(set, log, verbose);
+            
+            return results;
         }
 
         public static List<Package> GetEditedPackagesSince(string sqlConnectionString, int highestPackageKey, DateTime lastEditsIndexTime, TextWriter log = null, bool verbose = false)
@@ -281,6 +283,7 @@ namespace NuGet.Indexing
         public static IDictionary<int, int> FetchGalleryChecksums(string connectionString, int startKey = 0)
         {
             const int ChunkSize = 64000;
+
             IDictionary<int, int> checksums = new Dictionary<int, int>();
             int rangeStartKey = startKey;
             int added = 0;
@@ -289,6 +292,7 @@ namespace NuGet.Indexing
                 added = GetRangeFromGallery(connectionString, ChunkSize, ref rangeStartKey, checksums);
             }
             while (added > 0);
+
             return checksums;
         }
 

@@ -19,6 +19,7 @@ namespace NuGet.Indexing
         public CloudStorageAccount StorageAccount { get; set; }
         public string Container { get; set; }
         public string Folder { get; set; }
+        public string FrameworksFile { get; set; }
         public string SqlConnectionString { get; set; }
         public bool WhatIf { get; set; }
 
@@ -48,6 +49,28 @@ namespace NuGet.Indexing
             return directory;
         }
 
+        protected FrameworksList GetFrameworksList()
+        {
+            if (!String.IsNullOrEmpty(FrameworksFile))
+            {
+                return new LocalFrameworksList(FrameworksFile);
+            }
+
+            if (String.IsNullOrEmpty(Container))
+            {
+                var path = LocalFrameworksList.GetFileName(Folder);
+                if (!File.Exists(path))
+                {
+                    Log.WriteLine("WARNING: Could not find Frameworks list in '{0}'. Supported Framework Data may be inaccurate", path);
+                }
+                return new LocalFrameworksList(path);
+            }
+            else
+            {
+                return new StorageFrameworksList(StorageAccount, Container);
+            }
+        }
+
         protected PackageSearcherManager GetSearcherManager()
         {
             PackageSearcherManager manager;
@@ -55,15 +78,17 @@ namespace NuGet.Indexing
             {
                 manager = new PackageSearcherManager(
                     GetDirectory(),
-                    new StorageRankings(StorageAccount),
-                    new StorageDownloadCounts(StorageAccount));
+                    new StorageRankings(StorageAccount, Container),
+                    new StorageDownloadCounts(StorageAccount, Container),
+                    GetFrameworksList());
             }
             else if (!string.IsNullOrEmpty(Folder))
             {
                 manager = new PackageSearcherManager(
                     GetDirectory(),
                     new FolderRankings(Folder),
-                    new FolderDownloadCounts(Folder));
+                    new FolderDownloadCounts(Folder),
+                    GetFrameworksList());
             }
             else
             {
