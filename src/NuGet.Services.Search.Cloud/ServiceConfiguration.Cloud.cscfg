@@ -13,6 +13,7 @@
       <!-- Set this to a non-empty value to CHANGE the container name used for storing the index -->
       <!-- The default value, if this is empty, is 'ng-search' -->
       <Setting name="Search.IndexContainer" value="" />
+      <Setting name="Search.DataContainer" value="" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountEncryptedPassword" value="" />

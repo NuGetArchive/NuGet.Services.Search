@@ -20,6 +20,7 @@
       <Setting name="Http.AdminKey" />
       <Setting name="Search.IndexPath" />
       <Setting name="Search.IndexContainer" />
+      <Setting name="Search.DataContainer" />
     </ConfigurationSettings>
     <Certificates>
       <Certificate name="SSL" permissionLevel="limitedOrElevated" storeLocation="LocalMachine" storeName="My" />

@@ -14,6 +14,7 @@ namespace NuGet.Indexing
     public abstract class FrameworksList
     {
         public static readonly FrameworkName AnyFramework = new FrameworkName("Any", new Version(0, 0));
+        public static readonly string FileName = "projectframeworks.v1.json";
 
         public static FrameworksList Empty = new EmptyFrameworksList();
 
@@ -76,13 +77,16 @@ namespace NuGet.Indexing
 
         public static string GetFileName(string folder)
         {
-            return folder.Trim('\\') + "\\data\\projectframeworks.v1.json";
+            return folder.Trim('\\') + "\\data\\" + FileName;
         }
     }
 
     public class StorageFrameworksList : FrameworksList
     {
         CloudBlockBlob _blob;
+        private CloudStorageAccount storageAccount;
+        private string frameworksContainer;
+        private string path;
 
         public override string Path { get { return _blob.Uri.AbsoluteUri; } }
 
@@ -102,13 +106,18 @@ namespace NuGet.Indexing
         }
 
         public StorageFrameworksList(CloudBlobContainer container)
-            : this(container.GetBlockBlobReference(@"data/projectframeworks.v1.json"))
+            : this(container.GetBlockBlobReference(@"data/" + FileName))
         {
         }
 
         public StorageFrameworksList(CloudBlockBlob blob)
         {
             _blob = blob;
+        }
+
+        public StorageFrameworksList(CloudStorageAccount storageAccount, string containerName, string path)
+            : this(storageAccount.CreateCloudBlobClient().GetContainerReference(containerName).GetBlockBlobReference(path))
+        {
         }
 
         protected override JObject LoadJson()
