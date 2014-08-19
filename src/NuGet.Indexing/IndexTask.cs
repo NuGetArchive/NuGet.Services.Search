@@ -29,74 +29,21 @@ namespace NuGet.Indexing
             Log = Console.Out;
         }
 
-        protected Lucene.Net.Store.Directory GetDirectory()
-        {
-            Lucene.Net.Store.Directory directory = null;
-
-            if (!string.IsNullOrEmpty(Container))
-            {
-                directory = new AzureDirectory(StorageAccount, Container, new RAMDirectory());
-            }
-            else if (!string.IsNullOrEmpty(Folder))
-            {
-                directory = new SimpleFSDirectory(new DirectoryInfo(Folder));
-            }
-
-            if (directory == null)
-            {
-                throw new Exception("You must specify either a folder or container");
-            }
-
-            return directory;
-        }
-
-        protected FrameworksList GetFrameworksList()
-        {
-            if (!String.IsNullOrEmpty(FrameworksFile))
-            {
-                return new LocalFrameworksList(FrameworksFile);
-            }
-
-            if (String.IsNullOrEmpty(Container))
-            {
-                var path = LocalFrameworksList.GetFileName(Folder);
-                if (!File.Exists(path))
-                {
-                    Log.WriteLine("WARNING: Could not find Frameworks list in '{0}'. Supported Framework Data may be inaccurate", path);
-                }
-                return new LocalFrameworksList(path);
-            }
-            else
-            {
-                string path = FrameworksList.FileName;
-                string container = DataContainer;
-                if (String.IsNullOrEmpty(container))
-                {
-                    path = "data/" + path;
-                    container = Container;
-                }
-                return new StorageFrameworksList(StorageAccount, container, path);
-            }
-        }
-
         protected PackageSearcherManager GetSearcherManager()
         {
             PackageSearcherManager manager;
             if (!string.IsNullOrEmpty(Container))
             {
-                manager = new PackageSearcherManager(
-                    GetDirectory(),
-                    new StorageRankings(StorageAccount, Container),
-                    new StorageDownloadCounts(StorageAccount, Container),
-                    GetFrameworksList());
+                manager = PackageSearcherManager.CreateAzure(
+                    StorageAccount,
+                    Container,
+                    DataContainer);
             }
             else if (!string.IsNullOrEmpty(Folder))
             {
-                manager = new PackageSearcherManager(
-                    GetDirectory(),
-                    new FolderRankings(Folder),
-                    new FolderDownloadCounts(Folder),
-                    GetFrameworksList());
+                manager = PackageSearcherManager.CreateLocal(
+                    Folder,
+                    FrameworksFile);
             }
             else
             {

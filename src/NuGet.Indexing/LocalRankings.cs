@@ -10,15 +10,15 @@ using System.Threading.Tasks;
 
 namespace NuGet.Indexing
 {
-    public class FolderDownloadCounts : DownloadCounts
+    public class LocalRankings : Rankings
     {
-        string _folder;
+        string _path;
 
-        public override string Path { get { return _folder.Trim('\\') + "\\data\\downloads.v1.json"; } }
+        public override string Path { get { return _path; } }
 
-        public FolderDownloadCounts(string folder)
+        public LocalRankings(string path)
         {
-            _folder = folder;
+            _path = path;
         }
 
         protected override JObject LoadJson()

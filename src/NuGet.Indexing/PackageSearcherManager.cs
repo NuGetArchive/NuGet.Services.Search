@@ -5,6 +5,10 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Diagnostics;
 using System.Runtime.Versioning;
+using System.IO;
+using Lucene.Net.Store;
+using Lucene.Net.Store.Azure;
+using Microsoft.WindowsAzure.Storage;
 
 namespace NuGet.Indexing
 {
@@ -18,7 +22,7 @@ namespace NuGet.Indexing
         IndexData<IDictionary<string, IDictionary<string, int>>> _currentRankings;
         IndexData<IDictionary<int, DownloadCountRecord>> _currentDownloadCounts;
         IndexData<IList<FrameworkName>> _currentFrameworkList;
-        
+
         public DateTime DownloadCountsUpdatedUtc { get { return _currentDownloadCounts.LastUpdatedUtc; } }
         public DateTime RankingsUpdatedUtc { get { return _currentRankings.LastUpdatedUtc; } }
         public DateTime FrameworkListUpdatedUtc { get { return _currentFrameworkList.LastUpdatedUtc; } }
@@ -27,6 +31,7 @@ namespace NuGet.Indexing
         public FrameworksList Frameworks { get; private set; }
         public Guid Id { get; private set; }
 
+        [Obsolete("You really should use the CreateLocal or CreateAzure static methods instead of the constructor")]
         public PackageSearcherManager(Lucene.Net.Store.Directory directory, Rankings rankings, DownloadCounts downloadCounts, FrameworksList frameworks)
             : base(directory)
         {
@@ -49,7 +54,7 @@ namespace NuGet.Indexing
                 Frameworks.Path,
                 Frameworks.Load,
                 FrameworksRefreshRate);
-        
+
             Id = Guid.NewGuid(); // Used for identifying changes to the searcher manager at runtime.
         }
 
@@ -108,6 +113,65 @@ namespace NuGet.Indexing
 
             // Return the current value. It may be swapped out from under us but that's OK.
             return _currentFrameworkList.Value ?? new List<FrameworkName>();
+        }
+
+        public static PackageSearcherManager CreateLocal(
+            string localDirectory,
+            string frameworksFile = null,
+            string rankingsFile = null,
+            string downloadCountsFile = null)
+        {
+            if (String.IsNullOrEmpty(frameworksFile))
+            {
+                frameworksFile = Path.Combine(localDirectory, "data", FrameworksList.FileName);
+            }
+            if (String.IsNullOrEmpty(rankingsFile))
+            {
+                rankingsFile = Path.Combine(localDirectory, "data", Rankings.FileName);
+            }
+            if (String.IsNullOrEmpty(downloadCountsFile))
+            {
+                downloadCountsFile = Path.Combine(localDirectory, "data", DownloadCounts.FileName);
+            }
+            return new PackageSearcherManager(
+                new SimpleFSDirectory(new DirectoryInfo(localDirectory)),
+                new LocalRankings(rankingsFile),
+                new LocalDownloadCounts(downloadCountsFile),
+                new LocalFrameworksList(frameworksFile));
+        }
+
+        public static PackageSearcherManager CreateAzure(
+            string storageConnectionString,
+            string indexContainer = null,
+            string dataContainer = null)
+        {
+            return CreateAzure(
+                CloudStorageAccount.Parse(storageConnectionString),
+                indexContainer,
+                dataContainer);
+        }
+        public static PackageSearcherManager CreateAzure(
+            CloudStorageAccount storageAccount,
+            string indexContainer = null,
+            string dataContainer = null)
+        {
+            if (String.IsNullOrEmpty(indexContainer))
+            {
+                indexContainer = "ng-search-index";
+            }
+
+            string dataPath = String.Empty;
+            if (String.IsNullOrEmpty(dataContainer))
+            {
+                dataContainer = indexContainer;
+                dataPath = "data/";
+            }
+
+            return new PackageSearcherManager(
+                new AzureDirectory(storageAccount, indexContainer, new RAMDirectory()),
+                new StorageRankings(storageAccount, dataContainer, dataPath + Rankings.FileName),
+                new StorageDownloadCounts(storageAccount, dataContainer, dataPath + DownloadCounts.FileName),
+                new StorageFrameworksList(storageAccount, dataContainer, dataPath + FrameworksList.FileName));
         }
 
         // Little helper class to handle these "load async and swap" objects

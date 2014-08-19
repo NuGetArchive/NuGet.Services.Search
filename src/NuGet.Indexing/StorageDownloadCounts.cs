@@ -28,6 +28,11 @@ namespace NuGet.Indexing
         {
         }
 
+        public StorageDownloadCounts(CloudStorageAccount storageAccount, string containerName, string blobName)
+            : this(storageAccount.CreateCloudBlobClient().GetContainerReference(containerName).GetBlockBlobReference(blobName))
+        {
+        }
+
         public StorageDownloadCounts(CloudBlobContainer container) : this(container.GetBlockBlobReference(@"data/downloads.v1.json"))
         {
         }

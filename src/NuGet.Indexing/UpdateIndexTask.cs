@@ -14,6 +14,7 @@ namespace NuGet.Indexing
     {
         public override void Execute()
         {
+            var manager = GetSearcherManager();
             IDictionary<int, int> database = GalleryExport.FetchGalleryChecksums(SqlConnectionString);
 
             Log.WriteLine("fetched {0} keys from database", database.Count);
@@ -24,7 +25,7 @@ namespace NuGet.Indexing
 
             // For now, use the in-memory Searcher client. But eventually this will use the original Search Service call below
             IDictionary<int, int> index = ParseRangeResult(
-                Searcher.KeyRangeQuery(GetSearcherManager(), minMax.Item1, minMax.Item2));
+                Searcher.KeyRangeQuery(manager, minMax.Item1, minMax.Item2));
             
             Log.WriteLine("fetched {0} keys from index", index.Count);
 
@@ -46,10 +47,10 @@ namespace NuGet.Indexing
             IDictionary<int, IEnumerable<string>> feeds = GalleryExport.GetFeedsByPackageRegistration(SqlConnectionString, Log, verbose: false);
             IDictionary<int, IndexDocumentData> packages = PackageIndexing.LoadDocumentData(SqlConnectionString, adds, updates, deletes, feeds, database, Log);
 
-            Lucene.Net.Store.Directory directory = GetDirectory();
+            Lucene.Net.Store.Directory directory = manager.Directory;
 
             var perfTracker = new PerfEventTracker();
-            PackageIndexing.UpdateIndex(WhatIf, adds, updates, deletes, (key) => { return packages[key]; }, directory, Log, perfTracker, GetFrameworksList().Load());
+            PackageIndexing.UpdateIndex(WhatIf, adds, updates, deletes, (key) => { return packages[key]; }, directory, Log, perfTracker, manager.Frameworks.Load());
         }
 
         private void SortIntoAddsUpdateDeletes(IDictionary<int, int> database, IDictionary<int, int> index, List<int> adds, List<int> updates, List<int> deletes)

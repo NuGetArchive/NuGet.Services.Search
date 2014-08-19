@@ -129,7 +129,7 @@
     <Compile Include="DownloadCounts.cs" />
     <Compile Include="FacetedDocument.cs" />
     <Compile Include="Facets.cs" />
-    <Compile Include="FolderDownloadCounts.cs" />
+    <Compile Include="LocalDownloadCounts.cs" />
     <Compile Include="FrameworksList.cs" />
     <Compile Include="GalleryExport.cs" />
     <Compile Include="FullBuildTask.cs" />
@@ -147,7 +147,7 @@
     <Compile Include="CustomSimilarity.cs" />
     <Compile Include="DescriptionAnalyzer.cs" />
     <Compile Include="DotTokenizer.cs" />
-    <Compile Include="FolderRankings.cs" />
+    <Compile Include="LocalRankings.cs" />
     <Compile Include="IdentifierAnalyzer.cs" />
     <Compile Include="IdentifierKeywordAnalyzer.cs" />
     <Compile Include="IndexAnalyzer.cs" />

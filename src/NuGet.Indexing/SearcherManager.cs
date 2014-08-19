@@ -2,6 +2,7 @@
 using Lucene.Net.Search;
 using System;
 using System.Threading;
+using Lucene.Net.Store;
 
 namespace NuGet.Indexing
 {
@@ -11,9 +12,12 @@ namespace NuGet.Indexing
 
         private IndexSearcher _currentSearcher;
 
-        public SearcherManager(Lucene.Net.Store.Directory directory)
+        public Directory Directory { get; private set; }
+
+        public SearcherManager(Directory directory)
         {
-            _currentSearcher = new IndexSearcher(IndexReader.Open(directory, true));
+            Directory = directory;
+            _currentSearcher = new IndexSearcher(IndexReader.Open(Directory, true));
         }
 
         public void Open()

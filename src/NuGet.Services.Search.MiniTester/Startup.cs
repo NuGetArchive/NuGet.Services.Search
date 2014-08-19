@@ -32,19 +32,7 @@ namespace NuGet.Services.Search.MiniTester
         {
             var index = WebConfigurationManager.AppSettings["IndexLocation"];
             var fxList = WebConfigurationManager.AppSettings["FrameworksListLocation"];
-            if(String.IsNullOrEmpty(index))
-            {
-                throw new Exception("You must specify the location of the index in the IndexLocation appSetting");
-            }
-            if (String.IsNullOrEmpty(fxList))
-            {
-                fxList = LocalFrameworksList.GetFileName(index);
-            }
-            return new PackageSearcherManager(
-                new SimpleFSDirectory(new System.IO.DirectoryInfo(index)),
-                new FolderRankings(index),
-                new FolderDownloadCounts(index),
-                new LocalFrameworksList(fxList));
+            return PackageSearcherManager.CreateLocal(index, fxList);
         }
     }
 }

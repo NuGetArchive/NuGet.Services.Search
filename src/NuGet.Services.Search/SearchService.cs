@@ -100,45 +100,17 @@ namespace NuGet.Services.Search
 
         private PackageSearcherManager GetSearcherManager(SearchConfiguration config)
         {
-            Directory dir;
-            Rankings rankings;
-            DownloadCounts downloadCounts;
-            FrameworksList frameworksList;
             if (String.IsNullOrEmpty(config.IndexPath))
             {
-                CloudStorageAccount storageAccount = Configuration.Storage.Primary;
-
-                config.IndexContainer = String.IsNullOrEmpty(config.IndexContainer) ?
-                    "ng-search" :
-                    config.IndexContainer;
-
-                string url = storageAccount.CreateCloudBlobClient().GetContainerReference(config.IndexContainer).Uri.AbsoluteUri;
-
-                IndexingEventSource.Log.LoadingSearcherManager(url);
-
-                dir = new AzureDirectory(storageAccount, config.IndexContainer, new RAMDirectory());
-                rankings = new StorageRankings(storageAccount, config.IndexContainer);
-                downloadCounts = new StorageDownloadCounts(storageAccount, config.IndexContainer);
-
-                string frameworksContainer = config.DataContainer;
-                string path = FrameworksList.FileName;
-                if (String.IsNullOrEmpty(frameworksContainer))
-                {
-                    frameworksContainer = config.IndexContainer;
-                    path = "data/" + path;
-                }
-                frameworksList = new StorageFrameworksList(storageAccount, frameworksContainer, path);
+                return PackageSearcherManager.CreateLocal(config.IndexPath);
             }
             else
             {
-                IndexingEventSource.Log.LoadingSearcherManager(config.IndexPath);
-
-                dir = new SimpleFSDirectory(new System.IO.DirectoryInfo(config.IndexPath));
-                rankings = new FolderRankings(config.IndexPath);
-                downloadCounts = new FolderDownloadCounts(config.IndexPath);
-                frameworksList = new LocalFrameworksList(LocalFrameworksList.GetFileName(config.IndexPath));
+                return PackageSearcherManager.CreateAzure(
+                    Configuration.Storage.Primary,
+                    config.IndexContainer,
+                    config.DataContainer);
             }
-            return new PackageSearcherManager(dir, rankings, downloadCounts, frameworksList);
         }
     }
 }

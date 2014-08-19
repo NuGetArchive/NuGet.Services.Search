@@ -16,7 +16,8 @@ namespace NuGet.Indexing
         public override void Execute()
         {
             // Check for the frameworks list
-            FrameworksList frameworks = GetFrameworksList();
+            var manager = GetSearcherManager();
+            FrameworksList frameworks = manager.Frameworks;
             
             DateTime before = DateTime.Now;
 
@@ -25,7 +26,7 @@ namespace NuGet.Indexing
                 AzureDirectoryManagement.ForceUnlockAzureDirectory(StorageAccount, Container);
             }
 
-            Lucene.Net.Store.Directory directory = GetDirectory();
+            Lucene.Net.Store.Directory directory = manager.Directory;
 
             PackageIndexing.RebuildIndex(SqlConnectionString, directory, frameworks, Log);
 

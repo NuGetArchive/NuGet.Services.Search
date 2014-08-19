@@ -17,6 +17,7 @@ using PowerArgs;
 using IndexMaintenance;
 using System.IO;
 using System.Diagnostics.Tracing;
+using LuceneDirectory = Lucene.Net.Store.Directory;
 
 namespace IndexMaintainance
 {
@@ -26,6 +27,25 @@ namespace IndexMaintainance
         [ArgDescription("The level of tracing to display")]
         [DefaultValue(EventLevel.Informational)]
         public EventLevel TraceLevel { get; set; }
+
+        [ArgActionMethod]
+        public void PushIndex(PushIndexArgs args) {
+            using (StartTracing())
+            {
+                // Load directories
+                var sourceDir = new SimpleFSDirectory(new DirectoryInfo(args.SourceFolder));
+                var acct = CloudStorageAccount.Parse(args.DestinationStorage);
+                var container = acct.CreateCloudBlobClient().GetContainerReference(String.IsNullOrEmpty(args.Container) ? "ng-search" : args.Container);
+                var destDir = new AzureDirectory(
+                    acct,
+                    container.Name,
+                    new RAMDirectory());
+
+                Console.WriteLine("Copying from {0} to {1}", args.SourceFolder, container.Uri);
+                Lucene.Net.Store.Directory.Copy(sourceDir, destDir, closeDirSrc: true);
+                Console.WriteLine("Copy complete!");
+            }
+        }
 
         [ArgActionMethod]
         public void FullBuild(FullBuildArgs args)

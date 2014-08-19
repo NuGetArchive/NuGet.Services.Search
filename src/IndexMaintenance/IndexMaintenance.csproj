@@ -98,6 +98,7 @@
     <Compile Include="IndexArgs.cs" />
     <Compile Include="ParseQueryArgs.cs" />
     <Compile Include="PerfTestArgs.cs" />
+    <Compile Include="PushIndexArgs.cs" />
     <Compile Include="UpdateIndexArgs.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

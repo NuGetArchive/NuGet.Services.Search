@@ -28,6 +28,11 @@ namespace NuGet.Indexing
         {
         }
 
+        public StorageRankings(CloudStorageAccount storageAccount, string containerName, string blobName)
+            : this(storageAccount.CreateCloudBlobClient().GetContainerReference(containerName).GetBlockBlobReference(blobName))
+        {
+        }
+
         public StorageRankings(CloudBlobContainer container) : this(container.GetBlockBlobReference(@"data/rankings.v1.json"))
         {
         }
