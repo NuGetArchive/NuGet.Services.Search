@@ -50,7 +50,7 @@ namespace NuGet.Indexing
             }
         }
 
-        public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, FrameworkName supportedFramework, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
             return Search(
                 searcherManager,
@@ -58,7 +58,6 @@ namespace NuGet.Indexing
                 countOnly,
                 projectType,
                 includePrerelease,
-                supportedFramework,
                 feed,
                 sortBy,
                 skip,
@@ -67,14 +66,9 @@ namespace NuGet.Indexing
                 ignoreFilter);
         }
 
-        public static string Search(PackageSearcherManager searcherManager, Query q, bool countOnly, string projectType, bool includePrerelease, FrameworkName supportedFramework, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        public static string Search(PackageSearcherManager searcherManager, Query q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
             IndexSearcher searcher;
-
-            if (supportedFramework == null || !searcherManager.GetFrameworks().Contains(supportedFramework))
-            {
-                supportedFramework = FrameworksList.AnyFramework;
-            }
 
             try
             {
@@ -115,15 +109,6 @@ namespace NuGet.Indexing
                 {
                     // So if false, set up the filter and adjust the query for the framework if needed
                     filter = GetFilter(feed);
-
-                    string facet = includePrerelease ?
-                        Facets.LatestPrereleaseVersion(supportedFramework) :
-                        Facets.LatestStableVersion(supportedFramework);
-
-                    var newQuery = new BooleanQuery();
-                    newQuery.Add(q, Occur.SHOULD);
-                    newQuery.Add(new TermQuery(new Term("Facet", facet)), Occur.MUST);
-                    q = newQuery;
                 }
 
                 if (countOnly)

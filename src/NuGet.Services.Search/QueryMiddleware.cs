@@ -76,17 +76,33 @@ namespace NuGet.Services.Search
             {
                 supportedFramework = VersionUtility.ParseFrameworkName(fxName);
             }
+            if (supportedFramework == null || !SearcherManager.GetFrameworks().Contains(supportedFramework))
+            {
+                supportedFramework = FrameworksList.AnyFramework;
+            }
+
+            var query = LuceneQueryCreator.Parse(q, luceneQuery);
+            if (!ignoreFilter && !luceneQuery)
+            {
+                string facet = includePrerelease ?
+                    Facets.LatestPrereleaseVersion(supportedFramework) :
+                    Facets.LatestStableVersion(supportedFramework);
+
+                var newQuery = new BooleanQuery();
+                newQuery.Add(query, Occur.MUST);
+                newQuery.Add(new TermQuery(new Term("Facet", facet)), Occur.MUST);
+                query = newQuery;
+            }
 
             string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
             Trace.TraceInformation(args);
 
             string content = NuGet.Indexing.Searcher.Search(
                 SearcherManager, 
-                LuceneQueryCreator.Parse(q, luceneQuery), 
+                query, 
                 countOnly, 
                 projectType, 
                 includePrerelease, 
-                supportedFramework,
                 feed,
                 sortBy, 
                 skip, 
