@@ -100,7 +100,7 @@ namespace NuGet.Services.Search
 
         private PackageSearcherManager GetSearcherManager(SearchConfiguration config)
         {
-            if (String.IsNullOrEmpty(config.IndexPath))
+            if (!String.IsNullOrEmpty(config.IndexPath))
             {
                 return PackageSearcherManager.CreateLocal(config.IndexPath);
             }
