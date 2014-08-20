@@ -83,13 +83,19 @@ namespace NuGet.Services.Search.Client
             bool isLuceneQuery = false,
             bool countOnly = false,
             bool explain = false,
-            bool getAllVersions = false)
+            bool getAllVersions = false,
+            string supportedFramework = null)
         {
             IDictionary<string, string> nameValue = new Dictionary<string, string>();
             nameValue.Add("q", query);
             nameValue.Add("skip", skip.ToString());
             nameValue.Add("take", take.ToString());
             nameValue.Add("sortBy", _sortNames[sortBy]);
+
+            if (!String.IsNullOrEmpty(supportedFramework))
+            {
+                nameValue.Add("supportedFramework", supportedFramework);
+            }
             
             if (!String.IsNullOrEmpty(projectTypeFilter))
             {
