@@ -15,11 +15,11 @@ namespace NuGet.Indexing
         public override void Execute()
         {
             var manager = GetSearcherManager();
-            IDictionary<int, int> database = GalleryExport.FetchGalleryChecksums(SqlConnectionString);
+            IDictionary<int, int> databaseChecksums = GalleryExport.FetchGalleryChecksums(SqlConnectionString);
 
-            Log.WriteLine("fetched {0} keys from database", database.Count);
+            Log.WriteLine("fetched {0} keys from database", databaseChecksums.Count);
 
-            Tuple<int, int> minMax = GalleryExport.FindMinMaxKey(database);
+            Tuple<int, int> minMax = GalleryExport.FindMinMaxKey(databaseChecksums);
 
             Log.WriteLine("min = {0}, max = {1}", minMax.Item1, minMax.Item2);
 
@@ -33,7 +33,7 @@ namespace NuGet.Indexing
             List<int> updates = new List<int>();
             List<int> deletes = new List<int>();
 
-            SortIntoAddsUpdateDeletes(database, index, adds, updates, deletes);
+            SortIntoAddsUpdateDeletes(databaseChecksums, index, adds, updates, deletes);
 
             Log.WriteLine("{0} adds", adds.Count);
             Log.WriteLine("{0} updates", updates.Count);
@@ -45,12 +45,29 @@ namespace NuGet.Indexing
             }
 
             IDictionary<int, IEnumerable<string>> feeds = GalleryExport.GetFeedsByPackageRegistration(SqlConnectionString, Log, verbose: false);
-            IDictionary<int, IndexDocumentData> packages = PackageIndexing.LoadDocumentData(SqlConnectionString, adds, updates, deletes, feeds, database, Log);
+            IDictionary<int, IndexDocumentData> packages = PackageIndexing.LoadDocumentData(SqlConnectionString, adds, updates, deletes, feeds, databaseChecksums, Log);
 
             Lucene.Net.Store.Directory directory = manager.Directory;
 
+            Func<int, IndexDocumentData> packageFetcher = (key) =>
+            {
+                IndexDocumentData knownDoc;
+                if (packages.TryGetValue(key, out knownDoc))
+                {
+                    return knownDoc;
+                }
+                else
+                {
+                    // We're modifying a different document
+                    var pkgs = GalleryExport.GetPackages(SqlConnectionString, new List<int>() { key }, Log, verbose: false);
+                    var docs = PackageIndexing.MakeIndexDocumentData(pkgs, feeds, databaseChecksums);
+                    packages[key] = docs[0];
+                    return docs[0];
+                }
+            };
+
             var perfTracker = new PerfEventTracker();
-            PackageIndexing.UpdateIndex(WhatIf, adds, updates, deletes, (key) => { return packages[key]; }, directory, Log, perfTracker, manager.Frameworks.Load());
+            PackageIndexing.UpdateIndex(WhatIf, adds, updates, deletes, packageFetcher, directory, Log, perfTracker, manager.Frameworks.Load());
         }
 
         private void SortIntoAddsUpdateDeletes(IDictionary<int, int> database, IDictionary<int, int> index, List<int> adds, List<int> updates, List<int> deletes)

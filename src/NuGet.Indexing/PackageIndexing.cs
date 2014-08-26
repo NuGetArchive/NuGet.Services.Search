@@ -259,6 +259,10 @@ namespace NuGet.Indexing
                         {
                             doc.AddFacet(Facets.PrereleaseVersion);
                         }
+                        if (doc.Data.Package.Listed)
+                        {
+                            doc.AddFacet(Facets.Listed);
+                        }
                         var packageFxs = doc.Data.Package.SupportedFrameworks
                             .Select(fx =>
                             {
@@ -342,7 +346,7 @@ namespace NuGet.Indexing
                 if (existingValuesByFacet.TryGetValue(facet, out existingValues))
                 {
                     // Find the true latest
-                    var oldLatest = existingValues.OrderByDescending(d => d.Version).FirstOrDefault();
+                    var oldLatest = existingValues.Where(d => d.Data.Package.Listed).OrderByDescending(d => d.Version).FirstOrDefault();
                     if (oldLatest != null && oldLatest.Version > trueLatest.Version)
                     {
                         trueLatest = oldLatest;
@@ -763,7 +767,7 @@ namespace NuGet.Indexing
             return packages;
         }
 
-        private static List<IndexDocumentData> MakeIndexDocumentData(IList<Package> packages, IDictionary<int, IEnumerable<string>> feeds, IDictionary<int, int> checksums)
+        public static List<IndexDocumentData> MakeIndexDocumentData(IList<Package> packages, IDictionary<int, IEnumerable<string>> feeds, IDictionary<int, int> checksums)
         {
             Func<int, IEnumerable<string>> GetFeeds = packageRegistrationKey =>
             {

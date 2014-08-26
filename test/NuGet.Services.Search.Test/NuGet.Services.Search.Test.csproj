@@ -70,6 +70,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="ListedTests.cs" />
     <Compile Include="QuerySyntaxTests.cs" />
     <Compile Include="SupportedFrameworkTests.cs" />
     <Compile Include="QueryTests.cs" />
