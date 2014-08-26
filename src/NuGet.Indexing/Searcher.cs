@@ -227,7 +227,7 @@ namespace NuGet.Indexing
                 timestamp = null;
             }
 
-            strBldr.AppendFormat("{{\"totalHits\":{0},\"timeTakenInMs\":{1}", topDocs.TotalHits, elapsed);
+            strBldr.AppendFormat("{{\"totalHits\":{0},\"timeTakenInMs\":{1},\"index\":\"{2}\"", topDocs.TotalHits, elapsed, manager.IndexName);
             if (!String.IsNullOrEmpty(timestamp))
             {
                 strBldr.AppendFormat(",\"indexTimestamp\":\"{0}\"", timestamp);

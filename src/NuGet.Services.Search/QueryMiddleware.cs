@@ -8,13 +8,15 @@ using System.Threading.Tasks;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Microsoft.Owin;
+using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
+using NuGet.Services.ServiceModel;
 
 namespace NuGet.Services.Search
 {
     public class QueryMiddleware : SearchMiddleware
     {
-        public QueryMiddleware(OwinMiddleware next, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, path, searcherManagerThunk) { }
+        public QueryMiddleware(OwinMiddleware next, ServiceName serviceName, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, serviceName, path, searcherManagerThunk) { }
 
         protected override async Task Execute(IOwinContext context)
         {
@@ -110,7 +112,10 @@ namespace NuGet.Services.Search
                 includeExplanation, 
                 ignoreFilter);
 
-            await WriteResponse(context, content);
+            JObject result = JObject.Parse(content);
+            result["answeredBy"] = ServiceName.ToString();
+
+            await WriteResponse(context, result.ToString());
         }
     }
 }

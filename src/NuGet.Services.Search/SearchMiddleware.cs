@@ -10,6 +10,7 @@ using Lucene.Net.Store.Azure;
 using Microsoft.Owin;
 using Microsoft.WindowsAzure.Storage;
 using NuGet.Indexing;
+using NuGet.Services.ServiceModel;
 
 namespace NuGet.Services.Search
 {
@@ -20,11 +21,13 @@ namespace NuGet.Services.Search
         public PackageSearcherManager SearcherManager { get { return _searcherManagerThunk(); } }
 
         public PathString BasePath { get; private set; }
+        public ServiceName ServiceName { get; private set; }
 
-        protected SearchMiddleware(OwinMiddleware next, string basePath, Func<PackageSearcherManager> searcherManagerThunk)
+        protected SearchMiddleware(OwinMiddleware next, ServiceName serviceName, string basePath, Func<PackageSearcherManager> searcherManagerThunk)
             : base(next)
         {
             BasePath = new PathString(basePath);
+            ServiceName = serviceName;
 
             _searcherManagerThunk = searcherManagerThunk;
         }

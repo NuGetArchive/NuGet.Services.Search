@@ -14,14 +14,14 @@ namespace NuGet.Services.Search.Test
         public ListedTests(RunContext context) : base(context) { }
 
         [Theory]
-        [InlineData("nugettest.TestListed", "net40", "nugettest.TestListed", "2.0.0")]
-        public async Task ListedFilterShouldApplyToLatestSelection(string query, string framework, string expectedId, string expectedVersionRange)
+        [InlineData("nugettest.TestListed", "nugettest.TestListed", "2.0.0")]
+        public async Task ListedFilterShouldApplyToLatestSelection(string query, string expectedId, string expectedVersionRange)
         {
             // Arrange
             var spec = VersionUtility.ParseVersionSpec(expectedVersionRange);
 
             // Act
-            var result = await Context.GetJson<JObject>("/search/query?q=" + query + "&supportedFramework=" + framework);
+            var result = await Context.GetJson<JObject>("/search/query?q=" + query + "&luceneQuery=false");
 
             // Assert
             var firstResult = (JObject)result.Value<JArray>("data")[0];

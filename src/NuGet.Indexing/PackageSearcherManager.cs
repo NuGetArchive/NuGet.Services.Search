@@ -30,14 +30,16 @@ namespace NuGet.Indexing
         public DownloadCounts DownloadCounts { get; private set; }
         public FrameworksList Frameworks { get; private set; }
         public Guid Id { get; private set; }
+        public string IndexName { get; private set; }
 
         [Obsolete("You really should use the CreateLocal or CreateAzure static methods instead of the constructor")]
-        public PackageSearcherManager(Lucene.Net.Store.Directory directory, Rankings rankings, DownloadCounts downloadCounts, FrameworksList frameworks)
+        public PackageSearcherManager(string indexName, Lucene.Net.Store.Directory directory, Rankings rankings, DownloadCounts downloadCounts, FrameworksList frameworks)
             : base(directory)
         {
             Rankings = rankings;
             DownloadCounts = downloadCounts;
             Frameworks = frameworks;
+            IndexName = indexName;
 
             _currentDownloadCounts = new IndexData<IDictionary<int, DownloadCountRecord>>(
                 "DownloadCounts",
@@ -133,8 +135,10 @@ namespace NuGet.Indexing
             {
                 downloadCountsFile = Path.Combine(localDirectory, "data", DownloadCounts.FileName);
             }
+            var dir = new DirectoryInfo(localDirectory);
             return new PackageSearcherManager(
-                new SimpleFSDirectory(new DirectoryInfo(localDirectory)),
+                dir.Name,
+                new SimpleFSDirectory(dir),
                 new LocalRankings(rankingsFile),
                 new LocalDownloadCounts(downloadCountsFile),
                 new LocalFrameworksList(frameworksFile));
@@ -168,6 +172,7 @@ namespace NuGet.Indexing
             }
 
             return new PackageSearcherManager(
+                indexContainer,
                 new AzureDirectory(storageAccount, indexContainer, new RAMDirectory()),
                 new StorageRankings(storageAccount, dataContainer, dataPath + Rankings.FileName),
                 new StorageDownloadCounts(storageAccount, dataContainer, dataPath + DownloadCounts.FileName),

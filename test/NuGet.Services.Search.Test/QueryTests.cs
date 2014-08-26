@@ -159,7 +159,7 @@ namespace NuGet.Services.Search.Test
         [Fact]
         public async Task GivenPrereleaseIsFalse_ItNeverReturnsAnyPrereleaseResults()
         {
-            var result = await Context.GetJson<JObject>("/search/query?q=version:0.1.0-beta&prerelease=false");
+            var result = await Context.GetJson<JObject>("/search/query?q=version:0.1.0-beta&prerelease=false&luceneQuery=false");
 
             Assert.Equal(0, result.Value<int>("totalHits"));
             Assert.Equal(0, result.Value<JArray>("data").Count);
@@ -168,7 +168,7 @@ namespace NuGet.Services.Search.Test
         [Fact]
         public async Task GivenPrereleaseIsTrue_ItReturnsPrereleaseResults()
         {
-            var result = await Context.GetJson<JObject>("/search/query?q=version:0.1.0-beta&prerelease=true");
+            var result = await Context.GetJson<JObject>("/search/query?q=version:0.1.0-beta&prerelease=true&luceneQuery=false");
 
             Assert.True(result.Value<int>("totalHits") > 0);
             Assert.True(result.Value<JArray>("data").Count > 0);
@@ -223,7 +223,7 @@ namespace NuGet.Services.Search.Test
         [Fact]
         public async Task GivenNoIgnoreFilter_ItReturnsLatestVersionOfTheSamePackage()
         {
-            var result = await Context.GetJson<JObject>("/search/query?q=id:jquery");
+            var result = await Context.GetJson<JObject>("/search/query?q=packageid:jquery&luceneQuery=false");
 
             Assert.Equal(1, result.Value<int>("totalHits"));
 
