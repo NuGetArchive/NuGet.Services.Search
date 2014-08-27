@@ -7,12 +7,13 @@ using System.Threading.Tasks;
 using Lucene.Net.Index;
 using Microsoft.Owin;
 using NuGet.Indexing;
+using NuGet.Services.ServiceModel;
 
 namespace NuGet.Services.Search
 {
     public class RangeMiddleware : SearchMiddleware
     {
-        public RangeMiddleware(OwinMiddleware next, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, path, searcherManagerThunk) { }
+        public RangeMiddleware(OwinMiddleware next, ServiceName serviceName, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, serviceName, path, searcherManagerThunk) { }
 
         protected override async Task Execute(IOwinContext context)
         {
