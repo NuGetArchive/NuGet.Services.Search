@@ -23,7 +23,7 @@ namespace NuGet.Services.Search.Test
             var spec = VersionUtility.ParseVersionSpec(expectedVersionRange);
 
             // Act
-            var result = await Context.GetJson<JObject>("/search/query?q=" + query + "&supportedFramework=" + framework);
+            var result = await Context.GetJson<JObject>("/search/query?q=" + query + "&supportedFramework=" + framework + "&luceneQuery=false");
             
             // Assert
             var firstResult = (JObject)result.Value<JArray>("data")[0];
@@ -41,7 +41,7 @@ namespace NuGet.Services.Search.Test
             var spec = VersionUtility.ParseVersionSpec(expectedVersionRange);
 
             // Act
-            var result = await Context.GetJson<JObject>("/search/query?q=" + query + "&supportedFramework=" + framework);
+            var result = await Context.GetJson<JObject>("/search/query?q=" + query + "&supportedFramework=" + framework + "&luceneQuery=false");
 
             // Assert
             var firstResult = (JObject)result.Value<JArray>("data")[0];

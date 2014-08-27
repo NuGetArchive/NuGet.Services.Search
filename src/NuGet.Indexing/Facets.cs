@@ -19,6 +19,7 @@ namespace NuGet.Indexing
         }
 
         public static readonly string PrereleaseVersion = "pre";
+        public static readonly string Listed = "listed";
 
         public static string Compatible(FrameworkName framework)
         {

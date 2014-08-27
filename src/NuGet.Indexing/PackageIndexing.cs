@@ -259,6 +259,10 @@ namespace NuGet.Indexing
                         {
                             doc.AddFacet(Facets.PrereleaseVersion);
                         }
+                        if (doc.Data.Package.Listed)
+                        {
+                            doc.AddFacet(Facets.Listed);
+                        }
                         var packageFxs = doc.Data.Package.SupportedFrameworks
                             .Select(fx =>
                             {
@@ -302,18 +306,22 @@ namespace NuGet.Indexing
                 // Add compatible facet
                 doc.AddFacet(Facets.Compatible(projectFx));
 
-                // Check it against the current latest prerelease and swap latests if necessary
-                string latestPreFacet = Facets.LatestPrereleaseVersion(projectFx);
-                string latestStableFacet = Facets.LatestStableVersion(projectFx);
-                if (!candidateNewFacets.ContainsKey(latestPreFacet))
+                // If listed, process it against latest versions
+                if (doc.Data.Package.Listed)
                 {
-                    candidateNewFacets[latestPreFacet] = doc;
-                }
+                    // Check it against the current latest prerelease and swap latests if necessary
+                    string latestPreFacet = Facets.LatestPrereleaseVersion(projectFx);
+                    string latestStableFacet = Facets.LatestStableVersion(projectFx);
+                    if (!candidateNewFacets.ContainsKey(latestPreFacet))
+                    {
+                        candidateNewFacets[latestPreFacet] = doc;
+                    }
 
-                // If this package is a stable version, do the same for latest stable
-                if (String.IsNullOrEmpty(doc.Version.SpecialVersion) && !candidateNewFacets.ContainsKey(latestStableFacet))
-                {
-                    candidateNewFacets[latestStableFacet] = doc;
+                    // If this package is a stable version, do the same for latest stable
+                    if (String.IsNullOrEmpty(doc.Version.SpecialVersion) && !candidateNewFacets.ContainsKey(latestStableFacet))
+                    {
+                        candidateNewFacets[latestStableFacet] = doc;
+                    }
                 }
             }
         }
@@ -342,7 +350,7 @@ namespace NuGet.Indexing
                 if (existingValuesByFacet.TryGetValue(facet, out existingValues))
                 {
                     // Find the true latest
-                    var oldLatest = existingValues.OrderByDescending(d => d.Version).FirstOrDefault();
+                    var oldLatest = existingValues.Where(d => d.Data.Package.Listed).OrderByDescending(d => d.Version).FirstOrDefault();
                     if (oldLatest != null && oldLatest.Version > trueLatest.Version)
                     {
                         trueLatest = oldLatest;
@@ -572,7 +580,7 @@ namespace NuGet.Indexing
             else
             {
                 Apply(adds, keys => ApplyAdds(keys, fetch, directory, log, perfTracker, projectFxs));
-                Apply(updates, keys => ApplyUpdates(keys, fetch, directory, log));
+                Apply(updates, keys => ApplyUpdates(keys, fetch, directory, log, perfTracker, projectFxs));
                 Apply(deletes, keys => ApplyDeletes(keys, fetch, directory, log, perfTracker, projectFxs));
             }
         }
@@ -651,33 +659,52 @@ namespace NuGet.Indexing
             }
         }
 
-        private static void ApplyUpdates(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log)
+        private static void ApplyUpdates(List<int> packageKeys, Func<int, IndexDocumentData> fetch, Lucene.Net.Store.Directory directory, TextWriter log, PerfEventTracker perfTracker, IEnumerable<FrameworkName> projectFxs)
         {
             log.WriteLine("ApplyUpdates");
 
             PackageQueryParser queryParser = new PackageQueryParser(Lucene.Net.Util.Version.LUCENE_30, "Id", new PackageAnalyzer());
 
+            // Collect all the packages
+            var packages = packageKeys.Select(k => fetch(k));
+
             using (IndexWriter indexWriter = CreateIndexWriter(directory, false))
             {
+                var dirtyDocuments = new List<FacetedDocument>();
                 IDictionary<string, string> commitUserData;
-
                 using (var reader = indexWriter.GetReader())
-                using (var searcher = new IndexSearcher(reader))
                 {
                     commitUserData = reader.CommitUserData;
 
-                    foreach (int packageKey in packageKeys)
+                    // Group by Id
+                    foreach (var group in packages.GroupBy(p => p.Package.PackageRegistration.Id))
                     {
-                        IndexDocumentData documentData = fetch(packageKey);
+                        // Collect existing documents
+                        IList<FacetedDocument> existing = CollectExistingDocuments(perfTracker, indexWriter.GetReader(), group.Key).ToList();
 
-                        Query query = NumericRangeQuery.NewIntRange("Key", packageKey, packageKey, true, true);
-                        Document oldDocument = reader.Document(searcher.Search(query, 1).ScoreDocs[0].Doc);
-                        indexWriter.DeleteDocuments(query);
+                        // Replace the documents we need to replace
+                        foreach (var package in group)
+                        {
+                            Query query = NumericRangeQuery.NewIntRange("Key", package.Package.Key, package.Package.Key, true, true);
+                            indexWriter.DeleteDocuments(query);
+                            var existingDoc = existing.FirstOrDefault(d => SemanticVersion.Parse(package.Package.NormalizedVersion).Equals(d.Version));
+                            if (existingDoc != null)
+                            {
+                                existing.Remove(existingDoc);
+                            }
+                            existing.Add(new FacetedDocument(package));
+                        }
 
-                        Document newDocument = PackageIndexing.CreateLuceneDocument(new FacetedDocument(documentData, oldDocument.GetFields(Facets.FieldName)));
-                        indexWriter.AddDocument(newDocument);
+                        // Recalculate facets
+                        UpdateFacets(group.Key, existing, projectFxs, perfTracker);
+
+                        // Add dirty documents
+                        dirtyDocuments.AddRange(existing.Where(d => d.Dirty));
                     }
                 }
+
+                // Process dirty documents
+                WriteDirtyDocuments(dirtyDocuments, indexWriter, perfTracker);
 
                 commitUserData["count"] = packageKeys.Count.ToString();
                 commitUserData["commit-description"] = "update";
@@ -763,7 +790,7 @@ namespace NuGet.Indexing
             return packages;
         }
 
-        private static List<IndexDocumentData> MakeIndexDocumentData(IList<Package> packages, IDictionary<int, IEnumerable<string>> feeds, IDictionary<int, int> checksums)
+        public static List<IndexDocumentData> MakeIndexDocumentData(IList<Package> packages, IDictionary<int, IEnumerable<string>> feeds, IDictionary<int, int> checksums)
         {
             Func<int, IEnumerable<string>> GetFeeds = packageRegistrationKey =>
             {

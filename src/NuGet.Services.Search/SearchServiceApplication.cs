@@ -79,13 +79,13 @@ namespace NuGet.Services.Search
             var thunk = new Func<PackageSearcherManager>(() => _searcherManager);
 
             // Public endpoint(s)
-            app.Use(typeof(QueryMiddleware), "/query", thunk);
+            app.Use(typeof(QueryMiddleware), ServiceName, "/query", thunk);
 
             // Admin endpoints
-            app.Use(typeof(DiagMiddleware), "/diag", thunk);
-            app.Use(typeof(FieldsMiddleware), "/fields", thunk);
-            app.Use(typeof(RangeMiddleware), "/range", thunk);
-            app.Use(typeof(SegmentsMiddleware), "/segments", thunk);
+            app.Use(typeof(DiagMiddleware), ServiceName, "/diag", thunk);
+            app.Use(typeof(FieldsMiddleware), ServiceName, "/fields", thunk);
+            app.Use(typeof(RangeMiddleware), ServiceName, "/range", thunk);
+            app.Use(typeof(SegmentsMiddleware), ServiceName, "/segments", thunk);
 
             app.Use(async (context, next) =>
             {

@@ -266,28 +266,31 @@
             return json2html(resultObj);
         }
 
-        var updateResultsDiv = function (query, total, data, executedQuery) {
+        var updateResultsDiv = function (query, result) {
 
             var html = '';
 
-            html += '<p>Total: ' + total + '</p>';
+            html += '<p>Total: ' + result.totalHits + '</p>';
 
-            if (executedQuery) {
+            if (result.executedQuery) {
                 // Html Encode the content (this is a known trick and the best way to do it: http://stackoverflow.com/questions/1219860/html-encoding-in-javascript-jquery)
-                executedQuery = $('<div/>').text(executedQuery).html()
-                html += '<p class="executedQuery">Query: <span>' + executedQuery  + '</span></p>';
+                var executedQuery = $('<div/>').text(executedQuery).html()
+                html += '<p class="executedQuery">Query: <span>' + result.executedQuery  + '</span></p>';
+            }
+            if (result.answeredBy && result.index) {
+                html += '<p class="answeredBy">Query answered by ' + result.answeredBy + ' using index "' + result.index + '"</p>';
             }
 
-            for (var i = 0; i < data.length; i += 1) {
-                html += displayPackage(data, i, query);
+            for (var i = 0; i < result.data.length; i += 1) {
+                html += displayPackage(result.data, i, query);
             }
 
-            html += displayNavigationButtons(total, query.skip);
+            html += displayNavigationButtons(result.totalHits, query.skip);
 
             $('#results-div').html(html);
 
-            $('#prev').click(createNavigationFunction(query, total, query.skip - 10));
-            $('#next').click(createNavigationFunction(query, total, query.skip + 10));
+            $('#prev').click(createNavigationFunction(query, result.totalHits, query.skip - 10));
+            $('#next').click(createNavigationFunction(query, result.totalHits, query.skip + 10));
         }
 
         var addBoost = function(term, boost)
@@ -443,7 +446,7 @@
 
                     if (status === 'success') {
 
-                        updateResultsDiv(query, data.totalHits, data.data, data.executedQuery);
+                        updateResultsDiv(query, data);
                     }
                 });
             }

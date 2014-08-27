@@ -53,5 +53,39 @@ namespace NuGet.Indexing
             manager.Open();
             return manager;
         }
+
+        public FrameworksList GetFrameworksList()
+        {
+            if (!String.IsNullOrEmpty(Folder))
+            {
+                if (String.IsNullOrEmpty(FrameworksFile))
+                {
+                    FrameworksFile = Path.Combine(Folder, "data", FrameworksList.FileName);
+                }
+                return new LocalFrameworksList(FrameworksFile);
+            }
+            else
+            {
+                string dataPath = String.Empty;
+                if (String.IsNullOrEmpty(DataContainer))
+                {
+                    DataContainer = Container;
+                    dataPath = "data/";
+                }
+                return new StorageFrameworksList(StorageAccount, DataContainer, dataPath + FrameworksList.FileName);
+            }
+        }
+
+        public Lucene.Net.Store.Directory GetDirectory()
+        {
+            if (!String.IsNullOrEmpty(Folder))
+            {
+                return new SimpleFSDirectory(new DirectoryInfo(Folder));
+            }
+            else
+            {
+                return new AzureDirectory(StorageAccount, Container, new RAMDirectory());
+            }
+        }
     }
 }

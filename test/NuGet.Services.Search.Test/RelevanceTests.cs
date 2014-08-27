@@ -45,7 +45,7 @@ namespace NuGet.Services.Search.Test
         [InlineData("appinsights", @"^Microsoft\.ApplicationInsights(\..+)?$", 3, "PackageRegistration.Id")]
         [InlineData("application insights", @"^Microsoft\.ApplicationInsights(\..+)?$", 3, "PackageRegistration.Id")]
         [InlineData("riaservices server", @"^RIAServices.Server(\..+)?$", 3, "PackageRegistration.Id")]
-        [InlineData("rdf", @"^dotNetRDF$", 3, "PackageRegistration.Id")]
+        [InlineData("rdf", @"^dotNetRDF$", 5, "PackageRegistration.Id")]
         [InlineData("webapi", @"(?i)^.*WebApi.*$", 1, "PackageRegistration.Id")] // Top result should include WebAPI somewhere :)
         [InlineData("web api client", @"(?i)^.*WebApi.*$", 1, "PackageRegistration.Id")]
         [InlineData("signalr sample", @"(?i)^.*SignalR.*Sample.*$", 1, "PackageRegistration.Id")]

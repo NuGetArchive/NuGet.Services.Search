@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Lucene.Net.Store;
 
 namespace NuGet.Indexing
 {
@@ -16,8 +17,7 @@ namespace NuGet.Indexing
         public override void Execute()
         {
             // Check for the frameworks list
-            var manager = GetSearcherManager();
-            FrameworksList frameworks = manager.Frameworks;
+            var frameworks = GetFrameworksList();
             
             DateTime before = DateTime.Now;
 
@@ -26,7 +26,7 @@ namespace NuGet.Indexing
                 AzureDirectoryManagement.ForceUnlockAzureDirectory(StorageAccount, Container);
             }
 
-            Lucene.Net.Store.Directory directory = manager.Directory;
+            Lucene.Net.Store.Directory directory = GetDirectory();
 
             PackageIndexing.RebuildIndex(SqlConnectionString, directory, frameworks, Log);
 
