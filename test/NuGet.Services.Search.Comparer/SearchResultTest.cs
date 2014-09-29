@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
 using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace NuGet.Services.Search.Comparer
@@ -125,6 +123,7 @@ namespace NuGet.Services.Search.Comparer
             AssertPackageListOutcome(targetFramework, versionUpdates, true);
         }
 
+        #region Helper methods
         private void AssertPackageListOutcome(string targetFramework, IList<IPackage> list, bool expectCompatible)
         {
             FrameworkName projFramework = new FrameworkName(targetFramework);
@@ -143,8 +142,6 @@ namespace NuGet.Services.Search.Comparer
                 }
             }
         }
-
-        #region Helper methods
         private string BuildOutputString(IPackage package, FrameworkName projFramework, List<FrameworkName> packageFrameworks, bool isCompatible, bool expectTrue)
         {
             string packageFrameworksList = (packageFrameworks == null || packageFrameworks.Count == 0) ? "Supporing All Frameworks" : string.Join(", ", packageFrameworks); 
@@ -154,6 +151,12 @@ namespace NuGet.Services.Search.Comparer
             builder.AppendLine(string.Format("Expected compatbility: {0}; Actual: {1}", expectTrue, isCompatible));
             builder.AppendLine();
             return builder.ToString();
+        }
+
+        private bool IsCompatible(FrameworkName projectFramework, List<FrameworkName> packageFrameworks)
+        {
+            bool compat = NuGet.VersionUtility.IsCompatible(projectFramework, packageFrameworks);
+            return compat;
         }
 
         private Tuple<List<IPackage>, List<IPackage>, List<IPackage>> GetChangesInSearchResults(string targetFramework, CuratedFeed feed)
@@ -199,12 +202,6 @@ namespace NuGet.Services.Search.Comparer
 
             var resultTuple = new Tuple<List<IPackage>, List<IPackage>,List<IPackage>>(reductions, additions, versionUpdates);
             return resultTuple;
-        }
-
-        private bool IsCompatible(FrameworkName projectFramework, List<FrameworkName> packageFrameworks)
-        {
-            bool compat = NuGet.VersionUtility.IsCompatible(projectFramework, packageFrameworks);
-            return compat;
         }
 
         private List<FrameworkName> FindSupportedTargetFrameworksForPackage(IPackage package)
