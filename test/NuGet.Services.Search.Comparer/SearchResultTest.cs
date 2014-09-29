@@ -11,7 +11,7 @@ namespace NuGet.Services.Search.Comparer
 {
     public class SearchResultTest
     {
-        private int _count = 100;
+        private int _count = 50;
         private string _rootPath = Environment.CurrentDirectory;
 
         public int Count
@@ -50,7 +50,113 @@ namespace NuGet.Services.Search.Comparer
         [InlineData("ASP.Net,Version=v5.0", CuratedFeed.None)]
         [InlineData("ASP.NetCore,Version=v5.0", CuratedFeed.None)]
         [InlineData("Windows, Version=8.1", CuratedFeed.None)]
-        public void CompareSearchResultsBeforeAndAfterChanges(string targetFramework, CuratedFeed feed)
+        public void CompareSearchResultsForReductions(string targetFramework, CuratedFeed feed)
+        {
+            // Get the list of packages that are missing from the new search results
+            List<IPackage> reductions = GetChangesInSearchResults(targetFramework, feed).Item1;
+
+            // Assert packages from the redutions list are not compatible with the project's targetframework 
+            AssertPackageListOutcome(targetFramework, reductions, false);
+        }
+
+        [Theory]
+        [InlineData(".NETFramework,Version=v2.0", CuratedFeed.None)]
+        [InlineData(".NETFramework,Version=v3.0", CuratedFeed.DotNet)]
+        [InlineData(".NETFramework,Version=v3.5,Profile=Full", CuratedFeed.None)]
+        [InlineData(".NETFramework,Version=v4.0", CuratedFeed.None)]
+        [InlineData(".NETFramework,Version=v4.0", CuratedFeed.WebMatrix)]
+        [InlineData(".NETFramework,Version=v4.5", CuratedFeed.Win8Express)]
+        [InlineData("Silverlight,Version=v4.0", CuratedFeed.None)]
+        [InlineData("Silverlight,Version=v5.0", CuratedFeed.None)]
+        [InlineData(".NETFramework,Version=v4.0,Profile=Client", CuratedFeed.None)]
+        [InlineData(".NETCore,Version=v4.5.1", CuratedFeed.None)]
+        [InlineData("WindowsPhone,Version=v8.1", CuratedFeed.None)]
+        [InlineData(".NETPortable,Version=v0.0,Profile=wp8+netcore45+net45+wp81+wpa81", CuratedFeed.None)]
+        [InlineData("Unsupported,Version=v0.0", CuratedFeed.None)]
+        [InlineData("MonoAndroid,Version=v0.0", CuratedFeed.None)]
+        [InlineData("MonoTouch,Version=v0.0", CuratedFeed.None)]
+        [InlineData("Silverlight,Version=v4.0,Profile=windowsphone71", CuratedFeed.None)]
+        [InlineData("Windows,Version=v8.0", CuratedFeed.Win8Express)]
+        [InlineData("WindowsPhoneApp,Version=v8.1", CuratedFeed.None)]
+        [InlineData(".NETFramework,Version=v3.5,Profile=CompactFramework", CuratedFeed.None)]
+        [InlineData(".NETMicroFramework,Version=v4.1", CuratedFeed.DotNet)]
+        [InlineData("ASP.Net,Version=v5.0", CuratedFeed.None)]
+        [InlineData("ASP.NetCore,Version=v5.0", CuratedFeed.None)]
+        [InlineData("Windows, Version=8.1", CuratedFeed.None)]
+        public void CompareSearchResultsForAdditions(string targetFramework, CuratedFeed feed)
+        {
+            // Get the list of packages that are added to the new search results
+            List<IPackage> additions = GetChangesInSearchResults(targetFramework, feed).Item2;
+
+            // Assert packages from the additions list are compatible with the project's targetframework 
+            AssertPackageListOutcome(targetFramework, additions, true);
+        }
+
+        [Theory]
+        [InlineData(".NETFramework,Version=v2.0", CuratedFeed.None)]
+        [InlineData(".NETFramework,Version=v3.0", CuratedFeed.DotNet)]
+        [InlineData(".NETFramework,Version=v3.5,Profile=Full", CuratedFeed.None)]
+        [InlineData(".NETFramework,Version=v4.0", CuratedFeed.None)]
+        [InlineData(".NETFramework,Version=v4.0", CuratedFeed.WebMatrix)]
+        [InlineData(".NETFramework,Version=v4.5", CuratedFeed.Win8Express)]
+        [InlineData("Silverlight,Version=v4.0", CuratedFeed.None)]
+        [InlineData("Silverlight,Version=v5.0", CuratedFeed.None)]
+        [InlineData(".NETFramework,Version=v4.0,Profile=Client", CuratedFeed.None)]
+        [InlineData(".NETCore,Version=v4.5.1", CuratedFeed.None)]
+        [InlineData("WindowsPhone,Version=v8.1", CuratedFeed.None)]
+        [InlineData(".NETPortable,Version=v0.0,Profile=wp8+netcore45+net45+wp81+wpa81", CuratedFeed.None)]
+        [InlineData("Unsupported,Version=v0.0", CuratedFeed.None)]
+        [InlineData("MonoAndroid,Version=v0.0", CuratedFeed.None)]
+        [InlineData("MonoTouch,Version=v0.0", CuratedFeed.None)]
+        [InlineData("Silverlight,Version=v4.0,Profile=windowsphone71", CuratedFeed.None)]
+        [InlineData("Windows,Version=v8.0", CuratedFeed.Win8Express)]
+        [InlineData("WindowsPhoneApp,Version=v8.1", CuratedFeed.None)]
+        [InlineData(".NETFramework,Version=v3.5,Profile=CompactFramework", CuratedFeed.None)]
+        [InlineData(".NETMicroFramework,Version=v4.1", CuratedFeed.DotNet)]
+        [InlineData("ASP.Net,Version=v5.0", CuratedFeed.None)]
+        [InlineData("ASP.NetCore,Version=v5.0", CuratedFeed.None)]
+        [InlineData("Windows, Version=8.1", CuratedFeed.None)]
+        public void CompareSearchResultsForVersionUpdates(string targetFramework, CuratedFeed feed)
+        {
+            // Get the list of packages that have different versions in the new result results
+            List<IPackage> versionUpdates = GetChangesInSearchResults(targetFramework, feed).Item3;
+
+            // Assert packages from the versionUpdates list are compatible with the project's targetframework 
+            AssertPackageListOutcome(targetFramework, versionUpdates, true);
+        }
+
+        private void AssertPackageListOutcome(string targetFramework, IList<IPackage> list, bool expectCompatible)
+        {
+            FrameworkName projFramework = new FrameworkName(targetFramework);
+            foreach (IPackage package in list)
+            {
+                List<FrameworkName> packageFrameworks = FindSupportedTargetFrameworksForPackage(package);
+                bool isCompatible = IsCompatible(projFramework, packageFrameworks);
+                string output = BuildOutputString(package, projFramework, packageFrameworks, isCompatible, expectCompatible);
+                if (expectCompatible)
+                {
+                    Assert.True(isCompatible, output);
+                }
+                else
+                {
+                    Assert.False(isCompatible, output);
+                }
+            }
+        }
+
+        #region Helper methods
+        private string BuildOutputString(IPackage package, FrameworkName projFramework, List<FrameworkName> packageFrameworks, bool isCompatible, bool expectTrue)
+        {
+            string packageFrameworksList = (packageFrameworks == null || packageFrameworks.Count == 0) ? "Supporing All Frameworks" : string.Join(", ", packageFrameworks); 
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine(string.Format("Package: {0}, {1}", package.Id, package.Version));
+            builder.AppendLine(string.Format("Project targetframework is {0}; Package targetframewors are {1}.", projFramework, packageFrameworksList));
+            builder.AppendLine(string.Format("Expected compatbility: {0}; Actual: {1}", expectTrue, isCompatible));
+            builder.AppendLine();
+            return builder.ToString();
+        }
+
+        private Tuple<List<IPackage>, List<IPackage>, List<IPackage>> GetChangesInSearchResults(string targetFramework, CuratedFeed feed)
         {
             List<string> frameworks = new List<string>();
             frameworks.Add(targetFramework);
@@ -59,68 +165,40 @@ namespace NuGet.Services.Search.Comparer
             // Get Int search results
             List<IPackage> intResults = ReturnSearchResults(FeedSource.Int, feed, "", frameworks, false, Count);
 
-            // Compare the intResults against prodResults and get their differences
-            List<IPackage> reductions;
-            List<IPackage> additions;
-            List<IPackage> versionUpdates;
-            GetChangesInSearchResults(prodResults, intResults, out reductions, out additions, out versionUpdates);
+            List<IPackage> reductions = new List<IPackage>();
+            List<IPackage> additions = new List<IPackage>();
+            List<IPackage> versionUpdates = new List<IPackage>();
 
-            // Assert that the changes in search results are legitimate
-            FrameworkName projFramework = new FrameworkName(targetFramework);
-
-            foreach (IPackage package1 in reductions)
+            for (int i = 0; i < prodResults.Count(); i++)
             {
-                List<FrameworkName> packageFrameworks = FindSupportedTargetFrameworksForPackage(package1);
-                Assert.True(!IsCompatible(projFramework, packageFrameworks));
-            }
-
-            foreach (IPackage package2 in additions)
-            {
-                List<FrameworkName> packageFrameworks = FindSupportedTargetFrameworksForPackage(package2);
-                Assert.True(IsCompatible(projFramework, packageFrameworks));
-            }
-
-            foreach (IPackage package3 in versionUpdates)
-            {
-                List<FrameworkName> packageFrameworks = FindSupportedTargetFrameworksForPackage(package3);
-                Assert.True(IsCompatible(projFramework, packageFrameworks));
-            }
-        }
-
-        #region Helper methods
-        private void GetChangesInSearchResults(List<IPackage> listA, List<IPackage> listB, out List<IPackage> reductions, out List<IPackage> additions, out List<IPackage> versionUpdates)
-        {
-            reductions = new List<IPackage>();
-            additions = new List<IPackage>();
-            versionUpdates = new List<IPackage>();
-
-            for (int i = 0; i < listA.Count(); i++)
-            {
-                IPackage package = listB.Where(p => p.Id == listA[i].Id).FirstOrDefault();
+                IPackage package = intResults.Where(p => p.Id == prodResults[i].Id).FirstOrDefault();
                 if (package == null)
                 {
-                    reductions.Add(package);
+                    reductions.Add(prodResults[i]);
                 }
             }
 
-            for (int i = 0; i < listB.Count(); i++)
+            for (int i = 0; i < intResults.Count(); i++)
             {
-                IPackage package = listA.Where(p => p.Id == listB[i].Id).FirstOrDefault();
+                IPackage package = prodResults.Where(p => p.Id == intResults[i].Id).FirstOrDefault();
                 if (package == null)
                 {
-                    additions.Add(package);
+                    additions.Add(intResults[i]);
                 }
             }
 
-            for (int i = 0; i < listA.Count(); i++)
+            for (int i = 0; i < prodResults.Count(); i++)
             {
-                IPackage packageA = listA[i];
-                IPackage packageB = listB.Where(p => p.Id == packageA.Id).FirstOrDefault();
+                IPackage packageA = prodResults[i];
+                IPackage packageB = intResults.Where(p => p.Id == packageA.Id).FirstOrDefault();
                 if (packageB != null && packageA.Version != packageB.Version)
                 {
                     versionUpdates.Add(packageB);
                 }
             }
+
+            var resultTuple = new Tuple<List<IPackage>, List<IPackage>,List<IPackage>>(reductions, additions, versionUpdates);
+            return resultTuple;
         }
 
         private bool IsCompatible(FrameworkName projectFramework, List<FrameworkName> packageFrameworks)
@@ -136,9 +214,8 @@ namespace NuGet.Services.Search.Comparer
             {
                 frameworks = package.GetSupportedFrameworks().ToList();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex.Message);
             }
             return frameworks;
         }
@@ -223,6 +300,5 @@ namespace NuGet.Services.Search.Comparer
         Win8Express,
         WebMatrix,
         DotNet
-
     }
 }
