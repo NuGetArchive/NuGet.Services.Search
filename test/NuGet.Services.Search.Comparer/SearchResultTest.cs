@@ -11,6 +11,13 @@ namespace NuGet.Services.Search.Comparer
     {
         private int _count = 50;
         private string _rootPath = Environment.CurrentDirectory;
+        public string[] ExcludedProjects
+        {
+            get
+            {
+                return new string[] { ".NETPortable,Version=v0.0", "Unsupported,Version=v0.0", "Mono" };
+            }
+        }
 
         public int Count
         {
@@ -126,12 +133,22 @@ namespace NuGet.Services.Search.Comparer
         #region Helper methods
         private void AssertPackageListOutcome(string targetFramework, IList<IPackage> list, bool expectCompatible)
         {
-            FrameworkName projFramework = new FrameworkName(targetFramework);
+            FrameworkName projFramework;
+            if (IsExcludedProjectType(targetFramework))
+            {
+                projFramework = new FrameworkName(".NETFramework,Version=v4.5");
+            }
+            else
+            {
+                projFramework = new FrameworkName(targetFramework);
+            }
+
             foreach (IPackage package in list)
             {
                 List<FrameworkName> packageFrameworks = FindSupportedTargetFrameworksForPackage(package);
                 bool isCompatible = IsCompatible(projFramework, packageFrameworks);
                 string output = BuildOutputString(package, projFramework, packageFrameworks, isCompatible, expectCompatible);
+
                 if (expectCompatible)
                 {
                     Assert.True(isCompatible, output);
@@ -142,6 +159,7 @@ namespace NuGet.Services.Search.Comparer
                 }
             }
         }
+
         private string BuildOutputString(IPackage package, FrameworkName projFramework, List<FrameworkName> packageFrameworks, bool isCompatible, bool expectTrue)
         {
             string packageFrameworksList = (packageFrameworks == null || packageFrameworks.Count == 0) ? "Supporing All Frameworks" : string.Join(", ", packageFrameworks); 
@@ -157,6 +175,19 @@ namespace NuGet.Services.Search.Comparer
         {
             bool compat = NuGet.VersionUtility.IsCompatible(projectFramework, packageFrameworks);
             return compat;
+        }
+
+        private bool IsExcludedProjectType(string projectFramework)
+        {
+            bool isExcluded = false;
+            foreach (string moniker in ExcludedProjects)
+            {
+                if (projectFramework.ToLowerInvariant().Contains(moniker.ToLowerInvariant()))
+                {
+                    isExcluded = true;
+                }
+            }
+            return isExcluded;
         }
 
         private Tuple<List<IPackage>, List<IPackage>, List<IPackage>> GetChangesInSearchResults(string targetFramework, CuratedFeed feed)
