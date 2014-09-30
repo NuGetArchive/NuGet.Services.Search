@@ -147,8 +147,8 @@ namespace NuGet.Services.Search.Comparer
             string packageFrameworksList = (packageFrameworks == null || packageFrameworks.Count == 0) ? "Supporing All Frameworks" : string.Join(", ", packageFrameworks); 
             StringBuilder builder = new StringBuilder();
             builder.AppendLine(string.Format("Package: {0}, {1}", package.Id, package.Version));
-            builder.AppendLine(string.Format("Project targetframework is {0}; Package targetframewors are {1}.", projFramework, packageFrameworksList));
-            builder.AppendLine(string.Format("Expected compatbility: {0}; Actual: {1}", expectTrue, isCompatible));
+            builder.AppendLine(string.Format("Project targetframework is {0}; Package targetframeworks are {1}.", projFramework, packageFrameworksList));
+            builder.AppendLine(string.Format("Expected compatibility: {0}; Actual: {1}", expectTrue, isCompatible));
             builder.AppendLine();
             return builder.ToString();
         }
