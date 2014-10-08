@@ -146,11 +146,16 @@ namespace NuGet.Indexing
 
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            TopDocs topDocs = (sort == null) ?
-               searcher.Search(boostedQuery, filter, nDocs) :
-               searcher.Search(boostedQuery, filter, nDocs, sort);
-            sw.Stop();
-            
+
+            VisualStudioDialogCollector collector = new VisualStudioDialogCollector();            
+            searcher.Search(query, collector);
+
+            List<ScoreDoc> scoreDocs = collector.PopulateResults().ToList();
+            float score = scoreDocs.Count == 0 ? 0.0f : scoreDocs.First().Score;
+
+            // TODO: Handle boostedQuery, filter, nDocs, and sorting.
+            TopDocs topDocs = new TopDocs(scoreDocs.Count, scoreDocs.ToArray(), score);
+
             sw.Stop();
             return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds, rankings, manager);
         }
@@ -215,7 +220,7 @@ namespace NuGet.Indexing
             return (new JObject { { "totalHits", totalHits }, { "timeTakenInMs", elapsed } }).ToString();
         }
 
-        private static string MakeResults(IndexSearcher searcher, TopDocs topDocs, int skip, int take, bool includeExplanation, Query query, long elapsed, IDictionary<string, int> rankings, PackageSearcherManager manager)
+        private static string   MakeResults(IndexSearcher searcher, TopDocs topDocs, int skip, int take, bool includeExplanation, Query query, long elapsed, IDictionary<string, int> rankings, PackageSearcherManager manager)
         {
             //  note the use of a StringBuilder because we have the response data already formatted as JSON in the fields in the index
 
@@ -246,7 +251,7 @@ namespace NuGet.Indexing
                 ScoreDoc scoreDoc = topDocs.ScoreDocs[i];
 
                 Document doc = searcher.Doc(scoreDoc.Doc);
-                string data = doc.Get("Data");
+                string data = @"{ ""url"": """ + doc.Get("Url") + @""" }";
 
                 string key = doc.Get("Key");
                 int keyVal;

@@ -170,6 +170,7 @@
     <Compile Include="TagsAnalyzer.cs" />
     <Compile Include="TokenizingHelper.cs" />
     <Compile Include="VersionAnalyzer.cs" />
+    <Compile Include="VisualStudioDialogCollector.cs" />
     <Compile Include="WarehousePackageRanking.cs" />
     <Compile Include="SemanticVersionExtensions.cs" />
   </ItemGroup>
