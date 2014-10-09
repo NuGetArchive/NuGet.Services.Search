@@ -92,7 +92,8 @@ namespace NuGet.Services.Search
             Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
 
             SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
-            var searcher = GetSearcherManager(config);
+            PackageSearcherManager searcher = GetSearcherManager(config);
+            searcher.BlobBaseUrl = config.BlobBaseUrl;
             searcher.Open(); // Ensure the index is initially opened.
             IndexingEventSource.Log.LoadedSearcherManager();
             return searcher;
@@ -100,17 +101,22 @@ namespace NuGet.Services.Search
 
         private PackageSearcherManager GetSearcherManager(SearchConfiguration config)
         {
+            PackageSearcherManager manager;
             if (!String.IsNullOrEmpty(config.IndexPath))
             {
-                return PackageSearcherManager.CreateLocal(config.IndexPath);
+                manager = PackageSearcherManager.CreateLocal(config.IndexPath);
             }
             else
             {
-                return PackageSearcherManager.CreateAzure(
+                manager = PackageSearcherManager.CreateAzure(
                     Configuration.Storage.Primary,
                     config.IndexContainer,
                     config.DataContainer);
             }
+
+            manager.BlobBaseUrl = config.BlobBaseUrl;
+
+            return manager;
         }
     }
 }

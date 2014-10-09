@@ -30,9 +30,11 @@ namespace NuGet.Services.Search.MiniTester
 
         private PackageSearcherManager CreateSearcherManager()
         {
-            var index = WebConfigurationManager.AppSettings["IndexLocation"];
-            var fxList = WebConfigurationManager.AppSettings["FrameworksListLocation"];
-            return PackageSearcherManager.CreateLocal(index, fxList);
+            string index = WebConfigurationManager.AppSettings["IndexLocation"];
+            string fxList = WebConfigurationManager.AppSettings["FrameworksListLocation"];
+            var manager = PackageSearcherManager.CreateLocal(index, fxList);
+            manager.BlobBaseUrl = WebConfigurationManager.AppSettings["BlobBaseUrl"];
+            return manager;
         }
     }
 }

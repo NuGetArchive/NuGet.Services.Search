@@ -11,5 +11,6 @@ namespace NuGet.Services.Search
         public string IndexPath { get; set; }
         public string IndexContainer { get; set; }
         public string DataContainer { get; set; }
+        public string BlobBaseUrl { get; set; }
     }
 }

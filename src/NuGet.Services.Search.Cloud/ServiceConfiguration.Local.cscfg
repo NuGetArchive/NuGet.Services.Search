@@ -14,6 +14,7 @@
       <!-- The default value, if this is empty, is 'ng-search' -->
       <Setting name="Search.IndexContainer" value="" />
       <Setting name="Search.DataContainer" value="" />
+      <Setting name="Search.BlobBaseUrl" value="http://tempuri.org/" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountEncryptedPassword" value="" />

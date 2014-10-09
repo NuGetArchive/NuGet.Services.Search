@@ -31,6 +31,7 @@ namespace NuGet.Indexing
         public FrameworksList Frameworks { get; private set; }
         public Guid Id { get; private set; }
         public string IndexName { get; private set; }
+        public string BlobBaseUrl { get; set; }
 
         [Obsolete("You really should use the CreateLocal or CreateAzure static methods instead of the constructor")]
         public PackageSearcherManager(string indexName, Lucene.Net.Store.Directory directory, Rankings rankings, DownloadCounts downloadCounts, FrameworksList frameworks)

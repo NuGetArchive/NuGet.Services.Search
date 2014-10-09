@@ -251,7 +251,7 @@ namespace NuGet.Indexing
                 ScoreDoc scoreDoc = topDocs.ScoreDocs[i];
 
                 Document doc = searcher.Doc(scoreDoc.Doc);
-                string data = @"{ ""url"": """ + doc.Get("Url") + @""" }";
+                string data = @"{ ""url"": """ + manager.BlobBaseUrl + doc.Get("Url") + @""" }";
 
                 string key = doc.Get("Key");
                 int keyVal;
