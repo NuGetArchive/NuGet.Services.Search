@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>NuGet.Services.Search.Cloud</id>
+    <id>NuGet.Services.Search.V3.Cloud</id>
     <version>0.0.0</version>
     <authors>Outercurve Foundation</authors>
     <owners>Outercurve Foundation</owners>
