@@ -3,6 +3,7 @@ using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Lucene.Net.Util;
 using Newtonsoft.Json.Linq;
+using NuGetGallery;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,11 +18,14 @@ namespace NuGet.Indexing
         int _docBase;
         Scorer _scorer;
 
+        bool _includePrerelease;
+
         List<Tuple<string, SemanticVersion, float, int, Document>> _docs;
 
-        public VisualStudioDialogCollector()
+        public VisualStudioDialogCollector(bool includePrerelease)
         {
             _docs = new List<Tuple<string, SemanticVersion, float, int, Document>>();
+            _includePrerelease = includePrerelease;
         }
 
         public override bool AcceptsDocsOutOfOrder
@@ -31,13 +35,14 @@ namespace NuGet.Indexing
 
         public override void Collect(int doc)
         {
+            Package  pacakge;
             Document document = _reader.Document(doc);
             float score = _scorer.Score();
 
             string id = document.GetField("Id").StringValue;
             SemanticVersion ver = new SemanticVersion(document.GetField("Version").StringValue);
 
-            if (IsCompatible(doc))
+            if (IsCompatible(doc) && (_includePrerelease || string.IsNullOrEmpty(ver.SpecialVersion)))
             {
                 int index = _docs.FindIndex(x => x.Item1 == id);
                 if (index < 0)

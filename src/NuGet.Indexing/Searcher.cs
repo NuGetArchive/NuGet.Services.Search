@@ -119,7 +119,7 @@ namespace NuGet.Indexing
                 {
                     IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
 
-                    return ListDocumentsImpl(searcher, q, rankings, filter, sortBy, skip, take, includeExplanation, searcherManager);
+                    return ListDocumentsImpl(searcher, q, rankings, filter, sortBy, skip, take, includePrerelease, includeExplanation, searcherManager);
                 }
             }
             finally
@@ -137,7 +137,7 @@ namespace NuGet.Indexing
             return MakeCountResult(topDocs.TotalHits, sw.ElapsedMilliseconds);
         }
 
-        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, Filter filter, string sortBy, int skip, int take, bool includeExplanation, PackageSearcherManager manager)
+        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, Filter filter, string sortBy, int skip, int take, bool includePrerelease, bool includeExplanation, PackageSearcherManager manager)
         {
             Query boostedQuery = new RankingScoreQuery(query, rankings);
             
@@ -147,8 +147,8 @@ namespace NuGet.Indexing
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            VisualStudioDialogCollector collector = new VisualStudioDialogCollector();            
-            searcher.Search(query, collector);
+            VisualStudioDialogCollector collector = new VisualStudioDialogCollector(includePrerelease);
+            searcher.Search(query, filter, collector);
 
             List<ScoreDoc> scoreDocs = collector.PopulateResults().ToList();
             float score = scoreDocs.Count == 0 ? 0.0f : scoreDocs.First().Score;
