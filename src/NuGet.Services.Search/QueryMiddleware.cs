@@ -72,7 +72,8 @@ namespace NuGet.Services.Search
                 ignoreFilter = false;
             }
 
-            string fxName = context.Request.Query["supportedFramework"];
+            IList<string> fxValues = context.Request.Query.GetValues("supportedFramework");
+            string fxName = fxValues != null ? fxValues.FirstOrDefault() : null;
             FrameworkName supportedFramework = null;
             if (!String.IsNullOrEmpty(fxName))
             {
