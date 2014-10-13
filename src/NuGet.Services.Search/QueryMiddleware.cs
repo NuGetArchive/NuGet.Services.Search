@@ -72,6 +72,8 @@ namespace NuGet.Services.Search
                 ignoreFilter = false;
             }
 
+            string callback = context.Request.Query["callback"];
+
             IList<string> fxValues = context.Request.Query.GetValues("supportedFramework");
             string fxName = fxValues != null ? fxValues.FirstOrDefault() : null;
             FrameworkName supportedFramework = null;
@@ -116,7 +118,18 @@ namespace NuGet.Services.Search
             JObject result = JObject.Parse(content);
             result["answeredBy"] = ServiceName.ToString();
 
-            await WriteResponse(context, result.ToString());
+            string resultString;
+
+            if (string.IsNullOrEmpty(callback))
+            {
+                resultString = result.ToString();
+            }
+            else
+            {
+                resultString = callback + "(" + result.ToString() + ");";
+            }
+
+            await WriteResponse(context, resultString);
         }
     }
 }
