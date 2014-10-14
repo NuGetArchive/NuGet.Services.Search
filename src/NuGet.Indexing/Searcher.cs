@@ -251,7 +251,13 @@ namespace NuGet.Indexing
                 ScoreDoc scoreDoc = topDocs.ScoreDocs[i];
 
                 Document doc = searcher.Doc(scoreDoc.Doc);
-                string data = @"{ ""@id"": """ + manager.BlobBaseUrl + doc.Get("Url") + @""" }";
+                string data = string.Format(@"{{ ""@id"": ""{0}{1}"", ""registration"": ""{0}{2}/index.json"", ""id"": ""{3}"", ""version"": ""{4}"" }}",
+                    manager.BlobBaseUrl,
+                    doc.Get("Url"),
+                    doc.Get("Id").ToLowerInvariant(),
+                    doc.Get("Id"),
+                    doc.Get("Version")
+                    );
 
                 string key = doc.Get("Key");
                 int keyVal;
