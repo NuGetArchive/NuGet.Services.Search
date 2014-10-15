@@ -148,7 +148,7 @@ namespace NuGet.Indexing
             sw.Start();
 
             VisualStudioDialogCollector collector = new VisualStudioDialogCollector(includePrerelease);
-            searcher.Search(query, filter, collector);
+            searcher.Search(boostedQuery, collector);
 
             List<ScoreDoc> scoreDocs = collector.PopulateResults().ToList();
             float score = scoreDocs.Count == 0 ? 0.0f : scoreDocs.First().Score;
