@@ -20,11 +20,11 @@ namespace NuGet.Indexing
 
         bool _includePrerelease;
 
-        List<Tuple<string, SemanticVersion, float, int, Document>> _docs;
+        IDictionary<string, Tuple<string, SemanticVersion, float, int, Document>> _docs;
 
         public VisualStudioDialogCollector(bool includePrerelease)
         {
-            _docs = new List<Tuple<string, SemanticVersion, float, int, Document>>();
+            _docs = new Dictionary<string,Tuple<string, SemanticVersion, float, int, Document>>();
             _includePrerelease = includePrerelease;
         }
 
@@ -44,18 +44,9 @@ namespace NuGet.Indexing
 
             if (IsCompatible(doc) && (_includePrerelease || string.IsNullOrEmpty(ver.SpecialVersion)))
             {
-                int index = _docs.FindIndex(x => x.Item1 == id);
-                if (index < 0)
+                if (!_docs.ContainsKey(id) || _docs[id].Item2 < ver)
                 {
-                    _docs.Add(Tuple.Create(id, ver, _scorer.Score(), doc + _docBase, document));
-                    return;
-                }
-
-                // TODO: handle pre-release
-                if (_docs[index].Item2 < ver)
-                {
-                    _docs[index] = Tuple.Create(id, ver, _scorer.Score(), doc + _docBase, document);
-                    return;
+                    _docs[id] = Tuple.Create(id, ver, _scorer.Score(), doc + _docBase, document);
                 }
             }
         }
@@ -67,7 +58,7 @@ namespace NuGet.Indexing
 
         public IEnumerable<ScoreDoc> PopulateResults()
         {
-            return _docs.OrderBy(x => x.Item3).Select(x => new ScoreDoc(x.Item4, x.Item3));
+            return _docs.Select(x => x.Value).OrderByDescending(x => x.Item3).Select(x => new ScoreDoc(x.Item4, x.Item3));
         }
 
         public override void SetNextReader(Lucene.Net.Index.IndexReader reader, int docBase)
