@@ -35,7 +35,6 @@ namespace NuGet.Indexing
 
         public override void Collect(int doc)
         {
-            Package  pacakge;
             Document document = _reader.Document(doc);
             float score = _scorer.Score();
 
