@@ -95,7 +95,6 @@ namespace NuGet.Services.Search
 
                 var newQuery = new BooleanQuery();
                 newQuery.Add(query, Occur.MUST);
-                newQuery.Add(new TermQuery(new Term("Facet", facet)), Occur.MUST);
                 query = newQuery;
             }
 
