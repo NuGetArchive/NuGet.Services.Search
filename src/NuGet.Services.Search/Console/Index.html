@@ -115,9 +115,9 @@
 
             var html = '<div class="package-entry">';
 
-            var title = data[i].Title;
-            if (title === null || title === '') {
-                title = data[i].PackageRegistration.Id;
+            var title = data[i].title;
+            if (title === undefined || title === null || title === '') {
+                title = data[i].id;
             }
             html += '<p>';
             html += '<span class="result-number">' + number + '</span>&nbsp;<span class="result-title">' + title + '</span>';
@@ -131,12 +131,12 @@
             html += '<div class="result-details-div">';
 
             html += '<p><span class="result-id">';
-            html += data[i].PackageRegistration.Id + ' ' + data[i].Version;
+            html += data[i].id + ' ' + data[i].version;
             html += '</span></p>';
 
-            html += '<p><span class="result-description">' + data[i].Description + '</span></p>';
+            // html += '<p><span class="result-description">' + data[i].Description + '</span></p>';
 
-            html += '<p><span class="result-published">' + data[i].Published + '</span></p>';
+            // html += '<p><span class="result-published">' + data[i].Published + '</span></p>';
 
             if (data[i].Tags != undefined || data[i].Tags != null) {
                 html += '<p><span class="result-tags">' + data[i].Tags + '</span></p>';
