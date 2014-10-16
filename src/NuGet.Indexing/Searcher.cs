@@ -150,11 +150,13 @@ namespace NuGet.Indexing
             VisualStudioDialogCollector collector = new VisualStudioDialogCollector(includePrerelease);
             searcher.Search(boostedQuery, collector);
 
+            IEnumerable<ScoreDoc> results = collector.PopulateResults();
+
             List<ScoreDoc> scoreDocs = collector.PopulateResults().Take(nDocs).ToList();
             float score = scoreDocs.Count == 0 ? 0.0f : scoreDocs.First().Score;
 
             // TODO: Handle boostedQuery, filter, nDocs, and sorting.
-            TopDocs topDocs = new TopDocs(nDocs, scoreDocs.ToArray(), score);
+            TopDocs topDocs = new TopDocs(results.Count(), scoreDocs.ToArray(), score);
 
             sw.Stop();
             return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds, rankings, manager);
