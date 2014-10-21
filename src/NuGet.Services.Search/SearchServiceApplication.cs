@@ -80,6 +80,7 @@ namespace NuGet.Services.Search
 
             // Public endpoint(s)
             app.Use(typeof(QueryMiddleware), ServiceName, "/query", thunk);
+            app.Use(typeof(AutocompleteQueryMiddleware), ServiceName, "/autocomplete", thunk);
 
             // Admin endpoints
             app.Use(typeof(DiagMiddleware), ServiceName, "/diag", thunk);
@@ -105,6 +106,7 @@ namespace NuGet.Services.Search
                     resources.Add("diagnostics", MakeUri(context, "/diag"));
                     resources.Add("segments", MakeUri(context, "/segments"));
                     resources.Add("query", MakeUri(context, "/query"));
+                    resources.Add("query", MakeUri(context, "/autocomplete"));
 
                     if (context.Request.User != null && context.Request.User.IsInRole(Roles.Admin))
                     {

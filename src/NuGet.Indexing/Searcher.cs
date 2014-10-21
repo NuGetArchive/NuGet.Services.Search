@@ -68,8 +68,38 @@ namespace NuGet.Indexing
 
         public static string Search(PackageSearcherManager searcherManager, Query q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
-            IndexSearcher searcher;
+            IndexSearcher searcher = GetLatestSearcher(searcherManager);
 
+            try
+            {
+                // ignoreFilter = true, don't filter by framework, feed or latest(stable)
+                Filter filter = null;
+                if (!ignoreFilter)
+                {
+                    // So if false, set up the filter and adjust the query for the framework if needed
+                    filter = GetFilter(feed);
+                }
+
+                if (countOnly)
+                {
+                    return DocumentCountImpl(searcher, q, filter);
+                }
+                else
+                {
+                    IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
+
+                    return ListDocumentsImpl(searcher, q, rankings, filter, sortBy, skip, take, includePrerelease, includeExplanation, searcherManager);
+                }
+            }
+            finally
+            {
+                searcherManager.Release(searcher);
+            }
+        }
+
+        public static IndexSearcher GetLatestSearcher(PackageSearcherManager searcherManager)
+        {
+            IndexSearcher searcher;
             try
             {
                 if ((DateTime.UtcNow - WarmTimeStampUtc) > TimeSpan.FromMinutes(1))
@@ -101,31 +131,7 @@ namespace NuGet.Indexing
                 throw new CorruptIndexException("Exception on (re)opening", e);
             }
 
-            try
-            {
-                // ignoreFilter = true, don't filter by framework, feed or latest(stable)
-                Filter filter = null;
-                if (!ignoreFilter)
-                {
-                    // So if false, set up the filter and adjust the query for the framework if needed
-                    filter = GetFilter(feed);
-                }
-
-                if (countOnly)
-                {
-                    return DocumentCountImpl(searcher, q, filter);
-                }
-                else
-                {
-                    IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
-
-                    return ListDocumentsImpl(searcher, q, rankings, filter, sortBy, skip, take, includePrerelease, includeExplanation, searcherManager);
-                }
-            }
-            finally
-            {
-                searcherManager.Release(searcher);
-            }
+            return searcher;
         }
 
         private static string DocumentCountImpl(IndexSearcher searcher, Query query, Filter filter)
@@ -140,7 +146,7 @@ namespace NuGet.Indexing
         private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, Filter filter, string sortBy, int skip, int take, bool includePrerelease, bool includeExplanation, PackageSearcherManager manager)
         {
             Query boostedQuery = new RankingScoreQuery(query, rankings);
-            
+
             int nDocs = GetDocsCount(skip, take);
             Sort sort = GetSort(sortBy);
 
@@ -168,6 +174,7 @@ namespace NuGet.Indexing
             {"title-asc", () => new Sort(new SortField("DisplayName", SortField.STRING, reverse: false))},
             {"title-desc", () => new Sort(new SortField("DisplayName", SortField.STRING, reverse: true))},
         };
+
         private static Sort GetSort(string sortBy)
         {
             if (String.IsNullOrEmpty(sortBy))
