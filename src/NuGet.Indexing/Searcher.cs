@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Runtime.Versioning;
+using System.Collections.Concurrent;
 
 namespace NuGet.Indexing
 {
@@ -18,6 +19,8 @@ namespace NuGet.Indexing
     {
         static DateTime WarmTimeStampUtc = DateTime.UtcNow;
         static IDictionary<string, Filter> _filters = new Dictionary<string, Filter>();
+
+        static IDictionary<string, Tuple<DateTime, string>> _packageCache = new ConcurrentDictionary<string, Tuple<DateTime, string>>();
 
         public static string KeyRangeQuery(PackageSearcherManager searcherManager, int minKey, int maxKey)
         {
