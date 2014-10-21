@@ -15,6 +15,8 @@ namespace NuGet.Services.Search
 {
     public class AutocompleteQueryMiddleware: SearchMiddleware
     {
+        const int MAX_NGRAM_LENGTH = 8;
+
         public AutocompleteQueryMiddleware(OwinMiddleware next, ServiceName serviceName, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, serviceName, path, searcherManagerThunk) { }
 
         protected override async Task Execute(IOwinContext context)
@@ -25,6 +27,18 @@ namespace NuGet.Services.Search
             q = q.ToLowerInvariant();
             string id = context.Request.Query["id"] ?? String.Empty;
             id = id.ToLowerInvariant();
+
+            int skip;
+            if (!int.TryParse(context.Request.Query["skip"], out skip))
+            {
+                skip = 0;
+            }
+
+            int take;
+            if (!int.TryParse(context.Request.Query["take"], out take))
+            {
+                take = 20;
+            }
 
             IList<string> fxValues = context.Request.Query.GetValues("supportedFramework");
             string fxName = fxValues != null ? fxValues.FirstOrDefault() : null;
@@ -40,15 +54,20 @@ namespace NuGet.Services.Search
 
             if (!string.IsNullOrEmpty(q))
             {
-                Query query = new TermQuery(new Term("IdAutocomplete", q));
+                Query query = new TermQuery(new Term("IdAutocomplete", q.Length < 8 ? q : q.Substring(0, MAX_NGRAM_LENGTH)));
                 TopDocs results = searcher.Search(query, 1000);
-                resultString = string.Join("\",\"", results.ScoreDocs.Select(x => searcher.Doc(x.Doc)).Select(x => x.GetField("Id").StringValue).OrderBy(x => x).Distinct());
+                IEnumerable<string> resultStrings = results.ScoreDocs.Select(x => searcher.Doc(x.Doc)).Select(x => x.GetField("Id").StringValue);
+                if (q.Length > MAX_NGRAM_LENGTH)
+                {
+                    resultStrings = resultStrings.Where(x => x.ToLowerInvariant().Contains(q));
+                }
+                resultString = string.Join("\",\"", resultStrings.OrderBy(x => x).Distinct().Skip(skip).Take(take));
             }
             else if (!string.IsNullOrEmpty(id))
             {
                 Query query = new TermQuery(new Term("Id", id));
                 TopDocs results = searcher.Search(query, 1000);
-                resultString = string.Join("\",\"", results.ScoreDocs.Select(x => searcher.Doc(x.Doc)).Select(x => x.GetField("Version").StringValue).Select(x => new SemanticVersion(x)).OrderBy(x => x));
+                resultString = string.Join("\",\"", results.ScoreDocs.Select(x => searcher.Doc(x.Doc)).Select(x => x.GetField("Version").StringValue).Select(x => new SemanticVersion(x)).OrderBy(x => x).Skip(skip).Take(take));
             }
 
             StringBuilder strBldr = new StringBuilder();
