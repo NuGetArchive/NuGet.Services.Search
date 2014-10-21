@@ -74,7 +74,9 @@ namespace NuGet.Services.Search
                 strBldr.Append("\"");
             }
 
-            strBldr.Append("]}");
+            strBldr.Append("],");
+            strBldr.AppendFormat("\"answeredBy\":\"{0}\"", ServiceName);
+            strBldr.Append("}");
 
             await WriteResponse(context, strBldr.ToString());
         }
