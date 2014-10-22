@@ -21,12 +21,17 @@ namespace NuGet.Services.Search
 
         protected override async Task Execute(IOwinContext context)
         {
-            Trace.TraceInformation("Search: {0}", context.Request.QueryString);
+            Trace.TraceInformation("Autocomplete: {0}", context.Request.QueryString);
 
-            string q = context.Request.Query["q"] ?? String.Empty;
-            q = q.ToLowerInvariant();
-            string id = context.Request.Query["id"] ?? String.Empty;
-            id = id.ToLowerInvariant();
+            string q = context.Request.Query["q"];
+            q = (q == null ? null : q.ToLowerInvariant());
+            string id = context.Request.Query["id"];
+            id = (id == null ? null : id.ToLowerInvariant());
+
+            if (q == null && id == null)
+            {
+                q = string.Empty;
+            }
 
             int skip;
             if (!int.TryParse(context.Request.Query["skip"], out skip))
@@ -52,18 +57,32 @@ namespace NuGet.Services.Search
 
             IndexSearcher searcher = NuGet.Indexing.Searcher.GetLatestSearcher(SearcherManager);
 
-            if (!string.IsNullOrEmpty(q))
+            if (q != null)
             {
-                Query query = new TermQuery(new Term("IdAutocomplete", q.Length < 8 ? q : q.Substring(0, MAX_NGRAM_LENGTH)));
-                TopDocs results = searcher.Search(query, 1000);
-                IEnumerable<string> resultStrings = results.ScoreDocs.Select(x => searcher.Doc(x.Doc)).Select(x => x.GetField("Id").StringValue);
+                IDictionary<string, int> rankings = SearcherManager.GetRankings("");
+
+                Query query = new MatchAllDocsQuery();
+
+                if (!string.IsNullOrEmpty(q))
+                {
+                    query = new TermQuery(new Term("IdAutocomplete", q.Length < 8 ? q : q.Substring(0, MAX_NGRAM_LENGTH)));
+                }
+                Query boostedQuery = new RankingScoreQuery(query, rankings);
+
+                VisualStudioDialogCollector coll = new VisualStudioDialogCollector(includePrerelease: true);
+
+                searcher.Search(boostedQuery, coll);
+
+                IEnumerable<ScoreDoc> results = coll.PopulateResults();
+
+                IEnumerable<string> resultStrings = results.Select(x => searcher.Doc(x.Doc)).Select(x => x.GetField("Id").StringValue);
                 if (q.Length > MAX_NGRAM_LENGTH)
                 {
                     resultStrings = resultStrings.Where(x => x.ToLowerInvariant().Contains(q));
                 }
-                resultString = string.Join("\",\"", resultStrings.OrderBy(x => x).Distinct().Skip(skip).Take(take));
+                resultString = string.Join("\",\"", resultStrings.Skip(skip).Take(take));
             }
-            else if (!string.IsNullOrEmpty(id))
+            else if (id != null)
             {
                 Query query = new TermQuery(new Term("Id", id));
                 TopDocs results = searcher.Search(query, 1000);
