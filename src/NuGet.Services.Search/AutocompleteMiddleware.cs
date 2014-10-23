@@ -57,6 +57,8 @@ namespace NuGet.Services.Search
 
             IndexSearcher searcher = NuGet.Indexing.Searcher.GetLatestSearcher(SearcherManager);
 
+            int totalHits = 0;
+
             if (q != null)
             {
                 IDictionary<string, int> rankings = SearcherManager.GetRankings("");
@@ -80,12 +82,16 @@ namespace NuGet.Services.Search
                 {
                     resultStrings = resultStrings.Where(x => x.ToLowerInvariant().Contains(q));
                 }
+
+                totalHits = resultStrings.Count();
+
                 resultString = string.Join("\",\"", resultStrings.Skip(skip).Take(take));
             }
             else if (id != null)
             {
                 Query query = new TermQuery(new Term("Id", id));
                 TopDocs results = searcher.Search(query, 1000);
+                totalHits = results.TotalHits;
                 resultString = string.Join("\",\"", results.ScoreDocs.Select(x => searcher.Doc(x.Doc)).Select(x => x.GetField("Version").StringValue).Select(x => new SemanticVersion(x)).OrderBy(x => x).Skip(skip).Take(take));
             }
 
@@ -97,7 +103,7 @@ namespace NuGet.Services.Search
                 timestamp = null;
             }
 
-            strBldr.AppendFormat("{{\"@context\":{{\"@vocab\":\"http://schema.nuget.org/schema#\"}},\"totalHits\":{0},\"timeTakenInMs\":{1},\"index\":\"{2}\"", 0 /*topDocs.TotalHits*/, 0/*elapsed*/, SearcherManager.IndexName);
+            strBldr.AppendFormat("{{\"@context\":{{\"@vocab\":\"http://schema.nuget.org/schema#\"}},\"totalHits\":{0},\"timeTakenInMs\":{1},\"index\":\"{2}\"", totalHits, 0/*elapsed*/, SearcherManager.IndexName);
             if (!String.IsNullOrEmpty(timestamp))
             {
                 strBldr.AppendFormat(",\"indexTimestamp\":\"{0}\"", timestamp);
