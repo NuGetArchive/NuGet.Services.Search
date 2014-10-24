@@ -19,13 +19,17 @@ namespace NuGet.Indexing
         Scorer _scorer;
 
         bool _includePrerelease;
+        string _supportedFramework;
+        IDictionary<string, ISet<string>> _frameworkCompatibility;
 
         IDictionary<string, Tuple<string, SemanticVersion, float, int, Document>> _docs;
 
-        public VisualStudioDialogCollector(bool includePrerelease)
+        public VisualStudioDialogCollector(bool includePrerelease, string supportedFramework, IDictionary<string,ISet<string>> frameworkCompatibility)
         {
             _docs = new Dictionary<string,Tuple<string, SemanticVersion, float, int, Document>>();
             _includePrerelease = includePrerelease;
+            _supportedFramework = supportedFramework;
+            _frameworkCompatibility = frameworkCompatibility;
         }
 
         public override bool AcceptsDocsOutOfOrder
@@ -52,7 +56,26 @@ namespace NuGet.Indexing
 
         private bool IsCompatible(int doc)
         {
-            return true;
+            if (_supportedFramework == null || _supportedFramework == "any") return true;
+
+            string supportedFrameworkName = _supportedFramework; //VersionUtility.ParseFrameworkName(_supportedFramework).ToString();
+
+            Document document = _reader.Document(doc);
+            Field[] frameworks = document.GetFields("TargetFramework");
+
+            if (frameworks.Length == 0) return true;
+
+            ISet<string> compatibleFrameworks;
+            if (!_frameworkCompatibility.TryGetValue(_supportedFramework, out compatibleFrameworks)) return true;
+            foreach (Field frameworkField in frameworks)
+            {
+                string framework = frameworkField.StringValue;
+                if (framework == "any") return true;
+
+                if (compatibleFrameworks.Contains(framework)) return true;
+            }
+
+            return false;
         }
 
         public IEnumerable<ScoreDoc> PopulateResults()

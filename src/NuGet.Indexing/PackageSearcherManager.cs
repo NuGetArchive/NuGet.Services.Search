@@ -18,29 +18,34 @@ namespace NuGet.Indexing
         public static readonly TimeSpan PortableFrameworksRefreshRate = TimeSpan.FromHours(24);
         public static readonly TimeSpan RankingRefreshRate = TimeSpan.FromHours(24);
         public static readonly TimeSpan DownloadCountRefreshRate = TimeSpan.FromMinutes(5);
+        public static readonly TimeSpan FrameworkCompatibilityRefreshRate = TimeSpan.FromHours(24);
 
         IndexData<IDictionary<string, IDictionary<string, int>>> _currentRankings;
         IndexData<IDictionary<int, DownloadCountRecord>> _currentDownloadCounts;
         IndexData<IList<FrameworkName>> _currentFrameworkList;
+        IndexData<IDictionary<string, ISet<string>>> _currentFrameworkCompatibility;
 
         public DateTime DownloadCountsUpdatedUtc { get { return _currentDownloadCounts.LastUpdatedUtc; } }
         public DateTime RankingsUpdatedUtc { get { return _currentRankings.LastUpdatedUtc; } }
         public DateTime FrameworkListUpdatedUtc { get { return _currentFrameworkList.LastUpdatedUtc; } }
+        public DateTime FrameworkCompatibilityUpdatedUtc { get { return _currentFrameworkCompatibility.LastUpdatedUtc; } }
         public Rankings Rankings { get; private set; }
         public DownloadCounts DownloadCounts { get; private set; }
         public FrameworksList Frameworks { get; private set; }
+        public FrameworkCompatibility FrameworkCompatibility { get; private set; }
         public Guid Id { get; private set; }
         public string IndexName { get; private set; }
         public string BlobBaseUrl { get; set; }
 
         [Obsolete("You really should use the CreateLocal or CreateAzure static methods instead of the constructor")]
-        public PackageSearcherManager(string indexName, Lucene.Net.Store.Directory directory, Rankings rankings, DownloadCounts downloadCounts, FrameworksList frameworks)
+        public PackageSearcherManager(string indexName, Lucene.Net.Store.Directory directory, Rankings rankings, DownloadCounts downloadCounts, FrameworksList frameworks, FrameworkCompatibility frameworkCompatibility)
             : base(directory)
         {
             Rankings = rankings;
             DownloadCounts = downloadCounts;
             Frameworks = frameworks;
             IndexName = indexName;
+            FrameworkCompatibility = frameworkCompatibility;
 
             _currentDownloadCounts = new IndexData<IDictionary<int, DownloadCountRecord>>(
                 "DownloadCounts",
@@ -57,6 +62,12 @@ namespace NuGet.Indexing
                 Frameworks.Path,
                 Frameworks.Load,
                 FrameworksRefreshRate);
+            _currentFrameworkCompatibility = new IndexData<IDictionary<string,ISet<string>>>(
+                "FrameworkCompatibility",
+                FrameworkCompatibility.Path,
+                FrameworkCompatibility.Load,
+                FrameworkCompatibilityRefreshRate
+                );
 
             Id = Guid.NewGuid(); // Used for identifying changes to the searcher manager at runtime.
         }
@@ -69,6 +80,7 @@ namespace NuGet.Indexing
             _currentDownloadCounts.Reload();
             _currentRankings.Reload();
             _currentFrameworkList.Reload();
+            _currentFrameworkCompatibility.Reload();
         }
 
         public IDictionary<string, int> GetRankings(string context)
@@ -118,11 +130,19 @@ namespace NuGet.Indexing
             return _currentFrameworkList.Value ?? new List<FrameworkName>();
         }
 
+        public IDictionary<string, ISet<string>> GetFrameworkCompatibility()
+        {
+            _currentFrameworkCompatibility.MaybeReload();
+
+            return _currentFrameworkCompatibility.Value ?? new Dictionary<string, ISet<string>>();
+        }
+
         public static PackageSearcherManager CreateLocal(
             string localDirectory,
             string frameworksFile = null,
             string rankingsFile = null,
-            string downloadCountsFile = null)
+            string downloadCountsFile = null,
+            string frameworkCompatibilityFile = null)
         {
             if (String.IsNullOrEmpty(frameworksFile))
             {
@@ -136,13 +156,18 @@ namespace NuGet.Indexing
             {
                 downloadCountsFile = Path.Combine(localDirectory, "data", DownloadCounts.FileName);
             }
+            if (String.IsNullOrEmpty(frameworkCompatibilityFile))
+            {
+                frameworkCompatibilityFile = Path.Combine(localDirectory, "data", FrameworkCompatibility.FileName);
+            }
             var dir = new DirectoryInfo(localDirectory);
             return new PackageSearcherManager(
                 dir.Name,
                 new SimpleFSDirectory(dir),
                 new LocalRankings(rankingsFile),
                 new LocalDownloadCounts(downloadCountsFile),
-                new LocalFrameworksList(frameworksFile));
+                new LocalFrameworksList(frameworksFile),
+                new LocalFrameworkCompatibility(frameworkCompatibilityFile));
         }
 
         public static PackageSearcherManager CreateAzure(
@@ -177,7 +202,8 @@ namespace NuGet.Indexing
                 new AzureDirectory(storageAccount, indexContainer, new RAMDirectory()),
                 new StorageRankings(storageAccount, dataContainer, dataPath + Rankings.FileName),
                 new StorageDownloadCounts(storageAccount, dataContainer, dataPath + DownloadCounts.FileName),
-                new StorageFrameworksList(storageAccount, dataContainer, dataPath + FrameworksList.FileName));
+                new StorageFrameworksList(storageAccount, dataContainer, dataPath + FrameworksList.FileName),
+                new StorageFrameworkCompatibility(storageAccount, dataContainer, dataPath + FrameworkCompatibility.FileName));
         }
 
         // Little helper class to handle these "load async and swap" objects

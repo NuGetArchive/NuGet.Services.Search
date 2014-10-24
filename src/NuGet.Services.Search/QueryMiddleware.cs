@@ -102,16 +102,17 @@ namespace NuGet.Services.Search
             Trace.TraceInformation(args);
 
             string content = NuGet.Indexing.Searcher.Search(
-                SearcherManager, 
-                query, 
-                countOnly, 
-                projectType, 
-                includePrerelease, 
+                SearcherManager,
+                query,
+                countOnly,
+                projectType,
+                supportedFramework.ToString(),
+                includePrerelease,
                 feed,
-                sortBy, 
-                skip, 
-                take, 
-                includeExplanation, 
+                sortBy,
+                skip,
+                take,
+                includeExplanation,
                 ignoreFilter);
 
             JObject result = JObject.Parse(content);

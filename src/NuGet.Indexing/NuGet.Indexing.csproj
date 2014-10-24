@@ -130,6 +130,7 @@
     <Compile Include="DownloadCounts.cs" />
     <Compile Include="FacetedDocument.cs" />
     <Compile Include="Facets.cs" />
+    <Compile Include="FrameworkCompatibility.cs" />
     <Compile Include="IdentifierAutocompleteAnalyzer.cs" />
     <Compile Include="LocalDownloadCounts.cs" />
     <Compile Include="FrameworksList.cs" />

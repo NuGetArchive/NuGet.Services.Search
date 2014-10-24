@@ -53,13 +53,14 @@ namespace NuGet.Indexing
             }
         }
 
-        public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        public static string Search(PackageSearcherManager searcherManager, string q, bool countOnly, string projectType, string supportedFramework, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
             return Search(
                 searcherManager,
                 LuceneQueryCreator.Parse(q, true),
                 countOnly,
                 projectType,
+                supportedFramework,
                 includePrerelease,
                 feed,
                 sortBy,
@@ -69,7 +70,7 @@ namespace NuGet.Indexing
                 ignoreFilter);
         }
 
-        public static string Search(PackageSearcherManager searcherManager, Query q, bool countOnly, string projectType, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
+        public static string Search(PackageSearcherManager searcherManager, Query q, bool countOnly, string projectType, string supportedFramework, bool includePrerelease, string feed, string sortBy, int skip, int take, bool includeExplanation, bool ignoreFilter)
         {
             IndexSearcher searcher = GetLatestSearcher(searcherManager);
 
@@ -91,7 +92,7 @@ namespace NuGet.Indexing
                 {
                     IDictionary<string, int> rankings = searcherManager.GetRankings(projectType);
 
-                    return ListDocumentsImpl(searcher, q, rankings, filter, sortBy, skip, take, includePrerelease, includeExplanation, searcherManager);
+                    return ListDocumentsImpl(searcher, q, rankings, filter, sortBy, skip, take, includePrerelease, supportedFramework, includeExplanation, searcherManager);
                 }
             }
             finally
@@ -146,7 +147,7 @@ namespace NuGet.Indexing
             return MakeCountResult(topDocs.TotalHits, sw.ElapsedMilliseconds);
         }
 
-        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, Filter filter, string sortBy, int skip, int take, bool includePrerelease, bool includeExplanation, PackageSearcherManager manager)
+        private static string ListDocumentsImpl(IndexSearcher searcher, Query query, IDictionary<string, int> rankings, Filter filter, string sortBy, int skip, int take, bool includePrerelease, string supportedFramework, bool includeExplanation, PackageSearcherManager manager)
         {
             Query boostedQuery = new RankingScoreQuery(query, rankings);
 
@@ -156,7 +157,7 @@ namespace NuGet.Indexing
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            VisualStudioDialogCollector collector = new VisualStudioDialogCollector(includePrerelease);
+            VisualStudioDialogCollector collector = new VisualStudioDialogCollector(includePrerelease, supportedFramework, manager.GetFrameworkCompatibility());
             searcher.Search(boostedQuery, collector);
 
             IEnumerable<ScoreDoc> results = collector.PopulateResults();

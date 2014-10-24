@@ -47,10 +47,10 @@ namespace NuGet.Services.Search
 
             IList<string> fxValues = context.Request.Query.GetValues("supportedFramework");
             string fxName = fxValues != null ? fxValues.FirstOrDefault() : null;
-            FrameworkName supportedFramework = null;
+            string supportedFramework = null;
             if (!String.IsNullOrEmpty(fxName))
             {
-                supportedFramework = VersionUtility.ParseFrameworkName(fxName);
+                supportedFramework = VersionUtility.ParseFrameworkName(fxName).ToString();
             }
 
             string resultString = "";
@@ -71,7 +71,7 @@ namespace NuGet.Services.Search
                 }
                 Query boostedQuery = new RankingScoreQuery(query, rankings);
 
-                VisualStudioDialogCollector coll = new VisualStudioDialogCollector(includePrerelease: true);
+                VisualStudioDialogCollector coll = new VisualStudioDialogCollector(true, supportedFramework, SearcherManager.GetFrameworkCompatibility());
 
                 searcher.Search(boostedQuery, coll);
 
@@ -90,7 +90,7 @@ namespace NuGet.Services.Search
             else if (id != null)
             {
                 Query query = new TermQuery(new Term("Id", id));
-                TopDocs results = searcher.Search(query, 1000);
+                TopDocs results = searcher.Search(query, skip + take);
                 totalHits = results.TotalHits;
                 resultString = string.Join("\",\"", results.ScoreDocs.Select(x => searcher.Doc(x.Doc)).Select(x => x.GetField("Version").StringValue).Select(x => new SemanticVersion(x)).OrderBy(x => x).Skip(skip).Take(take));
             }
