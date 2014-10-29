@@ -31,7 +31,7 @@ namespace NuGet.Services.Search
             bool luceneQuery;
             if (!bool.TryParse(context.Request.Query["luceneQuery"], out luceneQuery))
             {
-                luceneQuery = true;
+                luceneQuery = false;
             }
 
             bool includePrerelease;
