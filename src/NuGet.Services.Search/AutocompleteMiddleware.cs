@@ -23,6 +23,9 @@ namespace NuGet.Services.Search
         {
             Trace.TraceInformation("Autocomplete: {0}", context.Request.QueryString);
 
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             string q = context.Request.Query["q"];
             q = (q == null ? null : q.ToLowerInvariant());
             string id = context.Request.Query["id"];
@@ -103,7 +106,9 @@ namespace NuGet.Services.Search
                 timestamp = null;
             }
 
-            strBldr.AppendFormat("{{\"@context\":{{\"@vocab\":\"http://schema.nuget.org/schema#\"}},\"totalHits\":{0},\"timeTakenInMs\":{1},\"index\":\"{2}\"", totalHits, 0/*elapsed*/, SearcherManager.IndexName);
+            sw.Stop();
+
+            strBldr.AppendFormat("{{\"@context\":{{\"@vocab\":\"http://schema.nuget.org/schema#\"}},\"totalHits\":{0},\"timeTakenInMs\":{1},\"index\":\"{2}\"", totalHits, sw.ElapsedMilliseconds, SearcherManager.IndexName);
             if (!String.IsNullOrEmpty(timestamp))
             {
                 strBldr.AppendFormat(",\"indexTimestamp\":\"{0}\"", timestamp);
