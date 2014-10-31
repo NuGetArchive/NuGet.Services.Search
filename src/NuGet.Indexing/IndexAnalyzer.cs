@@ -43,6 +43,7 @@ namespace NuGet.Indexing
 
                 report.Add("RankingsUpdated", searcherManager.RankingsUpdatedUtc);
                 report.Add("DownloadCountsUpdated", searcherManager.DownloadCountsUpdatedUtc);
+                report.Add("FrameworkCompatibilityUpdated", searcherManager.FrameworkCompatibilityUpdatedUtc);
 
                 if (indexReader.CommitUserData != null)
                 {

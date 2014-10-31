@@ -14,7 +14,7 @@ namespace NuGet.Indexing
     public abstract class FrameworkCompatibility
     {
         public static readonly FrameworkName AnyFramework = new FrameworkName("Any", new Version(0, 0));
-        public static readonly string FileName = "frameworkCompat.json";
+        public static readonly string FileName = "frameworkCompat.v1.json";
 
         public static FrameworkCompatibility Empty = new EmptyFrameworkCompatibility();
 
