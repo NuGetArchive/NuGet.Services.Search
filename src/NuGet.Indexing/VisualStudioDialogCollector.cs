@@ -70,7 +70,7 @@ namespace NuGet.Indexing
             foreach (Field frameworkField in frameworks)
             {
                 string framework = frameworkField.StringValue;
-                if (framework == "any") return true;
+                if (framework == "any" || framework == "agnostic") return true;
 
                 if (compatibleFrameworks.Contains(framework)) return true;
             }
