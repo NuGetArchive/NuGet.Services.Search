@@ -5,6 +5,8 @@ using System.Linq;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
+using System.Web.Caching;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Microsoft.Owin;
@@ -98,22 +100,63 @@ namespace NuGet.Services.Search
                 query = newQuery;
             }
 
-            string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
+            string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11})", q, countOnly, projectType, supportedFramework.ToString(), includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
             Trace.TraceInformation(args);
 
-            string content = NuGet.Indexing.Searcher.Search(
-                SearcherManager,
-                query,
-                countOnly,
-                projectType,
-                supportedFramework.ToString(),
-                includePrerelease,
-                feed,
-                sortBy,
-                skip,
-                take,
-                includeExplanation,
-                ignoreFilter);
+            object frameworkCompatibilityTimeObj = HttpRuntime.Cache.Get("FrameworkCompatibilityTime");
+            object rankingsTimeObj = HttpRuntime.Cache.Get("RankingsTime");
+
+            DateTime frameworkCompatibilityTime;
+            DateTime rankingsTime;
+
+            if (frameworkCompatibilityTimeObj == null)
+            {
+                frameworkCompatibilityTime = DateTime.MinValue;
+            }
+            else
+            {
+                frameworkCompatibilityTime = (DateTime)frameworkCompatibilityTimeObj;
+            }
+
+            if (frameworkCompatibilityTime != SearcherManager.FrameworkCompatibilityUpdatedUtc)
+            {
+                HttpRuntime.Cache.Add("FrameworkCompatibilityTime", SearcherManager.FrameworkCompatibilityUpdatedUtc, null, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration, CacheItemPriority.Normal, null);
+            }
+
+            if (rankingsTimeObj == null)
+            {
+                rankingsTime = DateTime.MinValue;
+            }
+            else
+            {
+                rankingsTime = (DateTime)rankingsTimeObj;
+            }
+
+            if (rankingsTime != SearcherManager.RankingsUpdatedUtc)
+            {
+                HttpRuntime.Cache.Add("RankingsTime", SearcherManager.RankingsUpdatedUtc, null, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration, CacheItemPriority.Normal, null);
+            }
+
+            Cache cache = HttpRuntime.Cache;
+            string content = (string)cache.Get(args);
+            if (content == null)
+            {
+                content = NuGet.Indexing.Searcher.Search(
+                    SearcherManager,
+                    query,
+                    countOnly,
+                    projectType,
+                    supportedFramework.ToString(),
+                    includePrerelease,
+                    feed,
+                    sortBy,
+                    skip,
+                    take,
+                    includeExplanation,
+                    ignoreFilter);
+
+                if (string.IsNullOrEmpty(q)) cache.Add(args, content, new CacheDependency(new string[0], new string[] { "FrameworkCompatibilityTime", "RankingsTime" }), Cache.NoAbsoluteExpiration, TimeSpan.FromMinutes(5), CacheItemPriority.Normal, null);
+            }
 
             JObject result = JObject.Parse(content);
             result["answeredBy"] = ServiceName.ToString();
