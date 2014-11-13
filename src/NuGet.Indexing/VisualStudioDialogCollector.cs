@@ -43,13 +43,15 @@ namespace NuGet.Indexing
             float score = _scorer.Score();
 
             string id = document.GetField("Id").StringValue;
+            string lowerId = id.ToLowerInvariant();
             SemanticVersion ver = new SemanticVersion(document.GetField("Version").StringValue);
 
             if (IsCompatible(doc) && (_includePrerelease || string.IsNullOrEmpty(ver.SpecialVersion)))
             {
-                if (!_docs.ContainsKey(id) || _docs[id].Item2 < ver)
+                Tuple<string, SemanticVersion, float, int, Document> item;
+                if (!_docs.TryGetValue(lowerId, out item) || item.Item2 < ver)
                 {
-                    _docs[id] = Tuple.Create(id, ver, _scorer.Score(), doc + _docBase, document);
+                    _docs[lowerId] = Tuple.Create(id, ver, _scorer.Score(), doc + _docBase, document);
                 }
             }
         }

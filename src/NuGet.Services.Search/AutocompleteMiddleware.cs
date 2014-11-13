@@ -10,6 +10,8 @@ using System.Linq;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
+using System.Web.Caching;
 
 namespace NuGet.Services.Search
 {
@@ -64,31 +66,79 @@ namespace NuGet.Services.Search
 
             if (q != null)
             {
-                IDictionary<string, int> rankings = SearcherManager.GetRankings("");
+                string args = string.Format("AutoComplete(..., {0}, {1}, {2}, {3})", q, supportedFramework, skip, take);
 
-                Query query = new MatchAllDocsQuery();
+                object frameworkCompatibilityTimeObj = HttpRuntime.Cache.Get("FrameworkCompatibilityTime");
+                object rankingsTimeObj = HttpRuntime.Cache.Get("RankingsTime");
 
-                if (!string.IsNullOrEmpty(q))
+                DateTime frameworkCompatibilityTime;
+                DateTime rankingsTime;
+
+                if (frameworkCompatibilityTimeObj == null)
                 {
-                    query = new TermQuery(new Term("IdAutocomplete", q.Length < 8 ? q : q.Substring(0, MAX_NGRAM_LENGTH)));
+                    frameworkCompatibilityTime = DateTime.MinValue;
                 }
-                Query boostedQuery = new RankingScoreQuery(query, rankings);
-
-                VisualStudioDialogCollector coll = new VisualStudioDialogCollector(true, supportedFramework, SearcherManager.GetFrameworkCompatibility());
-
-                searcher.Search(boostedQuery, coll);
-
-                IEnumerable<ScoreDoc> results = coll.PopulateResults();
-
-                IEnumerable<string> resultStrings = results.Select(x => searcher.Doc(x.Doc)).Select(x => x.GetField("Id").StringValue);
-                if (q.Length > MAX_NGRAM_LENGTH)
+                else
                 {
-                    resultStrings = resultStrings.Where(x => x.ToLowerInvariant().Contains(q));
+                    frameworkCompatibilityTime = (DateTime)frameworkCompatibilityTimeObj;
                 }
 
-                totalHits = resultStrings.Count();
+                if (frameworkCompatibilityTime != SearcherManager.FrameworkCompatibilityUpdatedUtc)
+                {
+                    HttpRuntime.Cache.Add("FrameworkCompatibilityTime", SearcherManager.FrameworkCompatibilityUpdatedUtc, null, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration, CacheItemPriority.Normal, null);
+                }
 
-                resultString = string.Join("\",\"", resultStrings.Skip(skip).Take(take));
+                if (rankingsTimeObj == null)
+                {
+                    rankingsTime = DateTime.MinValue;
+                }
+                else
+                {
+                    rankingsTime = (DateTime)rankingsTimeObj;
+                }
+
+                if (rankingsTime != SearcherManager.RankingsUpdatedUtc)
+                {
+                    HttpRuntime.Cache.Add("RankingsTime", SearcherManager.RankingsUpdatedUtc, null, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration, CacheItemPriority.Normal, null);
+                }
+
+                Tuple<int, string> resultObj = (Tuple<int, string>)HttpRuntime.Cache.Get(args);
+
+                if (resultObj == null)
+                {
+                    IDictionary<string, int> rankings = SearcherManager.GetRankings("");
+
+                    Query query = new MatchAllDocsQuery();
+
+                    if (!string.IsNullOrEmpty(q))
+                    {
+                        query = new TermQuery(new Term("IdAutocomplete", q.Length < 8 ? q : q.Substring(0, MAX_NGRAM_LENGTH)));
+                    }
+                    Query boostedQuery = new RankingScoreQuery(query, rankings);
+
+                    VisualStudioDialogCollector coll = new VisualStudioDialogCollector(true, supportedFramework, SearcherManager.GetFrameworkCompatibility());
+
+                    searcher.Search(boostedQuery, coll);
+
+                    IEnumerable<ScoreDoc> results = coll.PopulateResults();
+
+                    IEnumerable<string> resultStrings = results.Select(x => searcher.Doc(x.Doc)).Select(x => x.GetField("Id").StringValue);
+                    if (q.Length > MAX_NGRAM_LENGTH)
+                    {
+                        resultStrings = resultStrings.Where(x => x.ToLowerInvariant().Contains(q));
+                    }
+
+                    totalHits = resultStrings.Count();
+
+                    resultString = string.Join("\",\"", resultStrings.Skip(skip).Take(take));
+
+                    if (q == "") HttpRuntime.Cache.Add(args, Tuple.Create(totalHits,resultString),new CacheDependency(new string[0], new string[]{"FrameworkCompatibilityTime","RankingsTime"}),Cache.NoAbsoluteExpiration,TimeSpan.FromMinutes(5),CacheItemPriority.Normal,null);
+                }
+                else
+                {
+                    totalHits = resultObj.Item1;
+                    resultString = resultObj.Item2;
+                }
             }
             else if (id != null)
             {

@@ -68,11 +68,6 @@ namespace NuGet.Indexing
 
         protected override JObject LoadJson()
         {
-            if (!File.Exists(Path))
-            {
-                return null;
-            }
-
             string json;
             using (TextReader reader = new StreamReader(Path))
             {
@@ -129,10 +124,6 @@ namespace NuGet.Indexing
 
         protected override JObject LoadJson()
         {
-            if (!_blob.Exists())
-            {
-                return null;
-            }
             string json = _blob.DownloadText();
             JObject obj = JObject.Parse(json);
             return obj;
