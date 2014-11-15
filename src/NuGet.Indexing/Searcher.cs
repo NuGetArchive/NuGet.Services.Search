@@ -169,7 +169,7 @@ namespace NuGet.Indexing
             TopDocs topDocs = new TopDocs(results.Count(), scoreDocs.ToArray(), score);
 
             sw.Stop();
-            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds, rankings, manager);
+            return MakeResults(searcher, topDocs, skip, take, includeExplanation, boostedQuery, sw.ElapsedMilliseconds, rankings, collector.VersionLists, manager);
         }
 
         private static readonly Dictionary<string, Func<Sort>> _sorts = new Dictionary<string, Func<Sort>>(StringComparer.OrdinalIgnoreCase) {
@@ -233,7 +233,7 @@ namespace NuGet.Indexing
             return (new JObject { { "totalHits", totalHits }, { "timeTakenInMs", elapsed } }).ToString();
         }
 
-        private static string MakeResults(IndexSearcher searcher, TopDocs topDocs, int skip, int take, bool includeExplanation, Query query, long elapsed, IDictionary<string, int> rankings, PackageSearcherManager manager)
+        private static string MakeResults(IndexSearcher searcher, TopDocs topDocs, int skip, int take, bool includeExplanation, Query query, long elapsed, IDictionary<string, int> rankings, IDictionary<string,IList<SemanticVersion>> versionLists, PackageSearcherManager manager)
         {
             //  note the use of a StringBuilder because we have the response data already formatted as JSON in the fields in the index
 
@@ -264,12 +264,16 @@ namespace NuGet.Indexing
                 ScoreDoc scoreDoc = topDocs.ScoreDocs[i];
 
                 Document doc = searcher.Doc(scoreDoc.Doc);
-                string data = string.Format(@"{{ ""@id"": ""{0}{1}"", ""registration"": ""{0}{2}/index.json"", ""id"": ""{3}"", ""version"": ""{4}"" }}",
+
+                string id;
+
+                string data = string.Format(@"{{ ""@id"": ""{0}{1}"", ""registration"": ""{0}{2}/index.json"", ""id"": ""{3}"", ""version"": ""{4}"", ""versions"": [ {5} ] }}",
                     manager.BlobBaseUrl,
                     doc.Get("Url"),
-                    doc.Get("Id").ToLowerInvariant(),
+                    id = doc.Get("Id").ToLowerInvariant(),
                     doc.Get("Id"),
-                    doc.Get("Version")
+                    doc.Get("Version"),
+                    string.Join(", ", versionLists[id].OrderBy(x => x).Select(x => "\"" + x.ToString() + "\""))
                     );
 
                 string key = doc.Get("Key");

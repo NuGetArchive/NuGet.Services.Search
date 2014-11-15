@@ -22,11 +22,19 @@ namespace NuGet.Indexing
         string _supportedFramework;
         IDictionary<string, ISet<string>> _frameworkCompatibility;
 
-        IDictionary<string, Tuple<string, SemanticVersion, float, int, Document>> _docs;
+        IDictionary<string, Tuple<string, SemanticVersion, float, int, Document, IList<SemanticVersion>>> _docs;
+
+        public IDictionary<string, IList<SemanticVersion>> VersionLists
+        {
+            get
+            {
+                return _docs.ToDictionary(x => x.Key, x => x.Value.Item6);
+            }
+        }
 
         public VisualStudioDialogCollector(bool includePrerelease, string supportedFramework, IDictionary<string,ISet<string>> frameworkCompatibility)
         {
-            _docs = new Dictionary<string,Tuple<string, SemanticVersion, float, int, Document>>();
+            _docs = new Dictionary<string,Tuple<string, SemanticVersion, float, int, Document, IList<SemanticVersion>>>();
             _includePrerelease = includePrerelease;
             _supportedFramework = supportedFramework;
             _frameworkCompatibility = frameworkCompatibility;
@@ -48,10 +56,15 @@ namespace NuGet.Indexing
 
             if (IsCompatible(doc) && (_includePrerelease || string.IsNullOrEmpty(ver.SpecialVersion)))
             {
-                Tuple<string, SemanticVersion, float, int, Document> item;
-                if (!_docs.TryGetValue(lowerId, out item) || item.Item2 < ver)
+                Tuple<string, SemanticVersion, float, int, Document, IList<SemanticVersion>> item;
+                if (!_docs.TryGetValue(lowerId, out item))
                 {
-                    _docs[lowerId] = Tuple.Create(id, ver, _scorer.Score(), doc + _docBase, document);
+                    _docs[lowerId] = Tuple.Create(id, ver, _scorer.Score(), doc + _docBase, document, (IList<SemanticVersion>)new List<SemanticVersion>{ver});
+                }
+                else
+                {
+                    item.Item6.Add(ver);
+                    _docs[lowerId] = Tuple.Create(id, item.Item2 < ver ? ver : item.Item2, _scorer.Score(), doc + _docBase, document, item.Item6);
                 }
             }
         }
