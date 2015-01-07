@@ -141,6 +141,7 @@
     <Compile Include="DownloadLookup.cs" />
     <Compile Include="FacetedDocument.cs" />
     <Compile Include="Facets.cs" />
+    <Compile Include="IdentifierAutocompleteAnalyzer.cs" />
     <Compile Include="StorageFrameworkCompatibility.cs" />
     <Compile Include="LocalFrameworkCompatibility.cs" />
     <Compile Include="FrameworkCompatibility.cs" />
