@@ -15,7 +15,7 @@ namespace NuGet.Indexing
     public class NuGetSearcherManager : SearcherManager
     {
         Tuple<IDictionary<string, Filter>, IDictionary<string, Filter>> _filters;
-        JArray[] _versionsByDoc;
+        IDictionary<string, JArray[]> _versionsByDoc;
 
         public static readonly TimeSpan FrameworksRefreshRate = TimeSpan.FromHours(24);
         public static readonly TimeSpan PortableFrameworksRefreshRate = TimeSpan.FromHours(24);
@@ -34,7 +34,7 @@ namespace NuGet.Indexing
         public FrameworkCompatibility FrameworkCompatibility { get; private set; }
 
         public string IndexName { get; private set; }
-        public Uri RegistrationBaseAddress { get; set; }
+        public IDictionary<string, Uri> RegistrationBaseAddress { get; private set; }
 
         public DateTime LastReopen { get; private set; }
 
@@ -46,6 +46,8 @@ namespace NuGet.Indexing
             Frameworks = frameworks;
             IndexName = indexName;
             FrameworkCompatibility = frameworkCompatibility;
+
+            RegistrationBaseAddress = new Dictionary<string, Uri>();
 
             _currentDownloadCounts = new IndexData<IDictionary<string, IDictionary<string, int>>>(
                 "DownloadCounts",
@@ -140,7 +142,9 @@ namespace NuGet.Indexing
 
             _filters = Compatibility.Warm(searcher.IndexReader, _currentFrameworkCompatibility.Value);
 
-            _versionsByDoc = CreateVersionsLookUp(searcher.IndexReader, _currentDownloadCounts.Value, RegistrationBaseAddress);
+            _versionsByDoc = new Dictionary<string, JArray[]>();
+            _versionsByDoc["http"] = CreateVersionsLookUp(searcher.IndexReader, _currentDownloadCounts.Value, RegistrationBaseAddress["http"]);
+            _versionsByDoc["https"] = CreateVersionsLookUp(searcher.IndexReader, _currentDownloadCounts.Value, RegistrationBaseAddress["https"]);
 
             LastReopen = DateTime.UtcNow;
         }
@@ -180,9 +184,9 @@ namespace NuGet.Indexing
             return null;
         }
 
-        public JArray GetVersions(int doc)
+        public JArray GetVersions(string scheme, int doc)
         {
-            return _versionsByDoc[doc];
+            return _versionsByDoc[scheme][doc];
         }
 
         static JArray[] CreateVersionsLookUp(IndexReader reader, IDictionary<string, IDictionary<string, int>> downloadLookup, Uri registrationBaseAddress)

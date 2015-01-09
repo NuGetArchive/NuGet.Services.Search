@@ -65,9 +65,27 @@ namespace NuGet.Services.BasicSearch
             }
 
             string registrationBaseAddress = System.Configuration.ConfigurationManager.AppSettings.Get("Search.RegistrationBaseAddress");
-            
-            searcherManager.RegistrationBaseAddress = new Uri(registrationBaseAddress);
+
+            searcherManager.RegistrationBaseAddress["http"] = MakeRegistrationBaseAddress("http", registrationBaseAddress);
+            searcherManager.RegistrationBaseAddress["https"] = MakeRegistrationBaseAddress("https", registrationBaseAddress);
             return searcherManager;
+        }
+
+        static Uri MakeRegistrationBaseAddress(string scheme, string registrationBaseAddress)
+        {
+            Uri original = new Uri(registrationBaseAddress);
+            if (original.Scheme == scheme)
+            {
+                return original;
+            }
+            else
+            {
+                return new UriBuilder(original)
+                {
+                    Scheme = scheme,
+                    Port = -1
+                }.Uri;
+            }
         }
 
         public async Task Invoke(IOwinContext context)

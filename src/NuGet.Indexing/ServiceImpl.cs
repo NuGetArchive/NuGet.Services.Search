@@ -48,10 +48,12 @@ namespace NuGet.Indexing
 
             string q = context.Request.Query["q"] ?? string.Empty;
 
-            return Search(searcherManager, q, countOnly, projectType, supportedFramework, includePrerelease, skip, take, includeExplanation);
+            string scheme = context.Request.Uri.Scheme;
+
+            return Search(searcherManager, scheme, q, countOnly, projectType, supportedFramework, includePrerelease, skip, take, includeExplanation);
         }
 
-        public static JToken Search(NuGetSearcherManager searcherManager, string q, bool countOnly, string projectType, string supportedFramework, bool includePrerelease, int skip, int take, bool includeExplanation)
+        public static JToken Search(NuGetSearcherManager searcherManager, string scheme, string q, bool countOnly, string projectType, string supportedFramework, bool includePrerelease, int skip, int take, bool includeExplanation)
         {
             IndexSearcher searcher = searcherManager.Get();
             try
@@ -62,7 +64,7 @@ namespace NuGet.Indexing
 
                 TopDocs topDocs = searcher.Search(query, filter, skip + take);
 
-                return MakeResult(searcher, topDocs, skip, take, searcherManager, includeExplanation, query);
+                return MakeResult(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
             }
             finally
             {
@@ -77,8 +79,10 @@ namespace NuGet.Indexing
             return boostedQuery;
         }
 
-        public static JToken MakeResultData(IndexSearcher searcher, TopDocs topDocs, int skip, int take, NuGetSearcherManager searcherManager, bool includeExplanation, Query query)
+        public static JToken MakeResultData(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, NuGetSearcherManager searcherManager, bool includeExplanation, Query query)
         {
+            Uri registrationBaseAddress = searcherManager.RegistrationBaseAddress[scheme];
+
             JArray array = new JArray();
 
             for (int i = skip; i < Math.Min(skip + take, topDocs.ScoreDocs.Length); i++)
@@ -92,16 +96,19 @@ namespace NuGet.Indexing
                 string version = document.Get("Version");
 
                 JObject obj = new JObject();
-                obj["@id"] = new Uri(searcherManager.RegistrationBaseAddress, url).AbsoluteUri;
-                obj["registration"] = new Uri(searcherManager.RegistrationBaseAddress, string.Format("{0}/index.json", id.ToLowerInvariant())).AbsoluteUri;
+                obj["@id"] = new Uri(registrationBaseAddress, url).AbsoluteUri;
+                obj["@type"] = "Package";
+                obj["registration"] = new Uri(registrationBaseAddress, string.Format("{0}/index.json", id.ToLowerInvariant())).AbsoluteUri;
                 obj["id"] = id;
 
                 AddField(obj, document, "description", "Description");
                 AddField(obj, document, "summary", "Summary");
                 AddField(obj, document, "iconUrl", "IconUrl");
+                AddFieldAsArray(obj, document, "tags", "Tags");
+                AddFieldAsArray(obj, document, "authors", "Authors");
 
                 obj["version"] = version;
-                obj["versions"] = searcherManager.GetVersions(scoreDoc.Doc);
+                obj["versions"] = searcherManager.GetVersions(scheme, scoreDoc.Doc);
 
                 if (includeExplanation)
                 {
@@ -124,9 +131,18 @@ namespace NuGet.Indexing
             }
         }
 
-        public static JToken MakeResult(IndexSearcher searcher, TopDocs topDocs, int skip, int take, NuGetSearcherManager searcherManager, bool includeExplanation, Query query)
+        static void AddFieldAsArray(JObject obj, Document document, string to, string from)
         {
-            JToken data = MakeResultData(searcher, topDocs, skip, take, searcherManager, includeExplanation, query);
+            string value = document.Get(from);
+            if (value != null)
+            {
+                obj[to] = new JArray(value.Split(' '));
+            }
+        }
+
+        public static JToken MakeResult(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, NuGetSearcherManager searcherManager, bool includeExplanation, Query query)
+        {
+            JToken data = MakeResultData(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
 
             JObject result = new JObject();
 

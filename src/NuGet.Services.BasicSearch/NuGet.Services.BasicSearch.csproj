@@ -131,6 +131,8 @@
     <Content Include="packages.config" />
     <Content Include="ApplicationInsights.config" />
     <None Include="Properties\PublishProfiles\NuGetServicesBasicSearch.pubxml" />
+    <None Include="Properties\PublishProfiles\nusearch - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\nusearch - Web Deploy.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
