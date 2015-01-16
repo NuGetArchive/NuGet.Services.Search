@@ -1,5 +1,6 @@
 ﻿using Lucene.Net.Documents;
 using Lucene.Net.Index;
+using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
 using Microsoft.Owin;
 using Newtonsoft.Json.Linq;
@@ -219,12 +220,9 @@ namespace NuGet.Indexing
         {
             const int MAX_NGRAM_LENGTH = 8;
 
-            Query query = new MatchAllDocsQuery();
+            QueryParser queryParser = new QueryParser(Lucene.Net.Util.Version.LUCENE_30, "IdAutocomplete", new PackageAnalyzer());
+            Query query = queryParser.Parse(q);
 
-            if (!string.IsNullOrEmpty(q))
-            {
-                query = new TermQuery(new Term("IdAutocomplete", q.Length < MAX_NGRAM_LENGTH ? q : q.Substring(0, MAX_NGRAM_LENGTH)));
-            }
             Query boostedQuery = new RankingScoreQuery(query, searcherManager.GetRankings());
 
             return boostedQuery;
