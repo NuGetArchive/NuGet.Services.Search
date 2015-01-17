@@ -173,6 +173,18 @@ namespace NuGet.Indexing
             {
                 FrameworkName frameworkName = VersionUtility.ParseFrameworkName(supportedFramework);
                 frameworkFullName = frameworkName.FullName;
+                if (frameworkFullName == "Unsupported,Version=v0.0")
+                {
+                    try
+                    {
+                        frameworkName = new FrameworkName(supportedFramework);
+                        frameworkFullName = frameworkName.FullName;
+                    }
+                    catch (ArgumentException)
+                    {
+                        frameworkFullName = "any";
+                    }
+                }
             }
 
             Filter filter;
