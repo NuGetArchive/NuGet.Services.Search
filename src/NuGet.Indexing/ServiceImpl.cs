@@ -220,6 +220,11 @@ namespace NuGet.Indexing
         {
             const int MAX_NGRAM_LENGTH = 8;
 
+            if (string.IsNullOrEmpty(q))
+            {
+                return new MatchAllDocsQuery();
+            }
+
             QueryParser queryParser = new QueryParser(Lucene.Net.Util.Version.LUCENE_30, "IdAutocomplete", new PackageAnalyzer());
             Query query = queryParser.Parse(q);
 
