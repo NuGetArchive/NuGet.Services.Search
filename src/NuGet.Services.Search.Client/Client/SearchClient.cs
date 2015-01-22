@@ -14,6 +14,7 @@ namespace NuGet.Services.Search.Client
     public class SearchClient
     {
         private HttpClient _client;
+        private Task<ServiceDiscovery> _discoveryClient;
 
         /// <summary>
         /// Create a search service client from the specified base uri and credentials.
@@ -48,7 +49,8 @@ namespace NuGet.Services.Search.Client
             }
 
             _client = new HttpClient(handler, disposeHandler: true);
-            _client.BaseAddress = baseUri;
+
+            _discoveryClient = ServiceDiscovery.Connect(_client, baseUri);
         }
 
         /// <summary>
@@ -59,6 +61,7 @@ namespace NuGet.Services.Search.Client
         /// <param name="client">The client to use</param>
         public SearchClient(HttpClient client)
         {
+            throw new InvalidOperationException("Hopefully this isn't used, like ever.");
             _client = client;
         }
 
@@ -134,12 +137,16 @@ namespace NuGet.Services.Search.Client
 
             FormUrlEncodedContent qs = new FormUrlEncodedContent(nameValue);
 
-            return new ServiceResponse<SearchResults>(await _client.GetAsync("search/query?" + (await qs.ReadAsStringAsync())));
+            var client = await _discoveryClient;
+
+            return new ServiceResponse<SearchResults>(await client.GetAsync("SearchGalleryQueryService", "search/query?" + (await qs.ReadAsStringAsync())));
         }
 
         public async Task<ServiceResponse<IDictionary<int, int>>> GetChecksums(int minKey, int maxKey)
         {
-            var response = await _client.GetAsync("search/range?min=" + minKey.ToString() + "&max=" + maxKey.ToString());
+            var client = await _discoveryClient;
+
+            var response = await client.GetAsync("SearchGalleryQueryService", "search/range?min=" + minKey.ToString() + "&max=" + maxKey.ToString());
             return new ServiceResponse<IDictionary<int, int>>(
                 response,
                 async () => (await response.Content.ReadAsAsync<IDictionary<string, int>>())
@@ -149,14 +156,18 @@ namespace NuGet.Services.Search.Client
 
         public async Task<ServiceResponse<IEnumerable<string>>> GetStoredFieldNames()
         {
+            var client = await _discoveryClient;
+
             return new ServiceResponse<IEnumerable<string>>(
-                await _client.GetAsync("search/fields"));
+                await client.GetAsync("SearchGalleryQueryService", "search/fields"));
         }
 
         public async Task<ServiceResponse<JObject>> GetDiagnostics()
         {
+            var client = await _discoveryClient;
+
             return new ServiceResponse<JObject>(
-                await _client.GetAsync("search/diag"));
+                await client.GetAsync("SearchGalleryQueryService", "search/diag"));
         }
     }
 }

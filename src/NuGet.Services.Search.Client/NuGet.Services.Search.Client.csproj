@@ -49,6 +49,7 @@
     <Compile Include="Models\SearchResults.cs" />
     <Compile Include="Models\SortOrder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Client\ServiceDiscovery.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
