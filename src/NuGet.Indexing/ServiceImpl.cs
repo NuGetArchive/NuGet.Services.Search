@@ -5,6 +5,7 @@ using Lucene.Net.Search;
 using Microsoft.Owin;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace NuGet.Indexing
@@ -187,9 +188,15 @@ namespace NuGet.Indexing
 
                 string supportedFramework = context.Request.Query["supportedFramework"];
 
-                string q = context.Request.Query["q"] ?? string.Empty;
+                string q = context.Request.Query["q"]; 
+                string id = context.Request.Query["id"];
 
-                return AutoCompleteSearch(searcherManager, q, supportedFramework, includePrerelease, skip, take, includeExplanation);
+                if (q == null && id == null)
+                {
+                    q = string.Empty;
+                }
+
+                return AutoCompleteSearch(searcherManager, q, id, supportedFramework, includePrerelease, skip, take, includeExplanation);
             }
             finally
             {
@@ -197,23 +204,54 @@ namespace NuGet.Indexing
             }
         }
 
-        static JToken AutoCompleteSearch(NuGetSearcherManager searcherManager, string q, string supportedFramework, bool includePrerelease, int skip, int take, bool includeExplanation)
+        static JToken AutoCompleteSearch(NuGetSearcherManager searcherManager, string q, string id, string supportedFramework, bool includePrerelease, int skip, int take, bool includeExplanation)
         {
             IndexSearcher searcher = searcherManager.Get();
             try
             {
-                Filter filter = searcherManager.GetFilter(includePrerelease, supportedFramework);
-
-                Query query = AutoCompleteMakeQuery(q, searcherManager);
-
-                TopDocs topDocs = searcher.Search(query, filter, skip + take);
-
-                return AutoCompleteMakeResult(searcher, topDocs, skip, take, searcherManager, includeExplanation, query);
+                if (q != null)
+                {
+                    Filter filter = searcherManager.GetFilter(includePrerelease, supportedFramework);
+                    Query query = AutoCompleteMakeQuery(q, searcherManager);
+                    TopDocs topDocs = searcher.Search(query, filter, skip + take);
+                    return AutoCompleteMakeResult(searcher, topDocs, skip, take, searcherManager, includeExplanation, query);
+                }
+                else
+                {
+                    Filter filter = searcherManager.GetFilter(includePrerelease, supportedFramework);
+                    Query query = new TermQuery(new Term("Id", id.ToLowerInvariant()));
+                    TopDocs topDocs = searcher.Search(query, filter, skip + take);
+                    return AutoCompleteMakeVersionResult(searcherManager, includePrerelease, topDocs);
+                }
             }
             finally
             {
                 searcherManager.Release(searcher);
             }
+        }
+
+        private static JObject AutoCompleteMakeVersionResult(NuGetSearcherManager searcherManager, bool includePrerelease, TopDocs topDocs)
+        {
+            JObject result = new JObject();
+
+            result.Add("@context", new JObject { { "@vocab", "http://schema.nuget.org/schema#" } });
+            result.Add("indexName", searcherManager.IndexName);
+
+            if (topDocs.TotalHits > 0)
+            {
+                ScoreDoc scoreDoc = topDocs.ScoreDocs[0];
+                JArray versionsObj = searcherManager.GetVersions("http", scoreDoc.Doc);
+                IEnumerable<SemanticVersion> versions = versionsObj.Select(j => new SemanticVersion(((string)((JObject)j)["version"]))).OrderByDescending(v => v);
+
+                result.Add("totalHits", versions.Count());
+                result["data"] = new JArray(versions.Select(v => v.ToString()).ToArray());
+            }
+            else
+            {
+                result.Add("totalHits", 0);
+                result["data"] = new JArray();
+            }
+            return result;
         }
 
         static Query AutoCompleteMakeQuery(string q, NuGetSearcherManager searcherManager)
