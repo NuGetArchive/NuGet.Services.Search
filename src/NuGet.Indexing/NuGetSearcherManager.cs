@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Versioning;
 
 namespace NuGet.Indexing
@@ -236,7 +237,7 @@ namespace NuGet.Indexing
 
                 JArray versions = new JArray();
 
-                foreach (string version in registrations[registration.Key])
+                foreach (string version in registrations[registration.Key].OrderByDescending(v => new SemanticVersion(v)))
                 {
                     JObject versionObj = new JObject();
                     versionObj.Add("version", version);

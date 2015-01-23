@@ -241,10 +241,9 @@ namespace NuGet.Indexing
             {
                 ScoreDoc scoreDoc = topDocs.ScoreDocs[0];
                 JArray versionsObj = searcherManager.GetVersions("http", scoreDoc.Doc);
-                IEnumerable<SemanticVersion> versions = versionsObj.Select(j => new SemanticVersion(((string)((JObject)j)["version"]))).OrderByDescending(v => v);
-
+                JArray versions = new JArray(versionsObj.Select(j => j["version"]));
                 result.Add("totalHits", versions.Count());
-                result["data"] = new JArray(versions.Select(v => v.ToString()).ToArray());
+                result["data"] = versions;
             }
             else
             {
