@@ -15,6 +15,7 @@ namespace NuGet.Services.Search.Client
     {
         private HttpClient _client;
         private Task<ServiceDiscovery> _discoveryClient;
+        private string _resourceType;
 
         /// <summary>
         /// Create a search service client from the specified base uri and credentials.
@@ -22,7 +23,7 @@ namespace NuGet.Services.Search.Client
         /// <param name="baseUri">The URL to the root of the service</param>
         /// <param name="handlers">Handlers to apply to the request in order from first to last</param>
         public SearchClient(Uri baseUri, params DelegatingHandler[] handlers)
-            : this(baseUri, null, handlers)
+            : this(baseUri, "SearchGalleryQueryService/3.0.0-rc", null, handlers)
         {
         }
 
@@ -32,8 +33,10 @@ namespace NuGet.Services.Search.Client
         /// <param name="baseUri">The URL to the root of the service</param>
         /// <param name="credentials">The credentials to connect to the service with</param>
         /// <param name="handlers">Handlers to apply to the request in order from first to last</param>
-        public SearchClient(Uri baseUri, ICredentials credentials, params DelegatingHandler[] handlers)
+        public SearchClient(Uri baseUri, string resourceType, ICredentials credentials, params DelegatingHandler[] handlers)
         {
+            _resourceType = resourceType;
+
             // Link the handlers
             HttpMessageHandler handler = new HttpClientHandler()
             {
@@ -139,14 +142,14 @@ namespace NuGet.Services.Search.Client
 
             var client = await _discoveryClient;
 
-            return new ServiceResponse<SearchResults>(await client.GetAsync("SearchGalleryQueryService", "search/query?" + (await qs.ReadAsStringAsync())));
+            return new ServiceResponse<SearchResults>(await client.GetAsync(_resourceType, "search/query?" + (await qs.ReadAsStringAsync())));
         }
 
         public async Task<ServiceResponse<IDictionary<int, int>>> GetChecksums(int minKey, int maxKey)
         {
             var client = await _discoveryClient;
 
-            var response = await client.GetAsync("SearchGalleryQueryService", "search/range?min=" + minKey.ToString() + "&max=" + maxKey.ToString());
+            var response = await client.GetAsync(_resourceType, "search/range?min=" + minKey.ToString() + "&max=" + maxKey.ToString());
             return new ServiceResponse<IDictionary<int, int>>(
                 response,
                 async () => (await response.Content.ReadAsAsync<IDictionary<string, int>>())
@@ -159,7 +162,7 @@ namespace NuGet.Services.Search.Client
             var client = await _discoveryClient;
 
             return new ServiceResponse<IEnumerable<string>>(
-                await client.GetAsync("SearchGalleryQueryService", "search/fields"));
+                await client.GetAsync(_resourceType, "search/fields"));
         }
 
         public async Task<ServiceResponse<JObject>> GetDiagnostics()
@@ -167,7 +170,7 @@ namespace NuGet.Services.Search.Client
             var client = await _discoveryClient;
 
             return new ServiceResponse<JObject>(
-                await client.GetAsync("SearchGalleryQueryService", "search/diag"));
+                await client.GetAsync(_resourceType, "search/diag"));
         }
     }
 }

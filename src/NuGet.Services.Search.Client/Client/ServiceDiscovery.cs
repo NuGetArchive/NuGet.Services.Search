@@ -58,7 +58,7 @@ namespace NuGet.Services.Search.Client
             get
             {
                 BeginUpdateServiceIndexDocument();
-                return _serviceIndexDocument.Doc["resources"].Where(j => ((string)j["@type"]) == type).Select(o => o["@id"].ToObject<Uri>()).ToList();
+                return _serviceIndexDocument.Doc["resources"].Where(j => (j["@type"].Type == JTokenType.Array ? j["@type"].Any(v => (string)v == type) : ((string)j["@type"]) == type)).Select(o => o["@id"].ToObject<Uri>()).ToList();
             }
         }
 
