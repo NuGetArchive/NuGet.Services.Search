@@ -16,8 +16,10 @@ namespace NuGet.Indexing
         {
             return new Dictionary<string, Analyzer>(StringComparer.OrdinalIgnoreCase)
             {
+                { "@type", new KeywordAnalyzer() },
                 { "Id", new IdentifierKeywordAnalyzer() },
                 { "IdAutocomplete", new IdentifierAutocompleteAnalyzer() },
+                { "IdAutocompletePhrase", new IdentifierAutocompleteAnalyzer() },
                 { "Facet", new IdentifierKeywordAnalyzer() },
                 { "TokenizedId", new IdentifierAnalyzer() },
                 { "ShingledId", new ShingledIdentifierAnalyzer() },

@@ -1,6 +1,6 @@
 ﻿using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Tokenattributes;
-using System.IO;
+using NuGet.Versioning;
 
 namespace NuGet.Indexing
 {
@@ -22,8 +22,14 @@ namespace NuGet.Indexing
             }
 
             string version = _termAttribute.Term;
-            string normalizedVersion = SemanticVersionExtensions.Normalize(version);
-            _termAttribute.SetTermBuffer(normalizedVersion);
+
+            NuGetVersion nuGetVersion;
+            if (NuGetVersion.TryParse(version, out nuGetVersion))
+            {
+                version = nuGetVersion.ToNormalizedString();
+            }
+
+            _termAttribute.SetTermBuffer(version);
 
             return true;
         }

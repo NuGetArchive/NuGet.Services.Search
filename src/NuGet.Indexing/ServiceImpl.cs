@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Lucene.Net.Analysis;
 
 namespace NuGet.Indexing
 {
@@ -61,6 +62,10 @@ namespace NuGet.Indexing
             try
             {
                 Filter filter = searcherManager.GetFilter(includePrerelease, supportedFramework);
+
+                //TODO: uncomment these lines when we have an index that contains the appropriate @type field in every document
+                //Filter typeFilter = new CachingWrapperFilter(new TypeFilter("http://schema.nuget.org/schema#NuGetClassicPackage"));
+                //filter = new ChainedFilter(new Filter[] { filter, typeFilter }, ChainedFilter.Logic.AND);
 
                 Query query = MakeQuery(q, searcherManager);
 
@@ -209,18 +214,18 @@ namespace NuGet.Indexing
             IndexSearcher searcher = searcherManager.Get();
             try
             {
+                Filter filter = searcherManager.GetFilter(includePrerelease, supportedFramework);
+
                 if (q != null)
                 {
-                    Filter filter = searcherManager.GetFilter(includePrerelease, supportedFramework);
                     Query query = AutoCompleteMakeQuery(q, searcherManager);
                     TopDocs topDocs = searcher.Search(query, filter, skip + take);
                     return AutoCompleteMakeResult(searcher, topDocs, skip, take, searcherManager, includeExplanation, query);
                 }
                 else
                 {
-                    Filter filter = searcherManager.GetFilter(includePrerelease, supportedFramework);
                     Query query = new TermQuery(new Term("Id", id.ToLowerInvariant()));
-                    TopDocs topDocs = searcher.Search(query, filter, skip + take);
+                    TopDocs topDocs = searcher.Search(query, filter, 1);
                     return AutoCompleteMakeVersionResult(searcherManager, includePrerelease, topDocs);
                 }
             }
@@ -240,8 +245,7 @@ namespace NuGet.Indexing
             if (topDocs.TotalHits > 0)
             {
                 ScoreDoc scoreDoc = topDocs.ScoreDocs[0];
-                JArray versionsObj = searcherManager.GetVersions("http", scoreDoc.Doc);
-                JArray versions = new JArray(versionsObj.Select(j => j["version"]));
+                JArray versions = searcherManager.GetVersionLists(scoreDoc.Doc);
                 result.Add("totalHits", versions.Count());
                 result["data"] = versions;
             }
@@ -255,18 +259,22 @@ namespace NuGet.Indexing
 
         static Query AutoCompleteMakeQuery(string q, NuGetSearcherManager searcherManager)
         {
-            const int MAX_NGRAM_LENGTH = 8;
-
             if (string.IsNullOrEmpty(q))
             {
                 return new MatchAllDocsQuery();
             }
 
             QueryParser queryParser = new QueryParser(Lucene.Net.Util.Version.LUCENE_30, "IdAutocomplete", new PackageAnalyzer());
+
+            //TODO: we should be doing phrase queries to get the ordering right
+            //const int MAX_NGRAM_LENGTH = 8;
+            //q = (q.Length < MAX_NGRAM_LENGTH) ? q : q.Substring(0, MAX_NGRAM_LENGTH);
+            //string phraseQuery = string.Format("IdAutocompletePhrase:\"/ {0}\"~20", q);
+            //Query query = queryParser.Parse(phraseQuery);
+
             Query query = queryParser.Parse(q);
 
             Query boostedQuery = new RankingScoreQuery(query, searcherManager.GetRankings());
-
             return boostedQuery;
         }
 

@@ -50,7 +50,7 @@ namespace NuGet.Services.BasicSearch
             NuGetSearcherManager searcherManager;
 
             string luceneDirectory = System.Configuration.ConfigurationManager.AppSettings.Get("Local.Lucene.Directory");
-            if (luceneDirectory != null)
+            if (!string.IsNullOrEmpty(luceneDirectory))
             {
                 string dataDirectory = System.Configuration.ConfigurationManager.AppSettings.Get("Local.Data.Directory");
                 searcherManager = NuGetSearcherManager.CreateLocal(luceneDirectory, dataDirectory);

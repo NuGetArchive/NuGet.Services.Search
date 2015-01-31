@@ -7,9 +7,6 @@ namespace NuGet.Indexing
     public class StorageFrameworkCompatibility : FrameworkCompatibility
     {
         CloudBlockBlob _blob;
-        private CloudStorageAccount storageAccount;
-        private string frameworksContainer;
-        private string path;
 
         public override string Path { get { return _blob.Uri.AbsoluteUri; } }
 

@@ -110,9 +110,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Nuget.Core.2.8.3-alpha0001\lib\net40-Client\NuGet.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Versioning, Version=1.0.6.0, Culture=neutral, PublicKeyToken=2e465378e3b1a8dd, processorArchitecture=MSIL">
+    <Reference Include="NuGet.Versioning, Version=1.0.7.0, Culture=neutral, PublicKeyToken=2e465378e3b1a8dd, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\NuGet.Versioning.1.0.6\lib\portable-net40+win\NuGet.Versioning.dll</HintPath>
+      <HintPath>..\..\packages\NuGet.Versioning.1.0.7-pre-20150130233858\lib\portable-net40+win\NuGet.Versioning.dll</HintPath>
     </Reference>
     <Reference Include="NuGetGallery.Core">
       <HintPath>..\..\packages\NuGetGallery.Core.3.0.102-r-master\lib\net45\NuGetGallery.Core.dll</HintPath>
@@ -137,12 +137,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChainedFilter.cs" />
     <Compile Include="Compatibility.cs" />
     <Compile Include="DownloadCounts.cs" />
     <Compile Include="DownloadLookup.cs" />
     <Compile Include="FacetedDocument.cs" />
     <Compile Include="Facets.cs" />
     <Compile Include="IdentifierAutocompleteAnalyzer.cs" />
+    <Compile Include="PackageVersions.cs" />
     <Compile Include="StorageFrameworkCompatibility.cs" />
     <Compile Include="LocalFrameworkCompatibility.cs" />
     <Compile Include="FrameworkCompatibility.cs" />
@@ -162,6 +164,7 @@
     <Compile Include="ServiceImpl.cs" />
     <Compile Include="StorageDownloadCounts.cs" />
     <Compile Include="StorageDownloadLookup.cs" />
+    <Compile Include="TypeFilter.cs" />
     <Compile Include="UpdateIndexTask.cs" />
     <Compile Include="PackageJson.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -193,7 +196,6 @@
     <Compile Include="TokenizingHelper.cs" />
     <Compile Include="VersionAnalyzer.cs" />
     <Compile Include="WarehousePackageRanking.cs" />
-    <Compile Include="SemanticVersionExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
