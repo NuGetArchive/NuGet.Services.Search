@@ -112,7 +112,7 @@
     </Reference>
     <Reference Include="NuGet.Versioning, Version=1.0.7.0, Culture=neutral, PublicKeyToken=2e465378e3b1a8dd, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\NuGet.Versioning.1.0.7-pre-20150130233858\lib\portable-net40+win\NuGet.Versioning.dll</HintPath>
+      <HintPath>..\..\packages\NuGet.Versioning.1.0.7\lib\portable-net40+win\NuGet.Versioning.dll</HintPath>
     </Reference>
     <Reference Include="NuGetGallery.Core">
       <HintPath>..\..\packages\NuGetGallery.Core.3.0.102-r-master\lib\net45\NuGetGallery.Core.dll</HintPath>
@@ -144,6 +144,7 @@
     <Compile Include="FacetedDocument.cs" />
     <Compile Include="Facets.cs" />
     <Compile Include="IdentifierAutocompleteAnalyzer.cs" />
+    <Compile Include="MetadataImpl.cs" />
     <Compile Include="PackageVersions.cs" />
     <Compile Include="StorageFrameworkCompatibility.cs" />
     <Compile Include="LocalFrameworkCompatibility.cs" />
@@ -164,6 +165,7 @@
     <Compile Include="ServiceImpl.cs" />
     <Compile Include="StorageDownloadCounts.cs" />
     <Compile Include="StorageDownloadLookup.cs" />
+    <Compile Include="TenantFilter.cs" />
     <Compile Include="TypeFilter.cs" />
     <Compile Include="UpdateIndexTask.cs" />
     <Compile Include="PackageJson.cs" />

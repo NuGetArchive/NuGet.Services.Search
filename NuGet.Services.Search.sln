@@ -28,12 +28,15 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configurations", "Configurations", "{932A70DD-EF8F-4518-B18E-EA845C564C6C}"
 	ProjectSection(SolutionItems) = preProject
 		PublishScripts\Configurations\NuGetServicesBasicSearch-WAWS-dev.json = PublishScripts\Configurations\NuGetServicesBasicSearch-WAWS-dev.json
+		PublishScripts\Configurations\NuGetServicesSecureSearch-WAWS-dev.json = PublishScripts\Configurations\NuGetServicesSecureSearch-WAWS-dev.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{B22CF391-6F4D-4F90-B112-0065629319EB}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\packages.config = .nuget\packages.config
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.SecureSearch", "NuGet.Services.SecureSearch\NuGet.Services.SecureSearch.csproj", "{79FEEB5D-4021-4EBB-98A4-48BC89C8E7F4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,6 +76,10 @@ Global
 		{1460DE86-6DF4-49A3-822C-E52F8DA834F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1460DE86-6DF4-49A3-822C-E52F8DA834F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1460DE86-6DF4-49A3-822C-E52F8DA834F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79FEEB5D-4021-4EBB-98A4-48BC89C8E7F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79FEEB5D-4021-4EBB-98A4-48BC89C8E7F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79FEEB5D-4021-4EBB-98A4-48BC89C8E7F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79FEEB5D-4021-4EBB-98A4-48BC89C8E7F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

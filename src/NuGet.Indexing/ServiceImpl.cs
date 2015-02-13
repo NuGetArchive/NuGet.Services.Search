@@ -110,6 +110,7 @@ namespace NuGet.Indexing
 
                 AddField(obj, document, "description", "Description");
                 AddField(obj, document, "summary", "Summary");
+                AddField(obj, document, "title", "Title");
                 AddField(obj, document, "iconUrl", "IconUrl");
                 AddFieldAsArray(obj, document, "tags", "Tags");
                 AddFieldAsArray(obj, document, "authors", "Authors");
@@ -147,7 +148,7 @@ namespace NuGet.Indexing
             }
         }
 
-        public static JToken MakeResult(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, NuGetSearcherManager searcherManager, bool includeExplanation, Query query)
+        static JToken MakeResult(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, NuGetSearcherManager searcherManager, bool includeExplanation, Query query)
         {
             JToken data = MakeResultData(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
 
@@ -235,7 +236,7 @@ namespace NuGet.Indexing
             }
         }
 
-        private static JObject AutoCompleteMakeVersionResult(NuGetSearcherManager searcherManager, bool includePrerelease, TopDocs topDocs)
+        static JObject AutoCompleteMakeVersionResult(NuGetSearcherManager searcherManager, bool includePrerelease, TopDocs topDocs)
         {
             JObject result = new JObject();
 
