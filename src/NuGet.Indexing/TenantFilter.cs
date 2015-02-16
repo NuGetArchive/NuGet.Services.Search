@@ -23,7 +23,7 @@ namespace NuGet.Indexing
         public override DocIdSet GetDocIdSet(IndexReader reader)
         {
             OpenBitSet bitSet = new OpenBitSet(reader.NumDocs());
-            TermDocs termDocs = reader.TermDocs(new Term("tenantId", _tenantId));
+            TermDocs termDocs = reader.TermDocs(new Term("TenantId", _tenantId));
             while (termDocs.Next())
             {
                 if (termDocs.Freq > 0)

@@ -108,6 +108,7 @@ namespace NuGet.Indexing
                 obj["registration"] = new Uri(registrationBaseAddress, string.Format("{0}/index.json", id.ToLowerInvariant())).AbsoluteUri;
                 obj["id"] = id;
 
+                AddField(obj, document, "domain", "Domain");
                 AddField(obj, document, "description", "Description");
                 AddField(obj, document, "summary", "Summary");
                 AddField(obj, document, "title", "Title");

@@ -145,7 +145,10 @@
     <Compile Include="Facets.cs" />
     <Compile Include="IdentifierAutocompleteAnalyzer.cs" />
     <Compile Include="MetadataImpl.cs" />
+    <Compile Include="PackageTenantId.cs" />
+    <Compile Include="SecureSearcherManager.cs" />
     <Compile Include="PackageVersions.cs" />
+    <Compile Include="SecureServiceImpl.cs" />
     <Compile Include="StorageFrameworkCompatibility.cs" />
     <Compile Include="LocalFrameworkCompatibility.cs" />
     <Compile Include="FrameworkCompatibility.cs" />

@@ -1,9 +1,14 @@
 ﻿using Microsoft.Owin;
+using Microsoft.Owin.Security.ActiveDirectory;
 using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using Owin;
 using System;
+using System.Configuration;
+using System.IdentityModel.Tokens;
+using System.IO;
 using System.Net;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,12 +19,22 @@ namespace NuGet.Services.SecureSearch
     public class Startup
     {
         Timer _timer;
-        NuGetSearcherManager _searcherManager;
+        SecureSearcherManager _searcherManager;
         int _gate;
 
         public void Configuration(IAppBuilder app)
         {
             app.UseErrorPage();
+
+            string audience = ConfigurationManager.AppSettings["ida:Audience"];
+            string tenant = ConfigurationManager.AppSettings["ida:Tenant"];
+
+            app.UseWindowsAzureActiveDirectoryBearerAuthentication(
+                new WindowsAzureActiveDirectoryBearerAuthenticationOptions
+                {
+                    TokenValidationParameters = new TokenValidationParameters { ValidAudience = audience },
+                    Tenant = tenant
+                });
 
             _searcherManager = CreateSearcherManager();
 
@@ -45,23 +60,22 @@ namespace NuGet.Services.SecureSearch
             return;
         }
 
-        public NuGetSearcherManager CreateSearcherManager()
+        public SecureSearcherManager CreateSearcherManager()
         {
-            NuGetSearcherManager searcherManager;
+            SecureSearcherManager searcherManager;
 
             string luceneDirectory = System.Configuration.ConfigurationManager.AppSettings.Get("Local.Lucene.Directory");
             if (!string.IsNullOrEmpty(luceneDirectory))
             {
                 string dataDirectory = System.Configuration.ConfigurationManager.AppSettings.Get("Local.Data.Directory");
-                searcherManager = NuGetSearcherManager.CreateLocal(luceneDirectory, dataDirectory);
+                searcherManager = SecureSearcherManager.CreateLocal(luceneDirectory);
             }
             else
             {
                 string storagePrimary = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Primary");
                 string searchIndexContainer = System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexContainer");
-                string searchDataContainer = System.Configuration.ConfigurationManager.AppSettings.Get("Search.DataContainer");
 
-                searcherManager = NuGetSearcherManager.CreateAzure(storagePrimary, searchIndexContainer, searchDataContainer);
+                searcherManager = SecureSearcherManager.CreateAzure(storagePrimary, searchIndexContainer);
             }
 
             string registrationBaseAddress = System.Configuration.ConfigurationManager.AppSettings.Get("Search.RegistrationBaseAddress");
@@ -97,25 +111,39 @@ namespace NuGet.Services.SecureSearch
                     context.Response.StatusCode = (int)HttpStatusCode.OK;
                     break;
                 case "/query":
-                    await WriteResponse(context, ServiceImpl.Query(context, _searcherManager));
+                    await WriteResponse(context, SecureServiceImpl.Query(context, _searcherManager, string.Empty));
                     break;
-                case "/autocomplete":
-                    await WriteResponse(context, ServiceImpl.AutoComplete(context, _searcherManager));
-                    break;
-                case "/targetframeworks":
-                    await WriteResponse(context, ServiceImpl.TargetFrameworks(_searcherManager));
+                case "/secure/query":
+                    if (IsAuthorized())
+                    {
+                        Claim tenantIdClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/tenantid");
+                        string tenantId = (tenantIdClaim != null) ? tenantIdClaim.Value : "PUBLIC";
+                        await WriteResponse(context, SecureServiceImpl.Query(context, _searcherManager, tenantId));
+                    }
+                    else
+                    {
+                        await context.Response.WriteAsync("unauthorized");
+                        context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                    }
                     break;
                 case "/segments":
-                    await WriteResponse(context, ServiceImpl.Segments(_searcherManager));
+                    await WriteResponse(context, SecureServiceImpl.Segments(_searcherManager));
                     break;
                 case "/stats":
-                    await WriteResponse(context, ServiceImpl.Stats(_searcherManager));
+                    await WriteResponse(context, SecureServiceImpl.Stats(_searcherManager));
                     break;
                 default:
                     await context.Response.WriteAsync("unrecognized");
                     context.Response.StatusCode = (int)HttpStatusCode.NotFound;
                     break;
             }
+        }
+
+        public bool IsAuthorized()
+        {
+            Claim scopeClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope");
+            bool authorized = (scopeClaim != null && scopeClaim.Value == "user_impersonation");
+            return authorized;
         }
 
         public static Task WriteResponse(IOwinContext context, JToken content)

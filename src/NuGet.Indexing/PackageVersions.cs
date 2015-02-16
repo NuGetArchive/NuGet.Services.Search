@@ -52,7 +52,10 @@ namespace NuGet.Indexing
             foreach (KeyValuePair<string, List<NuGetVersion>> registration in _registrations)
             {
                 IDictionary<string, int> downloadsByVersion = null;
-                downloadLookup.TryGetValue(registration.Key, out downloadsByVersion);
+                if (downloadLookup != null)
+                {
+                    downloadLookup.TryGetValue(registration.Key, out downloadsByVersion);
+                }
 
                 JArray versions = new JArray();
 
