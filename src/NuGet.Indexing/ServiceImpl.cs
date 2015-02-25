@@ -5,9 +5,8 @@ using Lucene.Net.Search;
 using Microsoft.Owin;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using Lucene.Net.Analysis;
+using System.Linq;
 
 namespace NuGet.Indexing
 {
@@ -53,10 +52,10 @@ namespace NuGet.Indexing
 
             string scheme = context.Request.Uri.Scheme;
 
-            return Search(searcherManager, scheme, q, countOnly, projectType, supportedFramework, includePrerelease, skip, take, includeExplanation);
+            return QuerySearch(searcherManager, scheme, q, countOnly, projectType, supportedFramework, includePrerelease, skip, take, includeExplanation);
         }
 
-        public static JToken Search(NuGetSearcherManager searcherManager, string scheme, string q, bool countOnly, string projectType, string supportedFramework, bool includePrerelease, int skip, int take, bool includeExplanation)
+        public static JToken QuerySearch(NuGetSearcherManager searcherManager, string scheme, string q, bool countOnly, string projectType, string supportedFramework, bool includePrerelease, int skip, int take, bool includeExplanation)
         {
             IndexSearcher searcher = searcherManager.Get();
             try
@@ -313,6 +312,47 @@ namespace NuGet.Indexing
             }
 
             return result;
+        }
+
+        public static JToken Find(IOwinContext context, NuGetSearcherManager searcherManager)
+        {
+            string id = context.Request.Query["id"];
+
+            string scheme = context.Request.Uri.Scheme;
+
+            return FindSearch(searcherManager, id, scheme);
+        }
+
+        static JToken FindSearch(NuGetSearcherManager searcherManager, string id, string scheme)
+        {
+            if (id == null)
+            {
+                return null;
+            }
+
+            IndexSearcher searcher = searcherManager.Get();
+            try
+            {
+                string analyzedId = id.ToLowerInvariant();
+                Query query = new TermQuery(new Term("Id", analyzedId));
+                TopDocs topDocs = searcher.Search(query, 1);
+
+                if (topDocs.TotalHits > 0)
+                {
+                    Uri registrationBaseAddress = searcherManager.RegistrationBaseAddress[scheme];
+                    JObject obj = new JObject();
+                    obj["registration"] = new Uri(registrationBaseAddress, string.Format("{0}/index.json", id.ToLowerInvariant())).AbsoluteUri;
+                    return obj;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            finally
+            {
+                searcherManager.Release(searcher);
+            }
         }
 
         public static JToken TargetFrameworks(NuGetSearcherManager searcherManager)
