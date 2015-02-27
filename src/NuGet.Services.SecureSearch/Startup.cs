@@ -28,13 +28,21 @@ namespace NuGet.Services.SecureSearch
 
             string audience = ConfigurationManager.AppSettings["ida:Audience"];
             string tenant = ConfigurationManager.AppSettings["ida:Tenant"];
+            string aadInstance = ConfigurationManager.AppSettings["ida:AADInstance"];
 
-            app.UseWindowsAzureActiveDirectoryBearerAuthentication(
-                new WindowsAzureActiveDirectoryBearerAuthenticationOptions
+            string metadataAddress = string.Format(aadInstance, tenant) + "/federationmetadata/2007-06/federationmetadata.xml";
+
+            app.UseWindowsAzureActiveDirectoryBearerAuthentication(new WindowsAzureActiveDirectoryBearerAuthenticationOptions
+            {
+                TokenValidationParameters = new TokenValidationParameters
                 {
-                    TokenValidationParameters = new TokenValidationParameters { ValidAudience = audience },
-                    Tenant = tenant
-                });
+                    ValidAudience = audience,
+                    ValidateIssuer = true,
+                    IssuerValidator = (string issuer, SecurityToken securityToken, TokenValidationParameters validationParameters) => { return issuer; }
+                },
+                Tenant = tenant,
+                MetadataAddress = metadataAddress
+            });
 
             _searcherManager = CreateSearcherManager();
 
