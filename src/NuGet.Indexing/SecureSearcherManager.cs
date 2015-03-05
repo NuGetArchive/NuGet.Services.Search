@@ -13,6 +13,7 @@ namespace NuGet.Indexing
     public class SecureSearcherManager : SearcherManager
     {
         IDictionary<string, Filter> _filters;
+        Filter _publicFilter;
         IDictionary<string, JArray[]> _versionsByDoc;
         JArray[] _versionListsByDoc;
 
@@ -53,6 +54,7 @@ namespace NuGet.Indexing
             {
                 _filters.Add(tenantId, new CachingWrapperFilter(new TenantFilter(tenantId)));
             }
+            _publicFilter = new CachingWrapperFilter(new PublicFilter());
 
             // Recalculate precalculated Versions arrays 
             PackageVersions packageVersions = new PackageVersions(searcher.IndexReader);
@@ -68,17 +70,15 @@ namespace NuGet.Indexing
 
         public Filter GetFilter(string tenantId)
         {
-            Filter publicTenantFilter = _filters["PUBLIC"];
-
             Filter tenantFilter;
             if (_filters.TryGetValue(tenantId, out tenantFilter))
             {
-                Filter chainedFilter = new ChainedFilter(new Filter[] { publicTenantFilter, tenantFilter }, ChainedFilter.Logic.OR);
+                Filter chainedFilter = new ChainedFilter(new Filter[] { _publicFilter, tenantFilter }, ChainedFilter.Logic.OR);
                 return chainedFilter;
             }
             else
             {
-                return publicTenantFilter;
+                return _publicFilter;
             }
         }
 

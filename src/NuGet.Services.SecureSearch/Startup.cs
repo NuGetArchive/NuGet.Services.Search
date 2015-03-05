@@ -132,7 +132,7 @@ namespace NuGet.Services.SecureSearch
                     if (IsAuthorized())
                     {
                         Claim tenantIdClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/tenantid");
-                        string tenantId = (tenantIdClaim != null) ? tenantIdClaim.Value : "PUBLIC";
+                        string tenantId = (tenantIdClaim != null) ? tenantIdClaim.Value : string.Empty;
                         await WriteResponse(context, SecureServiceImpl.Query(context, _searcherManager, tenantId));
                     }
                     else

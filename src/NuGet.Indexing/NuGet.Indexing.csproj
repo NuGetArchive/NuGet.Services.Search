@@ -173,6 +173,7 @@
     <Compile Include="ServiceImpl.cs" />
     <Compile Include="StorageDownloadCounts.cs" />
     <Compile Include="StorageDownloadLookup.cs" />
+    <Compile Include="PublicFilter.cs" />
     <Compile Include="TenantFilter.cs" />
     <Compile Include="TypeFilter.cs" />
     <Compile Include="UpdateIndexTask.cs" />

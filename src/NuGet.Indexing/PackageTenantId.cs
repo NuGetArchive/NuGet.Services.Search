@@ -10,8 +10,6 @@ namespace NuGet.Indexing
         {
             HashSet<string> result = new HashSet<string>();
 
-            result.Add("PUBLIC");
-
             for (int i = 0; i < reader.MaxDoc; i++)
             {
                 if (reader.IsDeleted(i))
