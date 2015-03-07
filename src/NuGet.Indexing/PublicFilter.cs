@@ -5,7 +5,7 @@ namespace NuGet.Indexing
 {
     public class PublicFilter : QueryWrapperFilter
     {
-        public PublicFilter() : base(new TermQuery(new Term("visibility", "Public")))
+        public PublicFilter() : base(new TermQuery(new Term("Visibility", "Public")))
         {
         }
     }

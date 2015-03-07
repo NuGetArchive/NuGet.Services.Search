@@ -1,19 +1,16 @@
 ﻿using Lucene.Net.Documents;
-using Lucene.Net.Index;
-using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
 using Microsoft.Owin;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using Lucene.Net.Analysis;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace NuGet.Indexing
 {
-    public static class SecureServiceImpl
+    public static class SecureQueryImpl
     {
-        public static JToken Query(IOwinContext context, SecureSearcherManager searcherManager, string tenantId)
+        public static async Task Query(IOwinContext context, SecureSearcherManager searcherManager, string tenantId)
         {
             int skip;
             if (!int.TryParse(context.Request.Query["skip"], out skip))
@@ -49,7 +46,9 @@ namespace NuGet.Indexing
 
             string scheme = context.Request.Uri.Scheme;
 
-            return Search(searcherManager, tenantId, scheme, q, countOnly, includePrerelease, skip, take, includeExplanation);
+            JToken result = Search(searcherManager, tenantId, scheme, q, countOnly, includePrerelease, skip, take, includeExplanation);
+
+            await ServiceHelpers.WriteResponse(context, HttpStatusCode.OK, result);
         }
 
         public static JToken Search(SecureSearcherManager searcherManager, string tenantId, string scheme, string q, bool countOnly, bool includePrerelease, int skip, int take, bool includeExplanation)
@@ -57,11 +56,7 @@ namespace NuGet.Indexing
             IndexSearcher searcher = searcherManager.Get();
             try
             {
-                Filter filter = searcherManager.GetFilter(tenantId);
-
-                //TODO: uncomment these lines when we have an index that contains the appropriate @type field in every document
-                //Filter typeFilter = new CachingWrapperFilter(new TypeFilter("http://schema.nuget.org/schema#NuGetClassicPackage"));
-                //filter = new ChainedFilter(new Filter[] { filter, typeFilter }, ChainedFilter.Logic.AND);
+                Filter filter = searcherManager.GetFilter(tenantId, "http://schema.nuget.org/schema#ApiAppPackage");
 
                 Query query = MakeQuery(q);
 
@@ -99,22 +94,22 @@ namespace NuGet.Indexing
 
                 JObject obj = new JObject();
                 obj["@id"] = new Uri(registrationBaseAddress, url).AbsoluteUri;
-                obj["@type"] = "Package";
+                obj["@type"] = document.Get("@type"); ;
                 obj["registration"] = new Uri(registrationBaseAddress, string.Format("{0}/index.json", id.ToLowerInvariant())).AbsoluteUri;
                 obj["id"] = id;
 
-                string tenantId = document.Get("TenantId");
-                bool isPublic = (tenantId != null && tenantId == "PUBLIC");
+                ServiceHelpers.AddField(obj, document, "packageContent", "PackageContent");
+                ServiceHelpers.AddField(obj, document, "catalogEntry", "CatalogEntry");
 
-                obj["isPublic"] = isPublic;
-
-                AddField(obj, document, "domain", "Domain");
-                AddField(obj, document, "description", "Description");
-                AddField(obj, document, "summary", "Summary");
-                AddField(obj, document, "title", "Title");
-                AddField(obj, document, "iconUrl", "IconUrl");
-                AddFieldAsArray(obj, document, "tags", "Tags");
-                AddFieldAsArray(obj, document, "authors", "Authors");
+                ServiceHelpers.AddField(obj, document, "tenantId", "TenantId");
+                ServiceHelpers.AddField(obj, document, "namespace", "Namespace");
+                ServiceHelpers.AddField(obj, document, "visibility", "Visibility");
+                ServiceHelpers.AddField(obj, document, "description", "Description");
+                ServiceHelpers.AddField(obj, document, "summary", "Summary");
+                ServiceHelpers.AddField(obj, document, "title", "Title");
+                ServiceHelpers.AddField(obj, document, "iconUrl", "IconUrl");
+                ServiceHelpers.AddFieldAsArray(obj, document, "tags", "Tags");
+                ServiceHelpers.AddFieldAsArray(obj, document, "authors", "Authors");
 
                 obj["version"] = version;
                 obj["versions"] = searcherManager.GetVersions(scheme, scoreDoc.Doc);
@@ -131,24 +126,6 @@ namespace NuGet.Indexing
             return array;
         }
 
-        static void AddField(JObject obj, Document document, string to, string from)
-        {
-            string value = document.Get(from);
-            if (value != null)
-            {
-                obj[to] = value;
-            }
-        }
-
-        static void AddFieldAsArray(JObject obj, Document document, string to, string from)
-        {
-            string value = document.Get(from);
-            if (value != null)
-            {
-                obj[to] = new JArray(value.Split(' '));
-            }
-        }
-
         static JToken MakeResult(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, SecureSearcherManager searcherManager, bool includeExplanation, Query query)
         {
             JToken data = MakeResultData(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
@@ -162,54 +139,6 @@ namespace NuGet.Indexing
             result.Add("data", data);
 
             return result;
-        }
-
-        public static JToken Segments(SearcherManager searcherManager)
-        {
-            searcherManager.MaybeReopen();
-
-            IndexSearcher searcher = searcherManager.Get();
-
-            try
-            {
-                IndexReader indexReader = searcher.IndexReader;
-
-                JArray segments = new JArray();
-                foreach (ReadOnlySegmentReader segmentReader in indexReader.GetSequentialSubReaders())
-                {
-                    JObject segmentInfo = new JObject();
-                    segmentInfo.Add("segment", segmentReader.SegmentName);
-                    segmentInfo.Add("documents", segmentReader.NumDocs());
-                    segments.Add(segmentInfo);
-                }
-                return segments;
-            }
-            finally
-            {
-                searcherManager.Release(searcher);
-            }
-        }
-
-        public static JToken Stats(SecureSearcherManager searcherManager)
-        {
-            searcherManager.MaybeReopen();
-
-            IndexSearcher searcher = searcherManager.Get();
-
-            try
-            {
-                IndexReader indexReader = searcher.IndexReader;
-
-                JObject result = new JObject();
-                result.Add("numDocs", indexReader.NumDocs());
-                result.Add("indexName", searcherManager.IndexName);
-                result.Add("lastReopen", searcherManager.LastReopen.ToString("o"));
-                return result;
-            }
-            finally
-            {
-                searcherManager.Release(searcher);
-            }
         }
     }
 }

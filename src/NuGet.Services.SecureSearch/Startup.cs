@@ -125,66 +125,28 @@ namespace NuGet.Services.SecureSearch
                     await context.Response.WriteAsync("OK");
                     context.Response.StatusCode = (int)HttpStatusCode.OK;
                     break;
+                
                 case "/query":
-                    await WriteResponse(context, SecureServiceImpl.Query(context, _searcherManager, string.Empty));
+                    await SecureQueryImpl.Query(context, _searcherManager, ServiceHelpers.GetTenant());
                     break;
-                case "/secure/query":
-                    if (IsAuthorized())
-                    {
-                        Claim tenantIdClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/tenantid");
-                        string tenantId = (tenantIdClaim != null) ? tenantIdClaim.Value : string.Empty;
-                        await WriteResponse(context, SecureServiceImpl.Query(context, _searcherManager, tenantId));
-                    }
-                    else
-                    {
-                        await context.Response.WriteAsync("unauthorized");
-                        context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    }
+                
+                case "/find":
+                    await SecureFindImpl.Find(context, _searcherManager, ServiceHelpers.GetTenant());
                     break;
+                
                 case "/segments":
-                    await WriteResponse(context, SecureServiceImpl.Segments(_searcherManager));
+                    await ServiceInfoImpl.Segments(context, _searcherManager);
                     break;
+
                 case "/stats":
-                    await WriteResponse(context, SecureServiceImpl.Stats(_searcherManager));
+                    await ServiceInfoImpl.Stats(context, _searcherManager);
                     break;
+                
                 default:
                     string storagePrimary = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Primary");
                     MetadataImpl.Access(context, string.Empty, _searcherManager, storagePrimary, 30);
                     break;
             }
-        }
-
-        public bool IsAuthorized()
-        {
-            Claim scopeClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope");
-            bool authorized = (scopeClaim != null && scopeClaim.Value == "user_impersonation");
-            return authorized;
-        }
-
-        public static Task WriteResponse(IOwinContext context, JToken content)
-        {
-            string callback = context.Request.Query["callback"];
-
-            string contentType;
-            string responseString;
-            if (string.IsNullOrEmpty(callback))
-            {
-                responseString = content.ToString();
-                contentType = "application/json";
-            }
-            else
-            {
-                responseString = string.Format("{0}({1})", callback, content);
-                contentType = "application/javascript";
-            }
-
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
-            context.Response.Headers.Add("Pragma", new string[] { "no-cache" });
-            context.Response.Headers.Add("Cache-Control", new string[] { "no-cache" });
-            context.Response.Headers.Add("Expires", new string[] { "0" });
-            context.Response.ContentType = contentType;
-
-            return context.Response.WriteAsync(responseString);
         }
     }
 }

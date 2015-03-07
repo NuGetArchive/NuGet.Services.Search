@@ -153,7 +153,10 @@
     <Compile Include="PackageTenantId.cs" />
     <Compile Include="SecureSearcherManager.cs" />
     <Compile Include="PackageVersions.cs" />
-    <Compile Include="SecureServiceImpl.cs" />
+    <Compile Include="SecureQueryImpl.cs" />
+    <Compile Include="SecureFindImpl.cs" />
+    <Compile Include="ServiceHelpers.cs" />
+    <Compile Include="ServiceInfoImpl.cs" />
     <Compile Include="StorageFrameworkCompatibility.cs" />
     <Compile Include="LocalFrameworkCompatibility.cs" />
     <Compile Include="FrameworkCompatibility.cs" />

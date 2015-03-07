@@ -68,10 +68,19 @@ namespace NuGet.Indexing
             LastReopen = DateTime.UtcNow;
         }
 
-        public Filter GetFilter(string tenantId)
+        public Filter GetFilter(string tenantId, string type)
+        {
+            Filter visibilityFilter = GetVisibilityFilter(tenantId);
+            Filter typeFilter = new CachingWrapperFilter(new TypeFilter(type));
+
+            Filter chainedFilter = new ChainedFilter(new Filter[] { visibilityFilter, typeFilter }, ChainedFilter.Logic.AND);
+            return chainedFilter;
+        }
+
+        public Filter GetVisibilityFilter(string tenantId)
         {
             Filter tenantFilter;
-            if (_filters.TryGetValue(tenantId, out tenantFilter))
+            if (tenantId != null && _filters.TryGetValue(tenantId, out tenantFilter))
             {
                 Filter chainedFilter = new ChainedFilter(new Filter[] { _publicFilter, tenantFilter }, ChainedFilter.Logic.OR);
                 return chainedFilter;
