@@ -51,8 +51,8 @@ namespace NuGet.Indexing
 
             try
             {
-                Filter filter = searcherManager.GetFilter(tenantId, "ApiAppPackage");
-                string relativePath = string.Format("{0}/{1}", containerName, blobName);
+                Filter filter = searcherManager.GetFilter(tenantId, new string[] { "http://schema.nuget.org/schema#ApiAppPackage", "http://schema.nuget.org/schema#CatalogInfrastructure" });
+                string relativePath = string.Format("/{0}/{1}", containerName, blobName);
                 Query query = new TermQuery(new Term("StoragePath", relativePath));
                 TopDocs topDocs = searcher.Search(query, 1);
                 return (topDocs.TotalHits > 0);

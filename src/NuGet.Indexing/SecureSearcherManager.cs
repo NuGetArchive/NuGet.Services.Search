@@ -68,11 +68,11 @@ namespace NuGet.Indexing
             LastReopen = DateTime.UtcNow;
         }
 
-        public Filter GetFilter(string tenantId, string type)
+        public Filter GetFilter(string tenantId, string[] types)
         {
             Filter visibilityFilter = GetVisibilityFilter(tenantId);
-            Filter typeFilter = new CachingWrapperFilter(new TypeFilter(type));
 
+            Filter typeFilter = new CachingWrapperFilter(new TypeFilter(types));
             Filter chainedFilter = new ChainedFilter(new Filter[] { visibilityFilter, typeFilter }, ChainedFilter.Logic.AND);
             return chainedFilter;
         }

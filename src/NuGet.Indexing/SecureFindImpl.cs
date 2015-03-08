@@ -64,7 +64,7 @@ namespace NuGet.Indexing
                 query.Add(new BooleanClause(new TermQuery(new Term("Id", analyzedId)), Occur.MUST));
                 query.Add(new BooleanClause(new TermQuery(new Term("Version", analyzedVersion)), Occur.MUST));
 
-                Filter filter = searcherManager.GetFilter(tenantId, "http://schema.nuget.org/schema#ApiAppPackage");
+                Filter filter = searcherManager.GetFilter(tenantId, new string [] { "http://schema.nuget.org/schema#ApiAppPackage" });
 
                 TopDocs topDocs = searcher.Search(query, filter, 1);
 
@@ -103,7 +103,7 @@ namespace NuGet.Indexing
                 query.Add(new BooleanClause(new TermQuery(new Term("Namespace", analyzedNs)), Occur.MUST));
                 query.Add(new BooleanClause(new TermQuery(new Term("Id", analyzedId)), Occur.MUST));
 
-                Filter filter = searcherManager.GetFilter(tenantId, "http://schema.nuget.org/schema#ApiAppPackage");
+                Filter filter = searcherManager.GetFilter(tenantId, new string [] { "http://schema.nuget.org/schema#ApiAppPackage" });
 
                 TopDocs topDocs = searcher.Search(query, 1000);
 

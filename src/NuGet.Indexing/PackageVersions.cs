@@ -3,6 +3,7 @@ using Lucene.Net.Index;
 using Newtonsoft.Json.Linq;
 using NuGet.Versioning;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace NuGet.Indexing
@@ -26,17 +27,20 @@ namespace NuGet.Indexing
 
                 Document document = reader[i];
 
-                string id = document.Get("Id").ToLowerInvariant();
-                NuGetVersion version = NuGetVersion.Parse(document.Get("Version"));
-
-                List<NuGetVersion> versions;
-                if (!_registrations.TryGetValue(id, out versions))
+                if (document.GetValues("@type").Contains("http://schema.nuget.org/schema#Package"))
                 {
-                    versions = new List<NuGetVersion>();
-                    _registrations.Add(id, versions);
-                }
+                    string id = document.Get("Id").ToLowerInvariant();
+                    NuGetVersion version = NuGetVersion.Parse(document.Get("Version"));
 
-                versions.Add(version);
+                    List<NuGetVersion> versions;
+                    if (!_registrations.TryGetValue(id, out versions))
+                    {
+                        versions = new List<NuGetVersion>();
+                        _registrations.Add(id, versions);
+                    }
+
+                    versions.Add(version);
+                }
             }
 
             foreach (List<NuGetVersion> values in _registrations.Values)
@@ -117,9 +121,15 @@ namespace NuGet.Indexing
 
                 Document document = _reader[i];
 
-                string id = document.Get("Id").ToLowerInvariant();
-
-                versionsByDoc[i] = versionsById[id];
+                if (document.GetValues("@type").Contains("http://schema.nuget.org/schema#Package"))
+                {
+                    string id = document.Get("Id").ToLowerInvariant();
+                    versionsByDoc[i] = versionsById[id];
+                }
+                else
+                {
+                    versionsByDoc[i] = new JArray();
+                }
             }
 
             return versionsByDoc;

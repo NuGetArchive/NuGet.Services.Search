@@ -56,7 +56,7 @@ namespace NuGet.Indexing
             IndexSearcher searcher = searcherManager.Get();
             try
             {
-                Filter filter = searcherManager.GetFilter(tenantId, "http://schema.nuget.org/schema#ApiAppPackage");
+                Filter filter = searcherManager.GetFilter(tenantId, new string [] { "http://schema.nuget.org/schema#ApiAppPackage" });
 
                 Query query = MakeQuery(q);
 

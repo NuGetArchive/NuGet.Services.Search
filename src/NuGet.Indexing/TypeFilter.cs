@@ -11,27 +11,27 @@ namespace NuGet.Indexing
     //
     //  an alternative implementation might be to use that inline or subclass from it
 
-    public class TypeFilter : Filter
+    public class TypeFilter : QueryWrapperFilter
     {
-        string _type;
-
-        public TypeFilter(string type)
+        public TypeFilter(string[] types) : base(MakeQuery(types))
         {
-            _type = type;
         }
 
-        public override DocIdSet GetDocIdSet(IndexReader reader)
+        static Query MakeQuery(string[] types)
         {
-            OpenBitSet bitSet = new OpenBitSet(reader.NumDocs());
-            TermDocs termDocs = reader.TermDocs(new Term("@type", _type));
-            while (termDocs.Next())
+            if (types.Length == 1)
             {
-                if (termDocs.Freq > 0)
-                {
-                    bitSet.Set(termDocs.Doc);
-                }
+                return new TermQuery(new Term("@type", types[0]));
             }
-            return bitSet;
+            else
+            {
+                BooleanQuery query = new BooleanQuery();
+                for (int i = 0; i < types.Length; i++)
+                {
+                    query.Add(new BooleanClause(new TermQuery(new Term("@type", types[i])), Occur.SHOULD));
+                }
+                return query;
+            }
         }
     }
 }
