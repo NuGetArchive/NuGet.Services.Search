@@ -1,4 +1,5 @@
 ﻿using Lucene.Net.Documents;
+using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Microsoft.Owin;
 using Newtonsoft.Json.Linq;
@@ -108,6 +109,7 @@ namespace NuGet.Indexing
                 ServiceHelpers.AddField(obj, document, "summary", "Summary");
                 ServiceHelpers.AddField(obj, document, "title", "Title");
                 ServiceHelpers.AddField(obj, document, "iconUrl", "IconUrl");
+                ServiceHelpers.AddFieldAsObject(obj, document, "owner", "OwnerDetails");
                 ServiceHelpers.AddFieldAsArray(obj, document, "tags", "Tags");
                 ServiceHelpers.AddFieldAsArray(obj, document, "authors", "Authors");
 
@@ -139,6 +141,68 @@ namespace NuGet.Indexing
             result.Add("data", data);
 
             return result;
+        }
+
+        //TODO: this is a temporary implementation to unblock web site development
+
+        public static async Task QueryByOwner(IOwinContext context, SecureSearcherManager searcherManager, string tenantId)
+        {
+            int skip;
+            if (!int.TryParse(context.Request.Query["skip"], out skip))
+            {
+                skip = 0;
+            }
+
+            int take;
+            if (!int.TryParse(context.Request.Query["take"], out take))
+            {
+                take = 20;
+            }
+
+            bool countOnly;
+            if (!bool.TryParse(context.Request.Query["countOnly"], out countOnly))
+            {
+                countOnly = false;
+            }
+
+            bool includePrerelease;
+            if (!bool.TryParse(context.Request.Query["prerelease"], out includePrerelease))
+            {
+                includePrerelease = false;
+            }
+
+            bool includeExplanation = false;
+            if (!bool.TryParse(context.Request.Query["explanation"], out includeExplanation))
+            {
+                includeExplanation = false;
+            }
+
+            string q = context.Request.Query["q"] ?? string.Empty;
+
+            string scheme = context.Request.Uri.Scheme;
+
+            JToken result = SearchByOwner(searcherManager, tenantId, scheme, q, countOnly, includePrerelease, skip, take, includeExplanation);
+
+            await ServiceHelpers.WriteResponse(context, HttpStatusCode.OK, result);
+        }
+
+        public static JToken SearchByOwner(SecureSearcherManager searcherManager, string tenantId, string scheme, string q, bool countOnly, bool includePrerelease, int skip, int take, bool includeExplanation)
+        {
+            IndexSearcher searcher = searcherManager.Get();
+            try
+            {
+                Filter filter = searcherManager.GetFilter(tenantId, new string[] { "http://schema.nuget.org/schema#ApiAppPackage" });
+
+                Query query = new TermQuery(new Term("Owner", q));
+
+                TopDocs topDocs = searcher.Search(query, filter, skip + take);
+
+                return MakeResult(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
+            }
+            finally
+            {
+                searcherManager.Release(searcher);
+            }
         }
     }
 }

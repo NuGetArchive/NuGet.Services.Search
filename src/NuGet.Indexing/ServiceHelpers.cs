@@ -64,6 +64,15 @@ namespace NuGet.Indexing
             }
         }
 
+        public static void AddFieldAsObject(JObject obj, Document document, string to, string from)
+        {
+            string value = document.Get(from);
+            if (value != null)
+            {
+                obj[to] = JObject.Parse(value);
+            }
+        }
+
         public static void AddFieldAsArray(JObject obj, Document document, string to, string from)
         {
             string value = document.Get(from);

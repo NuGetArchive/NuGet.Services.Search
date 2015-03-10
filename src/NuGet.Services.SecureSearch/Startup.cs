@@ -129,7 +129,12 @@ namespace NuGet.Services.SecureSearch
                 case "/query":
                     await SecureQueryImpl.Query(context, _searcherManager, ServiceHelpers.GetTenant());
                     break;
-                
+
+                //TODO: temp fix to unblock web site development
+                case "/owner":
+                    await SecureQueryImpl.QueryByOwner(context, _searcherManager, ServiceHelpers.GetTenant());
+                    break;
+
                 case "/find":
                     await SecureFindImpl.Find(context, _searcherManager, ServiceHelpers.GetTenant());
                     break;
