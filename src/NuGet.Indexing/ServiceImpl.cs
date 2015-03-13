@@ -14,6 +14,16 @@ namespace NuGet.Indexing
     {
         public static JToken Query(IOwinContext context, NuGetSearcherManager searcherManager)
         {
+            return Query(context, searcherManager, MakeResult);
+        }
+
+        public static JToken GalleryQuery(IOwinContext context, NuGetSearcherManager searcherManager)
+        {
+            return Query(context, searcherManager, MakeGalleryResult);
+        }
+
+        static JToken Query(IOwinContext context, NuGetSearcherManager searcherManager, ResultBuilderType resultBuilder)
+        {
             int skip;
             if (!int.TryParse(context.Request.Query["skip"], out skip))
             {
@@ -52,10 +62,12 @@ namespace NuGet.Indexing
 
             string scheme = context.Request.Uri.Scheme;
 
-            return QuerySearch(searcherManager, scheme, q, countOnly, projectType, supportedFramework, includePrerelease, skip, take, includeExplanation);
+            return QuerySearch(searcherManager, scheme, q, countOnly, projectType, supportedFramework, includePrerelease, skip, take, includeExplanation, resultBuilder);
         }
 
-        public static JToken QuerySearch(NuGetSearcherManager searcherManager, string scheme, string q, bool countOnly, string projectType, string supportedFramework, bool includePrerelease, int skip, int take, bool includeExplanation)
+        delegate JToken ResultBuilderType(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, NuGetSearcherManager searcherManager, bool includeExplanation, Query query);
+
+        static JToken QuerySearch(NuGetSearcherManager searcherManager, string scheme, string q, bool countOnly, string projectType, string supportedFramework, bool includePrerelease, int skip, int take, bool includeExplanation, ResultBuilderType resultBuilder)
         {
             IndexSearcher searcher = searcherManager.Get();
             try
@@ -70,7 +82,7 @@ namespace NuGet.Indexing
 
                 TopDocs topDocs = searcher.Search(query, filter, skip + take);
 
-                return MakeResult(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
+                return resultBuilder(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
             }
             finally
             {
@@ -130,6 +142,58 @@ namespace NuGet.Indexing
             return array;
         }
 
+        public static JToken MakeGalleryResultData(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, NuGetSearcherManager searcherManager, bool includeExplanation, Query query)
+        {
+            Uri registrationBaseAddress = searcherManager.RegistrationBaseAddress[scheme];
+
+            JArray array = new JArray();
+
+            for (int i = skip; i < Math.Min(skip + take, topDocs.ScoreDocs.Length); i++)
+            {
+                ScoreDoc scoreDoc = topDocs.ScoreDocs[i];
+
+                Document document = searcher.Doc(scoreDoc.Doc);
+
+                string url = document.Get("Url");
+                string id = document.Get("Id");
+                string version = document.Get("Version");
+
+                JObject obj = new JObject();
+                obj["@id"] = new Uri(registrationBaseAddress, url).AbsoluteUri;
+                obj["@type"] = "Package";
+                obj["registration"] = new Uri(registrationBaseAddress, string.Format("{0}/index.json", id.ToLowerInvariant())).AbsoluteUri;
+                obj["Id"] = id;
+
+                obj["Dependencies"] = new JArray();
+                obj["SupportedFrameworks"] = new JArray();
+                obj["PackageRegistration"] = new JObject { new JProperty("Owners", new JArray()), new JProperty("Id", obj["Id"]) };
+
+                AddField(obj, document, "Domain", "Domain");
+                AddField(obj, document, "Description", "Description");
+                AddField(obj, document, "Summary", "Summary");
+                AddField(obj, document, "Title", "Title");
+                AddField(obj, document, "IconUrl", "IconUrl");
+                AddFieldAsArray(obj, document, "Tags", "Tags");
+                obj["Tags"] = string.Join(" ", ((JArray)(obj["Tags"])).Select(t => t.Value<string>()));
+
+                AddFieldAsArray(obj, document, "Authors", "Authors");
+                obj["Authors"] = string.Join(" ", ((JArray)(obj["Authors"])).Select(t => t.Value<string>()));
+
+                obj["Version"] = version;
+                obj["Versions"] = searcherManager.GetVersions(scheme, scoreDoc.Doc);
+
+                if (includeExplanation)
+                {
+                    Explanation explanation = searcher.Explain(query, scoreDoc.Doc);
+                    obj["explanation"] = explanation.ToString();
+                }
+
+                array.Add(obj);
+            }
+
+            return array;
+        }
+
         static void AddField(JObject obj, Document document, string to, string from)
         {
             string value = document.Get(from);
@@ -151,6 +215,21 @@ namespace NuGet.Indexing
         static JToken MakeResult(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, NuGetSearcherManager searcherManager, bool includeExplanation, Query query)
         {
             JToken data = MakeResultData(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
+
+            JObject result = new JObject();
+
+            result.Add("@context", new JObject { { "@vocab", "http://schema.nuget.org/schema#" } });
+            result.Add("totalHits", topDocs.TotalHits);
+            result.Add("lastReopen", searcherManager.LastReopen.ToString("o"));
+            result.Add("index", searcherManager.IndexName);
+            result.Add("data", data);
+
+            return result;
+        }
+
+        static JToken MakeGalleryResult(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, NuGetSearcherManager searcherManager, bool includeExplanation, Query query)
+        {
+            JToken data = MakeGalleryResultData(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
 
             JObject result = new JObject();
 
