@@ -249,6 +249,7 @@ namespace NuGet.Indexing
                 CreateFieldClauseAND(luceneQuery, "Title", nugetQuery, 4);
                 CreateFieldClause(luceneQuery, "Tags", nugetQuery);
                 CreateFieldClause(luceneQuery, "Description", nugetQuery);
+                CreateFieldClause(luceneQuery, "Summary", nugetQuery);
                 CreateFieldClause(luceneQuery, "Authors", nugetQuery);
                 CreateFieldClause(luceneQuery, "Owners", nugetQuery);
 

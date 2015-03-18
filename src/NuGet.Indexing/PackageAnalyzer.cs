@@ -26,6 +26,7 @@ namespace NuGet.Indexing
                 { "Version", new VersionAnalyzer() },
                 { "Title", new DescriptionAnalyzer() },
                 { "Description", new DescriptionAnalyzer() },
+                { "Summary", new DescriptionAnalyzer() },
                 { "Authors", new DescriptionAnalyzer() },
                 { "Owners", new DescriptionAnalyzer() },
                 { "Tags", new TagsAnalyzer() },
