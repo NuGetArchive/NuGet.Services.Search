@@ -55,6 +55,16 @@ namespace NuGet.Indexing
             return null;
         }
 
+        public static string GetNameIdentifier()
+        {
+            Claim nameIdentifierClaim = ClaimsPrincipal.Current.FindFirst(ClaimTypes.NameIdentifier);
+            if (nameIdentifierClaim != null)
+            {
+                return nameIdentifierClaim.Value;
+            }
+            return string.Empty;
+        }
+
         public static void AddField(JObject obj, Document document, string to, string from)
         {
             string value = document.Get(from);

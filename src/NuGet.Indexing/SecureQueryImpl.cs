@@ -11,7 +11,7 @@ namespace NuGet.Indexing
 {
     public static class SecureQueryImpl
     {
-        public static async Task Query(IOwinContext context, SecureSearcherManager searcherManager, string tenantId)
+        public static async Task Query(IOwinContext context, SecureSearcherManager searcherManager, string tenantId, string currentOwner)
         {
             int skip;
             if (!int.TryParse(context.Request.Query["skip"], out skip))
@@ -22,7 +22,7 @@ namespace NuGet.Indexing
             int take;
             if (!int.TryParse(context.Request.Query["take"], out take))
             {
-                take = 20;
+                take = 50;
             }
 
             bool countOnly;
@@ -47,12 +47,12 @@ namespace NuGet.Indexing
 
             string scheme = context.Request.Uri.Scheme;
 
-            JToken result = Search(searcherManager, tenantId, scheme, q, countOnly, includePrerelease, skip, take, includeExplanation);
+            JToken result = Search(searcherManager, tenantId, currentOwner, scheme, q, countOnly, includePrerelease, skip, take, includeExplanation);
 
             await ServiceHelpers.WriteResponse(context, HttpStatusCode.OK, result);
         }
 
-        public static JToken Search(SecureSearcherManager searcherManager, string tenantId, string scheme, string q, bool countOnly, bool includePrerelease, int skip, int take, bool includeExplanation)
+        public static JToken Search(SecureSearcherManager searcherManager, string tenantId, string currentOwner, string scheme, string q, bool countOnly, bool includePrerelease, int skip, int take, bool includeExplanation)
         {
             IndexSearcher searcher = searcherManager.Get();
             try
@@ -63,7 +63,7 @@ namespace NuGet.Indexing
 
                 TopDocs topDocs = searcher.Search(query, filter, skip + take);
 
-                return MakeResult(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
+                return MakeResult(searcher, currentOwner, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
             }
             finally
             {
@@ -77,7 +77,7 @@ namespace NuGet.Indexing
             return query;
         }
 
-        public static JToken MakeResultData(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, SecureSearcherManager searcherManager, bool includeExplanation, Query query)
+        public static JToken MakeResultData(IndexSearcher searcher, string currentOwner, string scheme, TopDocs topDocs, int skip, int take, SecureSearcherManager searcherManager, bool includeExplanation, Query query)
         {
             Uri registrationBaseAddress = searcherManager.RegistrationBaseAddress[scheme];
 
@@ -92,12 +92,15 @@ namespace NuGet.Indexing
                 string url = document.Get("Url");
                 string id = document.Get("Id");
                 string version = document.Get("Version");
+                string owner = document.Get("Owner");
 
                 JObject obj = new JObject();
                 obj["@id"] = new Uri(registrationBaseAddress, url).AbsoluteUri;
                 obj["@type"] = document.Get("@type"); ;
                 obj["registration"] = new Uri(registrationBaseAddress, string.Format("{0}/index.json", id.ToLowerInvariant())).AbsoluteUri;
                 obj["id"] = id;
+
+                obj["isOwner"] = (owner == currentOwner);
 
                 ServiceHelpers.AddField(obj, document, "packageContent", "PackageContent");
                 ServiceHelpers.AddField(obj, document, "catalogEntry", "CatalogEntry");
@@ -128,9 +131,9 @@ namespace NuGet.Indexing
             return array;
         }
 
-        static JToken MakeResult(IndexSearcher searcher, string scheme, TopDocs topDocs, int skip, int take, SecureSearcherManager searcherManager, bool includeExplanation, Query query)
+        static JToken MakeResult(IndexSearcher searcher, string currentOwner, string scheme, TopDocs topDocs, int skip, int take, SecureSearcherManager searcherManager, bool includeExplanation, Query query)
         {
-            JToken data = MakeResultData(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
+            JToken data = MakeResultData(searcher, currentOwner, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
 
             JObject result = new JObject();
 
@@ -139,13 +142,12 @@ namespace NuGet.Indexing
             result.Add("lastReopen", searcherManager.LastReopen.ToString("o"));
             result.Add("index", searcherManager.IndexName);
             result.Add("data", data);
+            result.Add("currentOwner", currentOwner);
 
             return result;
         }
 
-        //TODO: this is a temporary implementation to unblock web site development
-
-        public static async Task QueryByOwner(IOwinContext context, SecureSearcherManager searcherManager, string tenantId)
+        public static async Task QueryByOwner(IOwinContext context, SecureSearcherManager searcherManager, string tenantId, string currentOwner)
         {
             int skip;
             if (!int.TryParse(context.Request.Query["skip"], out skip))
@@ -177,27 +179,25 @@ namespace NuGet.Indexing
                 includeExplanation = false;
             }
 
-            string q = context.Request.Query["q"] ?? string.Empty;
-
             string scheme = context.Request.Uri.Scheme;
 
-            JToken result = SearchByOwner(searcherManager, tenantId, scheme, q, countOnly, includePrerelease, skip, take, includeExplanation);
+            JToken result = SearchByOwner(searcherManager, tenantId, scheme, currentOwner, countOnly, includePrerelease, skip, take, includeExplanation);
 
             await ServiceHelpers.WriteResponse(context, HttpStatusCode.OK, result);
         }
 
-        public static JToken SearchByOwner(SecureSearcherManager searcherManager, string tenantId, string scheme, string q, bool countOnly, bool includePrerelease, int skip, int take, bool includeExplanation)
+        public static JToken SearchByOwner(SecureSearcherManager searcherManager, string tenantId, string scheme, string currentOwner, bool countOnly, bool includePrerelease, int skip, int take, bool includeExplanation)
         {
             IndexSearcher searcher = searcherManager.Get();
             try
             {
                 Filter filter = searcherManager.GetFilter(tenantId, new string[] { "http://schema.nuget.org/schema#ApiAppPackage" });
 
-                Query query = new TermQuery(new Term("Owner", q));
+                Query query = new TermQuery(new Term("Owner", currentOwner));
 
                 TopDocs topDocs = searcher.Search(query, filter, skip + take);
 
-                return MakeResult(searcher, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
+                return MakeResult(searcher, currentOwner, scheme, topDocs, skip, take, searcherManager, includeExplanation, query);
             }
             finally
             {
