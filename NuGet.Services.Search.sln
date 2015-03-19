@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.BasicSearch"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.SecureSearch", "src\NuGet.Services.SecureSearch\NuGet.Services.SecureSearch.csproj", "{BBA2FEAE-6872-4B3D-A4EA-CED639618426}"
 EndProject
-Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "NuGet.Services.SecureSearch.CloudService", "src\NuGet.Services.SecureSearch.Cloud\NuGet.Services.SecureSearch.CloudService.ccproj", "{A02A584B-02F3-40DC-804F-344F03926F9F}"
+Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "NuGet.Services.SecureSearch.CloudService", "src\NuGet.Services.SecureSearch.CloudService\NuGet.Services.SecureSearch.CloudService.ccproj", "{A02A584B-02F3-40DC-804F-344F03926F9F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
