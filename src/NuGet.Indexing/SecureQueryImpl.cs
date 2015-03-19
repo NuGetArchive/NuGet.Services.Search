@@ -57,7 +57,7 @@ namespace NuGet.Indexing
             IndexSearcher searcher = searcherManager.Get();
             try
             {
-                Filter filter = searcherManager.GetFilter(tenantId, new string [] { "http://schema.nuget.org/schema#ApiAppPackage" });
+                Filter filter = searcherManager.GetFilter(tenantId, new string [] { "http://schema.nuget.org/schema#ApiAppPackage" }, includePrerelease);
 
                 Query query = MakeQuery(q);
 
@@ -191,7 +191,7 @@ namespace NuGet.Indexing
             IndexSearcher searcher = searcherManager.Get();
             try
             {
-                Filter filter = searcherManager.GetFilter(tenantId, new string[] { "http://schema.nuget.org/schema#ApiAppPackage" });
+                Filter filter = searcherManager.GetFilter(tenantId, new string[] { "http://schema.nuget.org/schema#ApiAppPackage" }, includePrerelease);
 
                 Query query = new TermQuery(new Term("Owner", currentOwner));
 

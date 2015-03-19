@@ -149,6 +149,7 @@
     <Compile Include="FacetedDocument.cs" />
     <Compile Include="Facets.cs" />
     <Compile Include="IdentifierAutocompleteAnalyzer.cs" />
+    <Compile Include="LatestVersionFilter.cs" />
     <Compile Include="MetadataImpl.cs" />
     <Compile Include="PackageTenantId.cs" />
     <Compile Include="SecureSearcherManager.cs" />
