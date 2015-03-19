@@ -5,8 +5,6 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Search", "src\NuGet.Services.Search\NuGet.Services.Search.csproj", "{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Search.Facts", "src\NuGet.Services.Search.Facts\NuGet.Services.Search.Facts.csproj", "{641CE15C-9889-4560-B0B5-64082B24A8B5}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Indexing", "src\NuGet.Indexing\NuGet.Indexing.csproj", "{DDB34145-870F-42C3-9663-A9390CEE1E35}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Search.Client", "src\NuGet.Services.Search.Client\NuGet.Services.Search.Client.csproj", "{CE0AC7E5-CDF7-4899-AD72-DCB64E402EBE}"
@@ -20,7 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{B22CF3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.SecureSearch", "src\NuGet.Services.SecureSearch\NuGet.Services.SecureSearch.csproj", "{BBA2FEAE-6872-4B3D-A4EA-CED639618426}"
 EndProject
-Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "NuGet.Services.SecureSearch.CloudService", "src\NuGet.Services.SecureSearch.CloudService\NuGet.Services.SecureSearch.CloudService.ccproj", "{A02A584B-02F3-40DC-804F-344F03926F9F}"
+Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "NuGet.Services.SecureSearch.CloudService", "src\NuGet.Services.SecureSearch.Cloud\NuGet.Services.SecureSearch.CloudService.ccproj", "{A02A584B-02F3-40DC-804F-344F03926F9F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,10 +30,6 @@ Global
 		{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{641CE15C-9889-4560-B0B5-64082B24A8B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{641CE15C-9889-4560-B0B5-64082B24A8B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{641CE15C-9889-4560-B0B5-64082B24A8B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{641CE15C-9889-4560-B0B5-64082B24A8B5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DDB34145-870F-42C3-9663-A9390CEE1E35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DDB34145-870F-42C3-9663-A9390CEE1E35}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DDB34145-870F-42C3-9663-A9390CEE1E35}.Release|Any CPU.ActiveCfg = Release|Any CPU
