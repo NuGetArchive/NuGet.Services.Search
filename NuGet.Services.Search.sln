@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "NuGet.Services.Search.Cloud", "src\NuGet.Services.Search.Cloud\NuGet.Services.Search.Cloud.ccproj", "{12CB66A2-0203-4263-B817-6813AB3C335C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Search", "src\NuGet.Services.Search\NuGet.Services.Search.csproj", "{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Search.Facts", "src\NuGet.Services.Search.Facts\NuGet.Services.Search.Facts.csproj", "{641CE15C-9889-4560-B0B5-64082B24A8B5}"
@@ -15,19 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Search.Clien
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.BasicSearch", "src\NuGet.Services.BasicSearch\NuGet.Services.BasicSearch.csproj", "{1460DE86-6DF4-49A3-822C-E52F8DA834F5}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PublishScripts", "PublishScripts", "{93EB656F-E4A2-40FF-BD06-0686B37F1C8B}"
-	ProjectSection(SolutionItems) = preProject
-		PublishScripts\AzureWebsitePublishModule.psm1 = PublishScripts\AzureWebsitePublishModule.psm1
-		PublishScripts\Publish-WebApplicationWebsite.ps1 = PublishScripts\Publish-WebApplicationWebsite.ps1
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configurations", "Configurations", "{932A70DD-EF8F-4518-B18E-EA845C564C6C}"
-	ProjectSection(SolutionItems) = preProject
-		PublishScripts\Configurations\NuGetServicesBasicSearch-WAWS-dev.json = PublishScripts\Configurations\NuGetServicesBasicSearch-WAWS-dev.json
-		PublishScripts\Configurations\NuGetServicesSecureSearch-WAWS-dev-2.json = PublishScripts\Configurations\NuGetServicesSecureSearch-WAWS-dev-2.json
-		PublishScripts\Configurations\NuGetServicesSecureSearch-WAWS-dev.json = PublishScripts\Configurations\NuGetServicesSecureSearch-WAWS-dev.json
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{B22CF391-6F4D-4F90-B112-0065629319EB}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\packages.config = .nuget\packages.config
@@ -35,7 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{B22CF3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.SecureSearch", "src\NuGet.Services.SecureSearch\NuGet.Services.SecureSearch.csproj", "{BBA2FEAE-6872-4B3D-A4EA-CED639618426}"
 EndProject
-Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "SecureSearchAzureCloudService", "SecureSearchAzureCloudService\SecureSearchAzureCloudService.ccproj", "{C500EE02-C797-4AB9-B9C2-2A7B8D2682D3}"
+Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "NuGet.Services.SecureSearch.CloudService", "src\NuGet.Services.SecureSearch.CloudService\NuGet.Services.SecureSearch.CloudService.ccproj", "{A02A584B-02F3-40DC-804F-344F03926F9F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,10 +28,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{12CB66A2-0203-4263-B817-6813AB3C335C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{12CB66A2-0203-4263-B817-6813AB3C335C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{12CB66A2-0203-4263-B817-6813AB3C335C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{12CB66A2-0203-4263-B817-6813AB3C335C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -71,15 +52,12 @@ Global
 		{BBA2FEAE-6872-4B3D-A4EA-CED639618426}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BBA2FEAE-6872-4B3D-A4EA-CED639618426}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BBA2FEAE-6872-4B3D-A4EA-CED639618426}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C500EE02-C797-4AB9-B9C2-2A7B8D2682D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C500EE02-C797-4AB9-B9C2-2A7B8D2682D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C500EE02-C797-4AB9-B9C2-2A7B8D2682D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C500EE02-C797-4AB9-B9C2-2A7B8D2682D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A02A584B-02F3-40DC-804F-344F03926F9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A02A584B-02F3-40DC-804F-344F03926F9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A02A584B-02F3-40DC-804F-344F03926F9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A02A584B-02F3-40DC-804F-344F03926F9F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{932A70DD-EF8F-4518-B18E-EA845C564C6C} = {93EB656F-E4A2-40FF-BD06-0686B37F1C8B}
 	EndGlobalSection
 EndGlobal

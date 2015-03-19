@@ -26,9 +26,9 @@ namespace NuGet.Services.SecureSearch
         {
             app.UseErrorPage();
 
-            string audience = ConfigurationManager.AppSettings["ida:Audience"];
-            string tenant = ConfigurationManager.AppSettings["ida:Tenant"];
-            string aadInstance = ConfigurationManager.AppSettings["ida:AADInstance"];
+            string audience = ConfigurationManager.AppSettings["ida.Audience"];
+            string tenant = ConfigurationManager.AppSettings["ida.Tenant"];
+            string aadInstance = ConfigurationManager.AppSettings["ida.AADInstance"];
 
             string metadataAddress = string.Format(aadInstance, tenant) + "/federationmetadata/2007-06/federationmetadata.xml";
 
