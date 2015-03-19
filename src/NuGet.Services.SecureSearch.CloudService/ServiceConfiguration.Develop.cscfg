@@ -2,6 +2,16 @@
 <ServiceConfiguration serviceName="NuGet.Services.SecureSearch.CloudService" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceConfiguration" osFamily="4" osVersion="*" schemaVersion="2014-06.2.4">
   <Role name="NuGet.Services.SecureSearch">
     <Instances count="1" />
-    <ConfigurationSettings />
+    <ConfigurationSettings>
+      <Setting name="Search.RegistrationBaseAddress" value="" />
+      <Setting name="Local.Lucene.Directory" value="" />
+      <Setting name="Search.IndexRefresh" value="" />
+      <Setting name="Storage.Primary" value="" />
+      <Setting name="Search.IndexContainer" value="" />
+      <Setting name="ida.Tenant" value="" />
+      <Setting name="ida.Audience" value="" />
+      <Setting name="ida.ClientId" value="" />
+      <Setting name="ida.AADInstance" value="" />
+    </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

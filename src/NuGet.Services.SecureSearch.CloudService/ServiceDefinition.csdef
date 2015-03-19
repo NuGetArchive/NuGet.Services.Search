@@ -11,5 +11,16 @@
     <Endpoints>
       <InputEndpoint name="Endpoint1" protocol="http" port="80" />
     </Endpoints>
+    <ConfigurationSettings>
+      <Setting name="Search.RegistrationBaseAddress" />
+      <Setting name="Local.Lucene.Directory" />
+      <Setting name="Search.IndexRefresh" />
+      <Setting name="Storage.Primary" />
+      <Setting name="Search.IndexContainer" />
+      <Setting name="ida.Tenant" />
+      <Setting name="ida.Audience" />
+      <Setting name="ida.ClientId" />
+      <Setting name="ida.AADInstance" />
+    </ConfigurationSettings>
   </WebRole>
 </ServiceDefinition>
