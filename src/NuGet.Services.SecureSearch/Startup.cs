@@ -1,14 +1,11 @@
 ﻿using Microsoft.Owin;
 using Microsoft.Owin.Security.ActiveDirectory;
-using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using Owin;
 using System;
 using System.Configuration;
 using System.IdentityModel.Tokens;
-using System.IO;
 using System.Net;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,14 +18,15 @@ namespace NuGet.Services.SecureSearch
         Timer _timer;
         SecureSearcherManager _searcherManager;
         int _gate;
+        private readonly ConfigurationService _configurationService = new ConfigurationService();
 
         public void Configuration(IAppBuilder app)
         {
             app.UseErrorPage();
 
-            string audience = ConfigurationManager.AppSettings["ida.Audience"];
-            string tenant = ConfigurationManager.AppSettings["ida.Tenant"];
-            string aadInstance = ConfigurationManager.AppSettings["ida.AADInstance"];
+            string audience = _configurationService.Get("ida.Audience");
+            string tenant = _configurationService.Get("ida.Tenant");
+            string aadInstance = _configurationService.Get("ida.AADInstance");
 
             string metadataAddress = string.Format(aadInstance, tenant) + "/federationmetadata/2007-06/federationmetadata.xml";
 
@@ -48,7 +46,7 @@ namespace NuGet.Services.SecureSearch
 
             _searcherManager.Open();
 
-            string searchIndexRefresh = ConfigurationManager.AppSettings["Search.IndexRefresh"] ?? "180";
+            string searchIndexRefresh = _configurationService.Get("Search.IndexRefresh") ?? "180";
             int seconds;
             if (!int.TryParse(searchIndexRefresh, out seconds))
             {
@@ -79,21 +77,21 @@ namespace NuGet.Services.SecureSearch
         {
             SecureSearcherManager searcherManager;
 
-            string luceneDirectory = System.Configuration.ConfigurationManager.AppSettings.Get("Local.Lucene.Directory");
+            string luceneDirectory = _configurationService.Get("Local.Lucene.Directory");
             if (!string.IsNullOrEmpty(luceneDirectory))
             {
-                string dataDirectory = System.Configuration.ConfigurationManager.AppSettings.Get("Local.Data.Directory");
+                string dataDirectory = _configurationService.Get("Local.Data.Directory");
                 searcherManager = SecureSearcherManager.CreateLocal(luceneDirectory);
             }
             else
             {
-                string storagePrimary = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Primary");
-                string searchIndexContainer = System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexContainer");
+                string storagePrimary = _configurationService.Get("Storage.Primary");
+                string searchIndexContainer = _configurationService.Get("Search.IndexContainer");
 
                 searcherManager = SecureSearcherManager.CreateAzure(storagePrimary, searchIndexContainer);
             }
 
-            string registrationBaseAddress = System.Configuration.ConfigurationManager.AppSettings.Get("Search.RegistrationBaseAddress");
+            string registrationBaseAddress = _configurationService.Get("Search.RegistrationBaseAddress");
 
             searcherManager.RegistrationBaseAddress["http"] = MakeRegistrationBaseAddress("http", registrationBaseAddress);
             searcherManager.RegistrationBaseAddress["https"] = MakeRegistrationBaseAddress("https", registrationBaseAddress);
@@ -147,7 +145,7 @@ namespace NuGet.Services.SecureSearch
                     break;
                 
                 default:
-                    string storagePrimary = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Primary");
+                    string storagePrimary = _configurationService.Get("Storage.Primary");
                     MetadataImpl.Access(context, string.Empty, _searcherManager, storagePrimary, 30);
                     break;
             }
