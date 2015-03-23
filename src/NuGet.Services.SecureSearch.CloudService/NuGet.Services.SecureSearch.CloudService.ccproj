@@ -1,20 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), 'Repository.props'))\Repository.props" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>2.4</ProductVersion>
-    <ProjectGuid>12cb66a2-0203-4263-b817-6813ab3c335c</ProjectGuid>
+    <ProductVersion>2.5</ProductVersion>
+    <ProjectGuid>a02a584b-02f3-40dc-804f-344f03926f9f</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NuGet.Services.Search.Cloud</RootNamespace>
-    <AssemblyName>NuGet.Services.Search.Cloud</AssemblyName>
+    <RootNamespace>NuGet.Services.SecureSearch.Cloud</RootNamespace>
+    <AssemblyName>NuGet.Services.SecureSearch.Cloud</AssemblyName>
     <StartDevelopmentStorage>True</StartDevelopmentStorage>
-    <Name>NuGet.Services.Search.Cloud</Name>
-    <TargetProfile>Local</TargetProfile>
-    <UseEmulatorExpressByDefault>False</UseEmulatorExpressByDefault>
+    <Name>NuGet.Services.SecureSearch.CloudService</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,35 +32,31 @@
   </PropertyGroup>
   <!-- Items for the project -->
   <ItemGroup>
-    <None Include="DeployToAzure.ps1" />
-    <None Include="NuGet.Services.Search.Cloud.nuspec" />
+    <ServiceConfiguration Include="ServiceConfiguration.Dev.cscfg" />
     <ServiceDefinition Include="ServiceDefinition.csdef" />
     <ServiceConfiguration Include="ServiceConfiguration.Local.cscfg" />
     <ServiceConfiguration Include="ServiceConfiguration.Cloud.cscfg" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NuGet.Services.Search\NuGet.Services.Search.csproj">
-      <Name>NuGet.Services.Search</Name>
-      <Project>{d846c97c-70d0-4a35-b2dc-997f0ccafa4d}</Project>
+    <ProjectReference Include="..\NuGet.Services.SecureSearch\NuGet.Services.SecureSearch.csproj">
+      <Name>NuGet.Services.SecureSearch</Name>
+      <Project>{bba2feae-6872-4b3d-a4ea-ced639618426}</Project>
       <Private>True</Private>
-      <RoleType>Worker</RoleType>
-      <RoleName>NuGet.Services.Search</RoleName>
+      <RoleType>Web</RoleType>
+      <RoleName>NuGet.Services.SecureSearch</RoleName>
       <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="NuGet.Services.SearchContent\" />
+    <Folder Include="NuGet.Services.SecureSearchContent\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="NuGet.Services.SearchContent\diagnostics.wadcfg">
-      <SubType>Content</SubType>
-    </Content>
+    <DiagnosticsConfiguration Include="NuGet.Services.SecureSearchContent\diagnostics.wadcfgx" />
   </ItemGroup>
   <!-- Import the target files for this project template -->
   <PropertyGroup>
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
-    <CloudExtensionsDir Condition=" '$(CloudExtensionsDir)' == '' ">$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Windows Azure Tools\2.4\</CloudExtensionsDir>
+    <CloudExtensionsDir Condition=" '$(CloudExtensionsDir)' == '' ">$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Windows Azure Tools\2.5\</CloudExtensionsDir>
   </PropertyGroup>
   <Import Project="$(CloudExtensionsDir)Microsoft.WindowsAzure.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\NuGet.Cloud.targets" />
 </Project>
