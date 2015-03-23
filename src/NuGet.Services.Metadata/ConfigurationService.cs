@@ -2,7 +2,7 @@
 using System;
 using System.Configuration;
 
-namespace NuGet.Services.SecureSearch
+namespace NuGet.Services.Metadata
 {
     internal class ConfigurationService
     {

@@ -11,7 +11,7 @@
     <RootNamespace>NuGet.Services.SecureSearch.Cloud</RootNamespace>
     <AssemblyName>NuGet.Services.SecureSearch.Cloud</AssemblyName>
     <StartDevelopmentStorage>True</StartDevelopmentStorage>
-    <Name>NuGet.Services.SecureSearch.CloudService</Name>
+    <Name>NuGet.Services.Metadata.CloudService</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -38,20 +38,19 @@
     <ServiceConfiguration Include="ServiceConfiguration.Cloud.cscfg" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NuGet.Services.SecureSearch\NuGet.Services.SecureSearch.csproj">
-      <Name>NuGet.Services.SecureSearch</Name>
+    <Folder Include="NuGet.Services.MetadataContent" />
+  </ItemGroup>
+  <ItemGroup>
+    <DiagnosticsConfiguration Include="NuGet.Services.MetadataContent\diagnostics.wadcfgx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NuGet.Services.SecureSearch\NuGet.Services.Metadata.csproj">
+      <Name>NuGet.Services.Metadata</Name>
       <Project>{bba2feae-6872-4b3d-a4ea-ced639618426}</Project>
       <Private>True</Private>
       <RoleType>Web</RoleType>
-      <RoleName>NuGet.Services.SecureSearch</RoleName>
-      <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
+      <RoleName>NuGet.Services.Metadata</RoleName>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="NuGet.Services.SecureSearchContent\" />
-  </ItemGroup>
-  <ItemGroup>
-    <DiagnosticsConfiguration Include="NuGet.Services.SecureSearchContent\diagnostics.wadcfgx" />
   </ItemGroup>
   <!-- Import the target files for this project template -->
   <PropertyGroup>

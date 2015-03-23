@@ -1,17 +1,17 @@
-﻿using Microsoft.Owin;
-using Microsoft.Owin.Security.ActiveDirectory;
-using NuGet.Indexing;
-using Owin;
-using System;
-using System.Configuration;
+﻿using System;
 using System.IdentityModel.Tokens;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Owin;
+using Microsoft.Owin.Security.ActiveDirectory;
+using NuGet.Indexing;
+using NuGet.Services.Metadata;
+using Owin;
 
-[assembly: OwinStartup(typeof(NuGet.Services.SecureSearch.Startup))]
+[assembly: OwinStartup(typeof(Startup))]
 
-namespace NuGet.Services.SecureSearch
+namespace NuGet.Services.Metadata
 {
     public class Startup
     {
