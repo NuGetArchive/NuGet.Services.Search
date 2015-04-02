@@ -1,4 +1,7 @@
 ﻿using Microsoft.Owin;
+using Microsoft.Owin.FileSystems;
+using Microsoft.Owin.StaticFiles;
+using Microsoft.Owin.StaticFiles.Infrastructure;
 using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using Owin;
@@ -20,6 +23,32 @@ namespace NuGet.Services.BasicSearch
         public void Configuration(IAppBuilder app)
         {
             app.UseErrorPage();
+
+            //  search test console
+
+            app.Use(async (context, next) =>
+            {
+                if (String.Equals(context.Request.Path.Value, "/console", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Redirect to trailing slash to maintain relative links
+                    context.Response.Redirect(context.Request.PathBase + context.Request.Path + "/");
+                    context.Response.StatusCode = 301;
+                    return;
+                }
+                else if (String.Equals(context.Request.Path.Value, "/console/", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Request.Path = new PathString("/console/Index.html");
+                }
+                await next();
+            });
+
+            app.UseStaticFiles(new StaticFileOptions(new SharedOptions
+            {
+                RequestPath = new PathString("/console"),
+                FileSystem = new EmbeddedResourceFileSystem(typeof(Startup).Assembly, "NuGet.Services.BasicSearch.Console")
+            }));
+
+            //  start the service running - the Lucene index needs to be reopened regularly on a background thread
 
             _searcherManager = CreateSearcherManager();
 
