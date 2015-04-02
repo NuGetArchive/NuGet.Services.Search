@@ -170,8 +170,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\NuGet.Core.2.8.3-alpha0001\lib\net40-Client\NuGet.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Indexing">
-      <HintPath>..\..\packages\NuGet.Indexing.3.0.12-r-master\lib\net45\NuGet.Indexing.dll</HintPath>
+    <Reference Include="NuGet.Indexing, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\NuGet.Services.Metadata\src\NuGet.Indexing\bin\Debug\NuGet.Indexing.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Versioning">
       <HintPath>..\..\packages\NuGet.Versioning.1.0.7\lib\portable-net40+win\NuGet.Versioning.dll</HintPath>

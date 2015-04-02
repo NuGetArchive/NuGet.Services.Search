@@ -21,6 +21,11 @@
                     <option value="false" selected>Stable Only</option>
                     <option value="true">Include Prerelease</option>
                 </select>
+                &nbsp;&nbsp;&nbsp;
+                <select id="filter">
+                    <option value="true" selected>Apply Filter</option>
+                    <option value="false">No Filter</option>
+                </select>
             </div>
         </div>
     </div>
@@ -80,10 +85,12 @@
 
             var q = $('#query').val();
             var prerelease = $('#prerelease').val();
+            var filter = $('#filter').val();
 
             var query = {
                 q: q,
                 prerelease: prerelease,
+                filter: filter,
                 skip: 0,
                 take: 100,
                 explanation: true
