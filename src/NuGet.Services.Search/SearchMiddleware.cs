@@ -1,22 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Lucene.Net.Store;
-using Lucene.Net.Store.Azure;
-using Microsoft.Owin;
-using Microsoft.WindowsAzure.Storage;
+﻿using Microsoft.Owin;
 using NuGet.Indexing;
 using NuGet.Services.ServiceModel;
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace NuGet.Services.Search
 {
     public abstract class SearchMiddleware : OwinMiddleware
     {
-        private Func<PackageSearcherManager> _searcherManagerThunk;
+        private readonly Func<PackageSearcherManager> _searcherManagerThunk;
 
         public PackageSearcherManager SearcherManager { get { return _searcherManagerThunk(); } }
 
@@ -47,9 +40,9 @@ namespace NuGet.Services.Search
 
         public static Task WriteResponse(IOwinContext context, string content)
         {
-            context.Response.Headers.Add("Pragma", new string[] { "no-cache" });
-            context.Response.Headers.Add("Cache-Control", new string[] { "no-cache" });
-            context.Response.Headers.Add("Expires", new string[] { "0" });
+            context.Response.Headers.Add("Pragma", new[] { "no-cache" });
+            context.Response.Headers.Add("Cache-Control", new[] { "no-cache" });
+            context.Response.Headers.Add("Expires", new[] { "0" });
             context.Response.ContentType = "application/json";
             return context.Response.WriteAsync(content);
         }

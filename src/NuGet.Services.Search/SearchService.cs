@@ -1,25 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.Tracing;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Autofac;
-using Lucene.Net.Store;
-using Lucene.Net.Store.Azure;
-using Microsoft.Owin;
-using Microsoft.Owin.FileSystems;
-using Microsoft.Owin.StaticFiles;
-using Microsoft.Owin.StaticFiles.Infrastructure;
+﻿using Microsoft.Owin;
 using Microsoft.WindowsAzure.ServiceRuntime;
-using Microsoft.WindowsAzure.Storage;
-using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using NuGet.Services.Http;
 using NuGet.Services.ServiceModel;
 using Owin;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.Tracing;
+using System.Threading.Tasks;
 
 namespace NuGet.Services.Search
 {
@@ -74,11 +63,11 @@ namespace NuGet.Services.Search
         }
 
         // This could be moved up to the service platform
-        private static readonly object Unit = new object();
+        private static readonly object _unit = new object();
         private Task WaitForShutdown()
         {
             var tcs = new TaskCompletionSource<object>();
-            Host.ShutdownToken.Register(() => tcs.SetResult(Unit)); // Don't want to return null, just a useless object
+            Host.ShutdownToken.Register(() => tcs.SetResult(_unit)); // Don't want to return null, just a useless object
             return tcs.Task;
         }
 

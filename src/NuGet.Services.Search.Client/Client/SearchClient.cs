@@ -1,21 +1,19 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using NuGet.Services.Client;
+using NuGet.Services.Search.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using NuGet.Services.Client;
-using NuGet.Services.Search.Models;
 
 namespace NuGet.Services.Search.Client
 {
     public class SearchClient
     {
-        private HttpClient _client;
-        private Task<ServiceDiscovery> _discoveryClient;
-        private string _resourceType;
+        private readonly Task<ServiceDiscovery> _discoveryClient;
+        private readonly string _resourceType;
 
         /// <summary>
         /// Create a search service client from the specified base uri and credentials.
@@ -51,9 +49,9 @@ namespace NuGet.Services.Search.Client
                 handler = providedHandler;
             }
 
-            _client = new HttpClient(handler, disposeHandler: true);
+            var client = new HttpClient(handler, disposeHandler: true);
 
-            _discoveryClient = ServiceDiscovery.Connect(_client, baseUri);
+            _discoveryClient = ServiceDiscovery.Connect(client, baseUri);
         }
 
         /// <summary>
@@ -65,17 +63,16 @@ namespace NuGet.Services.Search.Client
         public SearchClient(HttpClient client)
         {
             throw new InvalidOperationException("Hopefully this isn't used, like ever.");
-            _client = client;
         }
 
 
-        private static readonly Dictionary<SortOrder, string> _sortNames = new Dictionary<SortOrder, string>()
+        private static readonly Dictionary<SortOrder, string> _sortNames = new Dictionary<SortOrder, string>
         {
             {SortOrder.LastEdited, "lastEdited"},
             {SortOrder.Relevance, "relevance"},
             {SortOrder.Published, "published"},
             {SortOrder.TitleAscending, "title-asc"},
-            {SortOrder.TitleDescending, "title-desc"},
+            {SortOrder.TitleDescending, "title-desc"}
         };
 
         public async Task<ServiceResponse<SearchResults>> Search(
@@ -142,14 +139,16 @@ namespace NuGet.Services.Search.Client
 
             var client = await _discoveryClient;
 
-            return new ServiceResponse<SearchResults>(await client.GetAsync(_resourceType, "search/query?" + (await qs.ReadAsStringAsync())));
+            var queryString = await qs.ReadAsStringAsync();
+            var httpResponseMessage = await client.GetAsync(_resourceType, string.Format("search/query?{0}", queryString));
+            return new ServiceResponse<SearchResults>(httpResponseMessage);
         }
 
         public async Task<ServiceResponse<IDictionary<int, int>>> GetChecksums(int minKey, int maxKey)
         {
             var client = await _discoveryClient;
 
-            var response = await client.GetAsync(_resourceType, "search/range?min=" + minKey.ToString() + "&max=" + maxKey.ToString());
+            var response = await client.GetAsync(_resourceType, string.Format("search/range?min={0}&max={1}", minKey, maxKey));
             return new ServiceResponse<IDictionary<int, int>>(
                 response,
                 async () => (await response.Content.ReadAsAsync<IDictionary<string, int>>())

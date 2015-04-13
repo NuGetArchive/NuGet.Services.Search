@@ -1,32 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.Versioning;
-using System.Text;
-using System.Threading.Tasks;
-using Lucene.Net.Index;
+﻿using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Microsoft.Owin;
 using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using NuGet.Services.ServiceModel;
+using System;
+using System.Diagnostics;
+using System.Runtime.Versioning;
+using System.Threading.Tasks;
 
 namespace NuGet.Services.Search
 {
     public class QueryMiddleware : SearchMiddleware
     {
-        public QueryMiddleware(OwinMiddleware next, ServiceName serviceName, string path, Func<PackageSearcherManager> searcherManagerThunk) : base(next, serviceName, path, searcherManagerThunk) { }
+        public QueryMiddleware(OwinMiddleware next, ServiceName serviceName, string path,
+            Func<PackageSearcherManager> searcherManagerThunk)
+            : base(next, serviceName, path, searcherManagerThunk)
+        {
+        }
 
         protected override async Task Execute(IOwinContext context)
         {
             Trace.TraceInformation("Search: {0}", context.Request.QueryString);
 
-            string q = context.Request.Query["q"] ?? String.Empty;
+            string q = context.Request.Query["q"] ?? string.Empty;
 
-            string projectType = context.Request.Query["projectType"] ?? String.Empty;
+            string projectType = context.Request.Query["projectType"] ?? string.Empty;
 
-            string sortBy = context.Request.Query["sortBy"] ?? String.Empty;
+            string sortBy = context.Request.Query["sortBy"] ?? string.Empty;
 
             bool luceneQuery;
             if (!bool.TryParse(context.Request.Query["luceneQuery"], out luceneQuery))
@@ -60,7 +61,7 @@ namespace NuGet.Services.Search
                 take = 20;
             }
 
-            bool includeExplanation = false;
+            bool includeExplanation;
             if (!bool.TryParse(context.Request.Query["explanation"], out includeExplanation))
             {
                 includeExplanation = false;

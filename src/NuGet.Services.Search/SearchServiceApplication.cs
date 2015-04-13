@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Owin;
+﻿using Microsoft.Owin;
 using Microsoft.Owin.FileSystems;
 using Microsoft.Owin.StaticFiles;
 using Microsoft.Owin.StaticFiles.Infrastructure;
@@ -12,6 +6,8 @@ using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using NuGet.Services.ServiceModel;
 using Owin;
+using System;
+using System.Threading;
 
 namespace NuGet.Services.Search
 {

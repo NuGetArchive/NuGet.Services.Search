@@ -1,12 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Linq;
-using System.Text;
+using System.Net.Http;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using System.Net;
-using System.Diagnostics;
 
 namespace NuGet.Services.Search.Client
 {
@@ -27,12 +24,11 @@ namespace NuGet.Services.Search.Client
             }
         }
 
-        TimeSpan _serviceIndexDocumentExpiration = TimeSpan.FromMinutes(5);
-
-        Uri _serviceIndexUri;
-        ServiceIndexDocument _serviceIndexDocument;
-        object _serviceIndexDocumentLock;
-        HttpClient _httpClient;
+        private readonly TimeSpan _serviceIndexDocumentExpiration = TimeSpan.FromMinutes(5);
+        private readonly Uri _serviceIndexUri;
+        private ServiceIndexDocument _serviceIndexDocument;
+        private readonly object _serviceIndexDocumentLock;
+        private readonly HttpClient _httpClient;
 
         bool _serviceIndexDocumentUpdating;
 
@@ -73,7 +69,7 @@ namespace NuGet.Services.Search.Client
             {
                 foreach (Uri uri in uris)
                 {
-                    string loc = uri.ToString() + queryString;
+                    string loc = uri + queryString;
                     try
                     {
                         return await payload(_httpClient, loc);
@@ -92,12 +88,12 @@ namespace NuGet.Services.Search.Client
 
         public Task<string> GetStringAsync(string serviceType, string queryString)
         {
-            return GetAsyncByType<string>((h, u) => h.GetStringAsync(u), serviceType, queryString);
+            return GetAsyncByType((h, u) => h.GetStringAsync(u), serviceType, queryString);
         }
 
         public Task<HttpResponseMessage> GetAsync(string serviceType, string queryString)
         {
-            return GetAsyncByType<HttpResponseMessage>((h, u) => h.GetAsync(u), serviceType, queryString);
+            return GetAsyncByType((h, u) => h.GetAsync(u), serviceType, queryString);
         }
 
         void BeginUpdateServiceIndexDocument()
@@ -115,7 +111,7 @@ namespace NuGet.Services.Search.Client
                 _serviceIndexDocumentUpdating = true;
             }
 
-            _httpClient.GetStringAsync(_serviceIndexUri).ContinueWith((t) =>
+            _httpClient.GetStringAsync(_serviceIndexUri).ContinueWith(t =>
             {
                 try
                 {

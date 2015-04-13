@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.WindowsAzure.Storage;
-using NuGet.Indexing;
+﻿using Microsoft.WindowsAzure.Storage;
 using NuGet.Services.Configuration;
+using System;
 
 namespace NuGet.Services.Search
 {
     public class SearchMiddlewareConfiguration
     {
-        private ConfigurationHub _config;
+        private readonly ConfigurationHub _config;
 
         public bool UseStorage { get; private set; }
         public string LocalIndexPath { get; private set; }
