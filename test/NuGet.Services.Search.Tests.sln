@@ -1,16 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Search.Test", "NuGet.Services.Search.Test\NuGet.Services.Search.Test.csproj", "{72523780-59AC-43CA-89E5-192D4C7EB1F3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.TestFramework", "NuGet.Services.TestFramework\NuGet.Services.TestFramework.csproj", "{DF7E92A9-BE5B-4B6C-9446-9F3CDC99BC1D}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{C0EE7989-2BE1-4A8C-ABDB-51FEE33D66F0}"
-	ProjectSection(SolutionItems) = preProject
-		.nuget\packages.config = .nuget\packages.config
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Search.Comparer", "NuGet.Services.Search.Comparer\NuGet.Services.Search.Comparer.csproj", "{408277EA-804F-4510-A483-BEFE3F3947A0}"
 EndProject
