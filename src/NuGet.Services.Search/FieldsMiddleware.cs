@@ -9,19 +9,16 @@ using System.Threading.Tasks;
 
 namespace NuGet.Services.Search
 {
-    public class FieldsMiddleware : SearchMiddleware
+    public class FieldsMiddleware 
     {
-        public FieldsMiddleware(OwinMiddleware next, ServiceName serviceName, string path,
-            Func<PackageSearcherManager> searcherManagerThunk)
-            : base(next, serviceName, path, searcherManagerThunk)
-        {
-        }
-
-        protected override async Task Execute(IOwinContext context)
+        public static async Task Execute(IOwinContext context,PackageSearcherManager SearcherManager)
         {
             Trace.TraceInformation("Fields");
-
-            await WriteResponse(context, IndexAnalyzer.GetDistinctStoredFieldNames(SearcherManager));
+            context.Response.Headers.Add("Pragma", new[] { "no-cache" });
+            context.Response.Headers.Add("Cache-Control", new[] { "no-cache" });
+            context.Response.Headers.Add("Expires", new[] { "0" });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(IndexAnalyzer.GetDistinctStoredFieldNames(SearcherManager));          
         }
     }
 }

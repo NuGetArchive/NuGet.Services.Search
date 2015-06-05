@@ -259,7 +259,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SearchServiceApplication.cs" />
     <Compile Include="SegmentsMiddleware.cs" />
     <Compile Include="DiagMiddleware.cs" />
     <Compile Include="FieldsMiddleware.cs" />
@@ -269,7 +268,6 @@
     <Compile Include="SearchConfiguration.cs" />
     <Compile Include="SearchMiddleware.cs" />
     <Compile Include="SearchMiddlewareConfiguration.cs" />
-    <Compile Include="SearchService.cs" />
     <Compile Include="SearchServiceEventSource.cs" />
     <Compile Include="SearchWorkerRole.cs" />
   </ItemGroup>

@@ -204,8 +204,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SearchService.cs" />
-    <Compile Include="SearchServiceApplication.cs" />
+    <Compile Include="Startup.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NuGet.Services.Search\NuGet.Services.Search.csproj">

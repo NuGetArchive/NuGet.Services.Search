@@ -11,7 +11,7 @@ namespace NuGet.Services.Search
 {
     public class SegmentsMiddleware 
     {
-        public async Task Execute(IOwinContext context,PackageSearcherManager SearcherManager)
+        public static async Task Execute(IOwinContext context,PackageSearcherManager SearcherManager)
         {
             Trace.TraceInformation("Segments");
             context.Response.Headers.Add("Pragma", new[] { "no-cache" });

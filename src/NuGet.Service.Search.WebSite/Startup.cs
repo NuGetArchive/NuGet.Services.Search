@@ -23,27 +23,19 @@ namespace NuGet.Services.Search
         private PackageSearcherManager _searcherManager;
 
         public Func<PackageSearcherManager> SearcherManagerBuilder { get; private set; }
-        public string ServiceName = "/Search";
+        public string ServiceName = "Search";
 
-
-        //public SearchServiceApplication(Func<PackageSearcherManager> searcherManagerBuilder)
-        //{
-
-        //    SearcherManagerBuilder = searcherManagerBuilder;
-        //}
 
         public void Configuration(IAppBuilder app)
         {
-            // Configure the app
-         //   app.UseErrorPage();
+           
             _searcherManager = CreateSearcherManager();
 
             SharedOptions sharedStaticFileOptions = new SharedOptions()
             {
                 RequestPath = new PathString("/console"),
                 FileSystem = new EmbeddedResourceFileSystem(typeof(Startup).Assembly, "NuGet.Services.Search.Console")
-            };
-                    
+            };                    
 
             // Just a little bit of rewriting. Not the full UseDefaultFiles middleware, just a quick hack
             app.Use(async (context, next) =>
@@ -62,41 +54,11 @@ namespace NuGet.Services.Search
                 await next();
             });
             app.UseStaticFiles(new StaticFileOptions(sharedStaticFileOptions));
-
-            var thunk = new Func<PackageSearcherManager>(() => _searcherManager);
-
-            //// Public endpoint(s)
-            //app.Use(typeof(QueryMiddleware), ServiceName, "/query", thunk);
-
-            //// Admin endpoints
-            //app.Use(typeof(DiagMiddleware), ServiceName, "/diag", thunk);
-            //app.Use(typeof(FieldsMiddleware), ServiceName, "/fields", thunk);
-            //app.Use(typeof(RangeMiddleware), ServiceName, "/range", thunk);
-            //app.Use(typeof(SegmentsMiddleware), ServiceName, "/segments", thunk);
-
-            app.Use(async (context, next) =>
-            {
-                // Handle root requests
-                if (!context.Request.Path.HasValue || String.Equals(context.Request.Path.Value, "/"))
-                {
-                    JObject response = new JObject();
-                    response.Add("name", ServiceName.ToString());
-                    
-
-                    JObject resources = new JObject();
-                    response.Add("resources", resources);
-
-                    resources.Add("range", MakeUri(context, "/range"));
-                    resources.Add("fields", MakeUri(context, "/fields"));
-                    resources.Add("console", MakeUri(context, "/console"));
-                    resources.Add("diagnostics", MakeUri(context, "/diag"));
-                    resources.Add("segments", MakeUri(context, "/segments"));
-                    resources.Add("query", MakeUri(context, "/query"));                 
-                    await SearchMiddleware.WriteResponse(context, response.ToString());                  
-                }
-                await next();
+           
+            //app.Use(async (context, next) =>
+            //{   await next();
                 
-            });
+            //});
             app.Run(Invoke);
         }
 
@@ -106,23 +68,25 @@ namespace NuGet.Services.Search
             {
                 Path = (context.Request.PathBase + new PathString(path)).Value
             }.Uri.AbsoluteUri;
-        }
-
-        public void ReloadIndex()
-        {
-            SearchServiceEventSource.Log.ReloadingIndex();
-            PackageSearcherManager newIndex = SearcherManagerBuilder();
-            Interlocked.Exchange(ref _searcherManager, newIndex);
-            SearchServiceEventSource.Log.ReloadedIndex();
-        }
+        }      
 
         public async Task Invoke(IOwinContext context)
         {
             switch (context.Request.Path.Value)
             {
                 case "/":
-                    await context.Response.WriteAsync("OK");
+                    JObject response = new JObject();
+                    response.Add("name", ServiceName.ToString());         
+                    JObject resources = new JObject();
+                    response.Add("resources", resources);
+                    resources.Add("range", MakeUri(context, "/range"));
+                    resources.Add("fields", MakeUri(context, "/fields"));
+                    resources.Add("console", MakeUri(context, "/console"));
+                    resources.Add("diagnostics", MakeUri(context, "/diag"));
+                    resources.Add("segments", MakeUri(context, "/segments"));
+                    resources.Add("query", MakeUri(context, "/query"));   
                     context.Response.StatusCode = (int)HttpStatusCode.OK;
+                    await context.Response.WriteAsync(response.ToString());
                     break;              
                 case "/search/query":
                     await QueryMiddleware.Execute(context, _searcherManager);
@@ -132,7 +96,13 @@ namespace NuGet.Services.Search
                     break;
                 case "/search/diag":
                     await DiagMiddleware.Execute(context,_searcherManager);;
-                    break;                
+                    break;
+                case "/search/segments":
+                    await SegmentsMiddleware.Execute(context, _searcherManager); ;
+                    break;
+                case "/search/fields":
+                    await FieldsMiddleware.Execute(context, _searcherManager); ;
+                    break;     
                 default:
                     await context.Response.WriteAsync("unrecognized");
                     context.Response.StatusCode = (int)HttpStatusCode.NotFound;
@@ -143,8 +113,7 @@ namespace NuGet.Services.Search
          private PackageSearcherManager CreateSearcherManager()
         {
             Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
-
-          //  SearchConfiguration config = Configuration.GetSection<SearchConfiguration>();
+          
             var searcher = GetSearcherManager();
             searcher.Open(); // Ensure the index is initially opened.
             IndexingEventSource.Log.LoadedSearcherManager();
