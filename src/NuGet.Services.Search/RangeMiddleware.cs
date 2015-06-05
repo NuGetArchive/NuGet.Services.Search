@@ -1,17 +1,17 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-using Microsoft.Owin;
-using NuGet.Indexing;
-using NuGet.Services.ServiceModel;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.Owin;
+using NuGet.Indexing;
+using NuGet.Services.ServiceModel;
 
 namespace NuGet.Services.Search
 {
     public class RangeMiddleware
-    {  
-        public static async Task Execute(IOwinContext context,PackageSearcherManager SearcherManager)
+    {
+        public static async Task Execute(IOwinContext context, PackageSearcherManager SearcherManager)
         {
             Trace.TraceInformation("Range: {0}", context.Request.QueryString);
 

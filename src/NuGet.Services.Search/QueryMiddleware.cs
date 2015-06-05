@@ -1,21 +1,21 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+using System;
+using System.Diagnostics;
+using System.Runtime.Versioning;
+using System.Threading.Tasks;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Microsoft.Owin;
 using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using NuGet.Services.ServiceModel;
-using System;
-using System.Diagnostics;
-using System.Runtime.Versioning;
-using System.Threading.Tasks;
 
 namespace NuGet.Services.Search
 {
-    public class QueryMiddleware 
+    public class QueryMiddleware
     {
-        public static async Task Execute(IOwinContext context,PackageSearcherManager SearcherManager)
+        public static async Task Execute(IOwinContext context, PackageSearcherManager SearcherManager)
         {
             Trace.TraceInformation("Search: {0}", context.Request.QueryString);
 
@@ -97,16 +97,16 @@ namespace NuGet.Services.Search
             Trace.TraceInformation(args);
 
             string content = NuGet.Indexing.Searcher.Search(
-                SearcherManager, 
-                query, 
-                countOnly, 
-                projectType, 
-                includePrerelease, 
+                SearcherManager,
+                query,
+                countOnly,
+                projectType,
+                includePrerelease,
                 feed,
-                sortBy, 
-                skip, 
-                take, 
-                includeExplanation, 
+                sortBy,
+                skip,
+                take,
+                includeExplanation,
                 ignoreFilter);
 
             JObject result = JObject.Parse(content);

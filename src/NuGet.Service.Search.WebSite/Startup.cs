@@ -1,5 +1,11 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+using System;
+using System.Diagnostics;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Web.Security;
 using Microsoft.Owin;
 using Microsoft.Owin.FileSystems;
 using Microsoft.Owin.StaticFiles;
@@ -7,16 +13,9 @@ using Microsoft.Owin.StaticFiles.Infrastructure;
 using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using Owin;
-using System;
-using System.Diagnostics;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web.Security;
 
 namespace NuGet.Services.Search
 {
-
     [assembly: OwinStartup("NuGet.Services.Search", typeof(NuGet.Services.Search.Startup))]
     public class Startup
     {
@@ -28,14 +27,13 @@ namespace NuGet.Services.Search
 
         public void Configuration(IAppBuilder app)
         {
-           
             _searcherManager = CreateSearcherManager();
 
             SharedOptions sharedStaticFileOptions = new SharedOptions()
             {
                 RequestPath = new PathString("/console"),
                 FileSystem = new EmbeddedResourceFileSystem(typeof(Startup).Assembly, "NuGet.Services.Search.Console")
-            };                    
+            };
 
             // Just a little bit of rewriting. Not the full UseDefaultFiles middleware, just a quick hack
             app.Use(async (context, next) =>
@@ -54,21 +52,9 @@ namespace NuGet.Services.Search
                 await next();
             });
             app.UseStaticFiles(new StaticFileOptions(sharedStaticFileOptions));
-           
-            //app.Use(async (context, next) =>
-            //{   await next();
-                
-            //});
+
             app.Run(Invoke);
         }
-
-        private string MakeUri(IOwinContext context, string path)
-        {
-            return new UriBuilder(context.Request.Uri)
-            {
-                Path = (context.Request.PathBase + new PathString(path)).Value
-            }.Uri.AbsoluteUri;
-        }      
 
         public async Task Invoke(IOwinContext context)
         {
@@ -76,7 +62,7 @@ namespace NuGet.Services.Search
             {
                 case "/":
                     JObject response = new JObject();
-                    response.Add("name", ServiceName.ToString());         
+                    response.Add("name", ServiceName.ToString());
                     JObject resources = new JObject();
                     response.Add("resources", resources);
                     resources.Add("range", MakeUri(context, "/range"));
@@ -84,10 +70,10 @@ namespace NuGet.Services.Search
                     resources.Add("console", MakeUri(context, "/console"));
                     resources.Add("diagnostics", MakeUri(context, "/diag"));
                     resources.Add("segments", MakeUri(context, "/segments"));
-                    resources.Add("query", MakeUri(context, "/query"));   
+                    resources.Add("query", MakeUri(context, "/query"));
                     context.Response.StatusCode = (int)HttpStatusCode.OK;
                     await context.Response.WriteAsync(response.ToString());
-                    break;              
+                    break;
                 case "/search/query":
                     await QueryMiddleware.Execute(context, _searcherManager);
                     break;
@@ -95,14 +81,14 @@ namespace NuGet.Services.Search
                     await RangeMiddleware.Execute(context, _searcherManager);
                     break;
                 case "/search/diag":
-                    await DiagMiddleware.Execute(context,_searcherManager);;
+                    await DiagMiddleware.Execute(context, _searcherManager);
                     break;
                 case "/search/segments":
-                    await SegmentsMiddleware.Execute(context, _searcherManager); ;
+                    await SegmentsMiddleware.Execute(context, _searcherManager);
                     break;
                 case "/search/fields":
-                    await FieldsMiddleware.Execute(context, _searcherManager); ;
-                    break;     
+                    await FieldsMiddleware.Execute(context, _searcherManager);
+                    break;
                 default:
                     await context.Response.WriteAsync("unrecognized");
                     context.Response.StatusCode = (int)HttpStatusCode.NotFound;
@@ -110,12 +96,15 @@ namespace NuGet.Services.Search
             }
         }
 
-         private PackageSearcherManager CreateSearcherManager()
+        #region Private Helpers
+
+        private PackageSearcherManager CreateSearcherManager()
         {
             Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
-          
+
             var searcher = GetSearcherManager();
-            searcher.Open(); // Ensure the index is initially opened.
+            // Ensure the index is initially opened.
+            searcher.Open();
             IndexingEventSource.Log.LoadedSearcherManager();
             return searcher;
         }
@@ -134,5 +123,15 @@ namespace NuGet.Services.Search
                     System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexContainer"));
             }
         }
+
+        private string MakeUri(IOwinContext context, string path)
+        {
+            return new UriBuilder(context.Request.Uri)
+            {
+                Path = (context.Request.PathBase + new PathString(path)).Value
+            }.Uri.AbsoluteUri;
+        }
+
+        #endregion Private Helpers
     }
 }

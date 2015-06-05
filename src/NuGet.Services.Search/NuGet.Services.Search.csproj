@@ -265,11 +265,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryMiddleware.cs" />
     <Compile Include="RangeMiddleware.cs" />
-    <Compile Include="SearchConfiguration.cs" />
-    <Compile Include="SearchMiddleware.cs" />
-    <Compile Include="SearchMiddlewareConfiguration.cs" />
-    <Compile Include="SearchServiceEventSource.cs" />
-    <Compile Include="SearchWorkerRole.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config">
