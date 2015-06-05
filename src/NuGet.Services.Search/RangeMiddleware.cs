@@ -9,15 +9,9 @@ using System.Threading.Tasks;
 
 namespace NuGet.Services.Search
 {
-    public class RangeMiddleware : SearchMiddleware
-    {
-        public RangeMiddleware(OwinMiddleware next, ServiceName serviceName, string path,
-            Func<PackageSearcherManager> searcherManagerThunk)
-            : base(next, serviceName, path, searcherManagerThunk)
-        {
-        }
-
-        protected override async Task Execute(IOwinContext context)
+    public class RangeMiddleware
+    {  
+        public static async Task Execute(IOwinContext context,PackageSearcherManager SearcherManager)
         {
             Trace.TraceInformation("Range: {0}", context.Request.QueryString);
 
@@ -35,7 +29,11 @@ namespace NuGet.Services.Search
                 content = Searcher.KeyRangeQuery(SearcherManager, minKey, maxKey);
             }
 
-            await WriteResponse(context, content);
+            context.Response.Headers.Add("Pragma", new[] { "no-cache" });
+            context.Response.Headers.Add("Cache-Control", new[] { "no-cache" });
+            context.Response.Headers.Add("Expires", new[] { "0" });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(content);
         }
     }
 }

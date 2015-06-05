@@ -9,18 +9,16 @@ using System.Threading.Tasks;
 
 namespace NuGet.Services.Search
 {
-    public class SegmentsMiddleware : SearchMiddleware
+    public class SegmentsMiddleware 
     {
-        public SegmentsMiddleware(OwinMiddleware next, ServiceName serviceName, string path, Func<PackageSearcherManager> searcherManagerThunk) 
-            : base(next, serviceName, path, searcherManagerThunk)
-        {
-        }
-
-        protected override async Task Execute(IOwinContext context)
+        public async Task Execute(IOwinContext context,PackageSearcherManager SearcherManager)
         {
             Trace.TraceInformation("Segments");
-
-            await WriteResponse(context, IndexAnalyzer.GetSegments(SearcherManager));
+            context.Response.Headers.Add("Pragma", new[] { "no-cache" });
+            context.Response.Headers.Add("Cache-Control", new[] { "no-cache" });
+            context.Response.Headers.Add("Expires", new[] { "0" });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(IndexAnalyzer.GetSegments(SearcherManager));            
         }
     }
 }

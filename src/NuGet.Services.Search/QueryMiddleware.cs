@@ -13,15 +13,9 @@ using System.Threading.Tasks;
 
 namespace NuGet.Services.Search
 {
-    public class QueryMiddleware : SearchMiddleware
+    public class QueryMiddleware 
     {
-        public QueryMiddleware(OwinMiddleware next, ServiceName serviceName, string path,
-            Func<PackageSearcherManager> searcherManagerThunk)
-            : base(next, serviceName, path, searcherManagerThunk)
-        {
-        }
-
-        protected override async Task Execute(IOwinContext context)
+        public static async Task Execute(IOwinContext context,PackageSearcherManager SearcherManager)
         {
             Trace.TraceInformation("Search: {0}", context.Request.QueryString);
 
@@ -116,9 +110,13 @@ namespace NuGet.Services.Search
                 ignoreFilter);
 
             JObject result = JObject.Parse(content);
-            result["answeredBy"] = ServiceName.ToString();
+            result["answeredBy"] = "Search";
 
-            await WriteResponse(context, result.ToString());
+            context.Response.Headers.Add("Pragma", new[] { "no-cache" });
+            context.Response.Headers.Add("Cache-Control", new[] { "no-cache" });
+            context.Response.Headers.Add("Expires", new[] { "0" });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(content);
         }
     }
 }
