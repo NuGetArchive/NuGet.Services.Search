@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
+# Visual Studio Express 2013 for Web
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Search", "src\NuGet.Services.Search\NuGet.Services.Search.csproj", "{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Service.Search.WebSite", "src\NuGet.Service.Search.WebSite\NuGet.Service.Search.WebSite.csproj", "{590E51AB-9471-45EE-AC2E-9397B9E319F5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D846C97C-70D0-4A35-B2DC-997F0CCAFA4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{590E51AB-9471-45EE-AC2E-9397B9E319F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{590E51AB-9471-45EE-AC2E-9397B9E319F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{590E51AB-9471-45EE-AC2E-9397B9E319F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{590E51AB-9471-45EE-AC2E-9397B9E319F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

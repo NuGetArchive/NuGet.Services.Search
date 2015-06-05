@@ -1,23 +1,17 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-using Microsoft.Owin;
-using NuGet.Indexing;
-using NuGet.Services.ServiceModel;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.Owin;
+using NuGet.Indexing;
+using NuGet.Services.ServiceModel;
 
 namespace NuGet.Services.Search
 {
-    public class RangeMiddleware : SearchMiddleware
+    public class RangeMiddleware
     {
-        public RangeMiddleware(OwinMiddleware next, ServiceName serviceName, string path,
-            Func<PackageSearcherManager> searcherManagerThunk)
-            : base(next, serviceName, path, searcherManagerThunk)
-        {
-        }
-
-        protected override async Task Execute(IOwinContext context)
+        public static async Task Execute(IOwinContext context, PackageSearcherManager SearcherManager)
         {
             Trace.TraceInformation("Range: {0}", context.Request.QueryString);
 
@@ -35,7 +29,11 @@ namespace NuGet.Services.Search
                 content = Searcher.KeyRangeQuery(SearcherManager, minKey, maxKey);
             }
 
-            await WriteResponse(context, content);
+            context.Response.Headers.Add("Pragma", new[] { "no-cache" });
+            context.Response.Headers.Add("Cache-Control", new[] { "no-cache" });
+            context.Response.Headers.Add("Expires", new[] { "0" });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(content);
         }
     }
 }
