@@ -117,7 +117,7 @@ namespace NuGet.Services.Search
                 return PackageSearcherManager.CreateAzure(
                     System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Primary"),
                     System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexContainer"),
-                    System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexContainer"));
+                    System.Configuration.ConfigurationManager.AppSettings.Get("Search.DataContainer"));
             }
         }
 
