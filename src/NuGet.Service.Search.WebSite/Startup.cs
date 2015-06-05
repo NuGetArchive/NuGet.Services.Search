@@ -24,23 +24,15 @@ namespace NuGet.Services.Search
         public Func<PackageSearcherManager> SearcherManagerBuilder { get; private set; }
         public string ServiceName = "Search";
 
-
         public void Configuration(IAppBuilder app)
         {
             _searcherManager = CreateSearcherManager();
 
-            SharedOptions sharedStaticFileOptions = new SharedOptions()
-            {
-                RequestPath = new PathString("/console"),
-                FileSystem = new EmbeddedResourceFileSystem(typeof(Startup).Assembly, "NuGet.Services.Search.Console")
-            };
-
-            // Just a little bit of rewriting. Not the full UseDefaultFiles middleware, just a quick hack
+            //test console
             app.Use(async (context, next) =>
             {
                 if (String.Equals(context.Request.Path.Value, "/console", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Redirect to trailing slash to maintain relative links
                     context.Response.Redirect(context.Request.PathBase + context.Request.Path + "/");
                     context.Response.StatusCode = 301;
                     return;
@@ -51,7 +43,12 @@ namespace NuGet.Services.Search
                 }
                 await next();
             });
-            app.UseStaticFiles(new StaticFileOptions(sharedStaticFileOptions));
+
+            app.UseStaticFiles(new StaticFileOptions(new SharedOptions
+            {
+                RequestPath = new PathString("/console"),
+                FileSystem = new EmbeddedResourceFileSystem(typeof(Startup).Assembly, "NuGet.Services.Search.Console")
+            }));
 
             app.Run(Invoke);
         }
