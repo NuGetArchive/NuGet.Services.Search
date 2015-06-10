@@ -1,11 +1,11 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 using System;
 using System.Diagnostics;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Security;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Owin;
 using Microsoft.Owin.FileSystems;
 using Microsoft.Owin.StaticFiles;
@@ -14,9 +14,10 @@ using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
 using Owin;
 
+[assembly: OwinStartup("NuGet.Services.Search", typeof(NuGet.Services.Search.Startup))]
+
 namespace NuGet.Services.Search
 {
-    [assembly: OwinStartup("NuGet.Services.Search", typeof(NuGet.Services.Search.Startup))]
     public class Startup
     {
         private PackageSearcherManager _searcherManager;
@@ -26,6 +27,12 @@ namespace NuGet.Services.Search
 
         public void Configuration(IAppBuilder app)
         {
+            var instrumentationKey = System.Configuration.ConfigurationManager.AppSettings.Get("Telemetry.InstrumentationKey");
+            if (!string.IsNullOrEmpty(instrumentationKey))
+            {
+                TelemetryConfiguration.Active.InstrumentationKey = instrumentationKey;
+            }
+
             _searcherManager = CreateSearcherManager();
 
             //test console
@@ -92,9 +99,7 @@ namespace NuGet.Services.Search
                     break;
             }
         }
-
-        #region Private Helpers
-
+        
         private PackageSearcherManager CreateSearcherManager()
         {
             Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
@@ -128,7 +133,5 @@ namespace NuGet.Services.Search
                 Path = (context.Request.PathBase + new PathString(path)).Value
             }.Uri.AbsoluteUri;
         }
-
-        #endregion Private Helpers
     }
 }
