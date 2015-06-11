@@ -10,14 +10,14 @@ namespace NuGet.Services.Search
 {
     public class SegmentsMiddleware
     {
-        public static async Task Execute(IOwinContext context, PackageSearcherManager SearcherManager)
+        public static async Task Execute(IOwinContext context, PackageSearcherManager searcherManager)
         {
             Trace.TraceInformation("Segments");
             context.Response.Headers.Add("Pragma", new[] { "no-cache" });
             context.Response.Headers.Add("Cache-Control", new[] { "no-cache" });
             context.Response.Headers.Add("Expires", new[] { "0" });
             context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(IndexAnalyzer.GetSegments(SearcherManager));
+            await context.Response.WriteAsync(IndexAnalyzer.GetSegments(searcherManager));
         }
     }
 }

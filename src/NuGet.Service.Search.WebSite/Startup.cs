@@ -1,5 +1,6 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 using System;
 using System.Diagnostics;
 using System.Net;
@@ -28,13 +29,13 @@ namespace NuGet.Services.Search
             //test console
             app.Use(async (context, next) =>
             {
-                if (String.Equals(context.Request.Path.Value, "/console", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(context.Request.Path.Value, "/console", StringComparison.OrdinalIgnoreCase))
                 {
                     context.Response.Redirect(context.Request.PathBase + context.Request.Path + "/");
                     context.Response.StatusCode = 301;
                     return;
                 }
-                else if (String.Equals(context.Request.Path.Value, "/console/", StringComparison.OrdinalIgnoreCase))
+                else if (string.Equals(context.Request.Path.Value, "/console/", StringComparison.OrdinalIgnoreCase))
                 {
                     context.Request.Path = new PathString("/console/Index.html");
                 }
@@ -105,7 +106,7 @@ namespace NuGet.Services.Search
 
         private PackageSearcherManager GetSearcherManager()
         {
-            if (!String.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexPath")))
+            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexPath")))
             {
                 return PackageSearcherManager.CreateLocal(System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexPath"));
             }

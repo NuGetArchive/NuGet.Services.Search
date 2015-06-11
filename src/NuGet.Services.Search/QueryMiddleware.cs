@@ -1,7 +1,6 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
 using System.Diagnostics;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
@@ -16,7 +15,7 @@ namespace NuGet.Services.Search
 {
     public class QueryMiddleware
     {
-        public static async Task Execute(IOwinContext context, PackageSearcherManager SearcherManager)
+        public static async Task Execute(IOwinContext context, PackageSearcherManager searcherManager)
         {
             Trace.TraceInformation("Search: {0}", context.Request.QueryString);
 
@@ -72,11 +71,11 @@ namespace NuGet.Services.Search
 
             string fxName = context.Request.Query["supportedFramework"];
             FrameworkName supportedFramework = null;
-            if (!String.IsNullOrEmpty(fxName))
+            if (!string.IsNullOrEmpty(fxName))
             {
                 supportedFramework = VersionUtility.ParseFrameworkName(fxName);
             }
-            if (supportedFramework == null || !SearcherManager.GetFrameworks().Contains(supportedFramework))
+            if (supportedFramework == null || !searcherManager.GetFrameworks().Contains(supportedFramework))
             {
                 supportedFramework = FrameworksList.AnyFramework;
             }
@@ -98,7 +97,7 @@ namespace NuGet.Services.Search
             Trace.TraceInformation(args);
 
             string content = Searcher.Search(
-                SearcherManager,
+                searcherManager,
                 query,
                 countOnly,
                 projectType,

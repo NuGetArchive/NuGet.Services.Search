@@ -10,7 +10,7 @@ namespace NuGet.Services.Search
 {
     public class RangeMiddleware
     {
-        public static async Task Execute(IOwinContext context, PackageSearcherManager SearcherManager)
+        public static async Task Execute(IOwinContext context, PackageSearcherManager searcherManager)
         {
             Trace.TraceInformation("Range: {0}", context.Request.QueryString);
 
@@ -25,7 +25,7 @@ namespace NuGet.Services.Search
             {
                 Trace.TraceInformation("Searcher.KeyRangeQuery(..., {0}, {1})", minKey, maxKey);
 
-                content = Searcher.KeyRangeQuery(SearcherManager, minKey, maxKey);
+                content = Searcher.KeyRangeQuery(searcherManager, minKey, maxKey);
             }
 
             context.Response.Headers.Add("Pragma", new[] { "no-cache" });
