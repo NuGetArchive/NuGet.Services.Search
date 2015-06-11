@@ -188,7 +188,7 @@
       <HintPath>..\..\packages\NuGet.Core.2.8.5\lib\net40-Client\NuGet.Core.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Indexing, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NuGet.Indexing.3.0.280-r-master\lib\net45\NuGet.Indexing.dll</HintPath>
+      <HintPath>..\..\packages\NuGet.Indexing.3.0.323-r-master\lib\net45\NuGet.Indexing.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="NuGet.Services.Platform">

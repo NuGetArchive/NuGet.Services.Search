@@ -179,7 +179,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="NuGet.Indexing, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NuGet.Indexing.3.0.280-r-master\lib\net45\NuGet.Indexing.dll</HintPath>
+      <HintPath>..\..\packages\NuGet.Indexing.3.0.323-r-master\lib\net45\NuGet.Indexing.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="NuGet.Versioning, Version=1.0.7.0, Culture=neutral, PublicKeyToken=2e465378e3b1a8dd, processorArchitecture=MSIL">

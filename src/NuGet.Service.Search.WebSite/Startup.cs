@@ -3,8 +3,11 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Owin;
 using Microsoft.Owin.FileSystems;
@@ -30,10 +33,16 @@ namespace NuGet.Services.Search
             var instrumentationKey = System.Configuration.ConfigurationManager.AppSettings.Get("Telemetry.InstrumentationKey");
             if (!string.IsNullOrEmpty(instrumentationKey))
             {
+                // set it as early as possible to avoid losing telemetry
                 TelemetryConfiguration.Active.InstrumentationKey = instrumentationKey;
             }
 
             _searcherManager = CreateSearcherManager();
+
+            if (!string.IsNullOrEmpty(instrumentationKey) && _searcherManager != null)
+            {
+                _searcherManager.IndexReopened += TrackTelemetryOnIndexReopened;
+            }
 
             //test console
             app.Use(async (context, next) =>
@@ -58,6 +67,23 @@ namespace NuGet.Services.Search
             }));
 
             app.Run(Invoke);
+        }
+
+        private static void TrackTelemetryOnIndexReopened(object sender, SegmentInfoEventArgs e)
+        {
+            var telemetryClient = new TelemetryClient();
+
+            // track the index reopened event
+            var eventTelemetry = new EventTelemetry("Index Reopened");
+            eventTelemetry.Metrics.Add("SegmentCount", e.Segments.Count());
+            eventTelemetry.Metrics.Add("TotalSegmentSize", e.Segments.Sum(s => s.NumDocs));
+
+            foreach (var segment in e.Segments)
+            {
+                eventTelemetry.Metrics.Add("SegmentSize - " + segment.Name, segment.NumDocs);
+            }
+
+            telemetryClient.TrackEvent(eventTelemetry);
         }
 
         public async Task Invoke(IOwinContext context)
