@@ -1,5 +1,6 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 using System;
 using System.Diagnostics;
 using System.Runtime.Versioning;
@@ -9,7 +10,7 @@ using Lucene.Net.Search;
 using Microsoft.Owin;
 using Newtonsoft.Json.Linq;
 using NuGet.Indexing;
-using NuGet.Services.ServiceModel;
+using Searcher = NuGet.Indexing.Searcher;
 
 namespace NuGet.Services.Search
 {
@@ -96,7 +97,7 @@ namespace NuGet.Services.Search
             string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
             Trace.TraceInformation(args);
 
-            string content = NuGet.Indexing.Searcher.Search(
+            string content = Searcher.Search(
                 SearcherManager,
                 query,
                 countOnly,

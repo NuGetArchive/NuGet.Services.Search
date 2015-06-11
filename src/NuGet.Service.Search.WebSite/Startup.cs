@@ -3,9 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Security;
 using Microsoft.Owin;
 using Microsoft.Owin.FileSystems;
 using Microsoft.Owin.StaticFiles;
@@ -16,7 +14,6 @@ using Owin;
 
 namespace NuGet.Services.Search
 {
-    [assembly: OwinStartup("NuGet.Services.Search", typeof(NuGet.Services.Search.Startup))]
     public class Startup
     {
         private PackageSearcherManager _searcherManager;
@@ -59,7 +56,7 @@ namespace NuGet.Services.Search
             {
                 case "/":
                     JObject response = new JObject();
-                    response.Add("name", ServiceName.ToString());
+                    response.Add("name", ServiceName);
                     JObject resources = new JObject();
                     response.Add("resources", resources);
                     resources.Add("range", MakeUri(context, "/range"));

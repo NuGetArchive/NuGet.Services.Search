@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>NuGet.Service.Search.WebSite</id>
+    <version>$version$</version>
+    <authors>.NET Foundation</authors>
+    <owners>.NET Foundation</owners>
+    <licenseUrl>https://raw.githubusercontent.com/NuGet/NuGet.Services.Metadata/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/NuGet/NuGet.Services.Search</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>NuGet's search service.</description>
+    <copyright>Copyright 2015 Microsoft. NuGet is made possible by the .NET Foundation's open source project.</copyright>
+  </metadata>  
+  <files>
+    <file src="*.*" />
+    <file src="bin\**\*.*" target="bin" />
+  </files>
+</package>
