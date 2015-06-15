@@ -1,6 +1,7 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Diagnostics;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
@@ -80,42 +81,60 @@ namespace NuGet.Services.Search
                 supportedFramework = FrameworksList.AnyFramework;
             }
 
-            var query = LuceneQueryCreator.Parse(q, luceneQuery);
-            if (!ignoreFilter && !luceneQuery)
+            Query query;
+            string content;
+
+            try
             {
-                string facet = includePrerelease ?
-                    Facets.LatestPrereleaseVersion(supportedFramework) :
-                    Facets.LatestStableVersion(supportedFramework);
+                query = LuceneQueryCreator.Parse(q, luceneQuery);
 
-                var newQuery = new BooleanQuery();
-                newQuery.Add(query, Occur.MUST);
-                newQuery.Add(new TermQuery(new Term("Facet", facet)), Occur.MUST);
-                query = newQuery;
+                if (query == null)
+                {
+                    query = new MatchAllDocsQuery();
+                }
+                if (!ignoreFilter && !luceneQuery)
+                {
+                    string facet = includePrerelease ?
+                        Facets.LatestPrereleaseVersion(supportedFramework) :
+                        Facets.LatestStableVersion(supportedFramework);
+
+                    var newQuery = new BooleanQuery();
+                    newQuery.Add(query, Occur.MUST);
+                    newQuery.Add(new TermQuery(new Term("Facet", facet)), Occur.MUST);
+                    query = newQuery;
+                }
+
+                string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
+                Trace.TraceInformation(args);
+
+                content = Searcher.Search(
+                    searcherManager,
+                    query,
+                    countOnly,
+                    projectType,
+                    includePrerelease,
+                    feed,
+                    sortBy,
+                    skip,
+                    take,
+                    includeExplanation,
+                    ignoreFilter);
+
+                JObject result = JObject.Parse(content);
+                result["answeredBy"] = "Search";
             }
-
-            string args = string.Format("Searcher.Search(..., {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10})", q, countOnly, projectType, includePrerelease, feed, sortBy, skip, take, includeExplanation, ignoreFilter, luceneQuery);
-            Trace.TraceInformation(args);
-
-            string content = Searcher.Search(
-                searcherManager,
-                query,
-                countOnly,
-                projectType,
-                includePrerelease,
-                feed,
-                sortBy,
-                skip,
-                take,
-                includeExplanation,
-                ignoreFilter);
-
-            JObject result = JObject.Parse(content);
-            result["answeredBy"] = "Search";
-
-            context.Response.Headers.Add("Pragma", new[] { "no-cache" });
-            context.Response.Headers.Add("Cache-Control", new[] { "no-cache" });
-            context.Response.Headers.Add("Expires", new[] { "0" });
-            context.Response.ContentType = "application/json";
+            catch (Lucene.Net.QueryParsers.ParseException)
+            {
+                context.Response.StatusCode = 400;
+                content = "Invalid query";
+            }
+            finally
+            {
+                context.Response.Headers.Add("Pragma", new[] { "no-cache" });
+                context.Response.Headers.Add("Cache-Control", new[] { "no-cache" });
+                context.Response.Headers.Add("Expires", new[] { "0" });
+                context.Response.ContentType = "application/json";
+            }
             await context.Response.WriteAsync(content);
         }
     }

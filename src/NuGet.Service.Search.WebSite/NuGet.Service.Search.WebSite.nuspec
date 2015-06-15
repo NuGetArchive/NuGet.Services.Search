@@ -12,7 +12,7 @@
     <copyright>Copyright 2015 Microsoft. NuGet is made possible by the .NET Foundation's open source project.</copyright>
   </metadata>  
   <files>
-    <file src="*.*" />
-    <file src="bin\**\*.*" target="bin" />
+    <file src="Deploy.ps1" />
+    <file src="obj\NuGet.Services.Search.Website.zip" />
   </files>
 </package>
