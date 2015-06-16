@@ -15,7 +15,7 @@ namespace NuGet.Services.TestFramework
 
         private RunConfiguration()
         {
-            ServiceRoot = new Uri("https://api-search.nuget.org/");
+            ServiceRoot = new Uri("http://nuget-int-0-v2searchwebsite.azurewebsites.net");
         }
 
         private RunConfiguration(string root)
