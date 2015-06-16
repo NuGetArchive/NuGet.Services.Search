@@ -13,6 +13,6 @@
   </metadata>  
   <files>
     <file src="Deploy.ps1" />
-    <file src="obj\NuGet.Services.Search.Website.zip" />
+    <file src="obj\NuGet.Service.Search.Website.zip" />
   </files>
 </package>
