@@ -62,7 +62,7 @@ namespace NuGet.Services.Search.Test
             Assert.NotNull(firstResult.Property("Listed"));
             Assert.NotNull(firstResult.Property("DownloadCount"));
             Assert.NotNull(firstResult.Property("Hash"));
-            Assert.NotNull(firstResult.Property("PackageFileSize"));          
+            Assert.NotNull(firstResult.Property("PackageFileSize"));
         }
 
         [Fact]
@@ -79,7 +79,7 @@ namespace NuGet.Services.Search.Test
             var result = await Context.GetJson<JObject>("/search/query?sortBy=lastEdited");
 
             Assert.True(result.Value<int>("totalHits") > 0);
-            var dates = result.Value<JArray>("data").Values<JObject>().Select(jobj => 
+            var dates = result.Value<JArray>("data").Values<JObject>().Select(jobj =>
                 jobj.Value<DateTime?>("LastEdited") ??
                 jobj.Value<DateTime?>("Published"));
 

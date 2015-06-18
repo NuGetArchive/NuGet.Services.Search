@@ -7,7 +7,7 @@ using Xunit;
 
 namespace NuGet.Services.Search.Comparer
 {
-    
+
     // This class is made private right now to avoid discovering them during test run.
     // It has a dependency on V2 Gallery to be up for running search tests. Hence disabling them for now.
     class SearchResultTest
@@ -165,7 +165,7 @@ namespace NuGet.Services.Search.Comparer
 
         private string BuildOutputString(IPackage package, FrameworkName projFramework, List<FrameworkName> packageFrameworks, bool isCompatible, bool expectTrue)
         {
-            string packageFrameworksList = (packageFrameworks == null || packageFrameworks.Count == 0) ? "Supporing All Frameworks" : string.Join(", ", packageFrameworks); 
+            string packageFrameworksList = (packageFrameworks == null || packageFrameworks.Count == 0) ? "Supporing All Frameworks" : string.Join(", ", packageFrameworks);
             StringBuilder builder = new StringBuilder();
             builder.AppendLine(string.Format("Package: {0}, {1}", package.Id, package.Version));
             builder.AppendLine(string.Format("Project targetframework is {0}; Package targetframeworks are {1}.", projFramework, packageFrameworksList));
@@ -234,7 +234,7 @@ namespace NuGet.Services.Search.Comparer
                 }
             }
 
-            var resultTuple = new Tuple<List<IPackage>, List<IPackage>,List<IPackage>>(reductions, additions, versionUpdates);
+            var resultTuple = new Tuple<List<IPackage>, List<IPackage>, List<IPackage>>(reductions, additions, versionUpdates);
             return resultTuple;
         }
 
