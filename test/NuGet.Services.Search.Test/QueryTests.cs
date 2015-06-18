@@ -62,9 +62,7 @@ namespace NuGet.Services.Search.Test
             Assert.NotNull(firstResult.Property("Listed"));
             Assert.NotNull(firstResult.Property("DownloadCount"));
             Assert.NotNull(firstResult.Property("Hash"));
-            Assert.NotNull(firstResult.Property("PackageFileSize"));
-            Assert.NotNull(firstResult.Property("Installs"));
-            Assert.NotNull(firstResult.Property("Updates"));
+            Assert.NotNull(firstResult.Property("PackageFileSize"));          
         }
 
         [Fact]

@@ -7,7 +7,10 @@ using Xunit;
 
 namespace NuGet.Services.Search.Comparer
 {
-    public class SearchResultTest
+    
+    // This class is made private right now to avoid discovering them during test run.
+    // It has a dependency on V2 Gallery to be up for running search tests. Hence disabling them for now.
+    class SearchResultTest
     {
         private int _count = 50;
         private string _rootPath = Environment.CurrentDirectory;

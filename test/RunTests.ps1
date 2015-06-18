@@ -1,25 +1,5 @@
 [CmdletBinding(DefaultParameterSetName="RootUrl")]
 param(
-    [Parameter(Mandatory, Position=0, ParameterSetName="RootUrl")]
-    [string]$ServiceRoot,
-    
-    [Parameter(Mandatory, ParameterSetName="ServiceAndSlot")]
-    [Parameter(Mandatory, ParameterSetName="ServiceAndSlotAndSub")]
-    [string]$ServiceName,
-    
-    [Parameter(Mandatory, ParameterSetName="ServiceAndSlot")]
-    [Parameter(Mandatory, ParameterSetName="ServiceAndSlotAndSub")]
-    [string]$DeploymentSlot,
-    
-    [Parameter(Mandatory, ParameterSetName="ServiceAndSlotAndSub")]
-    [string]$SubscriptionId,
-    
-    [Parameter(Mandatory, ParameterSetName="ServiceAndSlotAndSub")]
-    [string]$SubscriptionName,
-    
-    [Parameter(Mandatory, ParameterSetName="ServiceAndSlotAndSub")]
-    [string]$SubscriptionCertThumbprint,
-
     [Parameter()]
     [string]$Category,
 
@@ -48,28 +28,6 @@ if($PSCmdlet.ParameterSetName.StartsWith("ServiceAndSlot")) {
     }
 }
 
-# If we're in service/slot mode, look up the ServiceRoot
-if($PSCmdlet.ParameterSetName -eq "ServiceAndSlotAndSub") {
-    # Load and select the subscription
-    $cert = dir "cert:\CurrentUser\My\$SubscriptionCertThumbprint"
-    if(!$cert) {
-        $cert = dir "cert:\LocalMachine\My\$SubscriptionCertThumbprint"
-    }
-    if(!$cert) {
-        throw "Could not find certificate: $SubscriptionCertThumbprint"
-    }
-    Set-AzureSubscription -SubscriptionName $SubscriptionName -SubscriptionId $SubscriptionId -Certificate $cert
-    Select-AzureSubscription $SubscriptionName
-}
-
-if($PSCmdlet.ParameterSetName.StartsWith("ServiceAndSlot")) {
-    $ServiceRoot = (Get-AzureDeployment -ServiceName $ServiceName -Slot $DeploymentSlot).Url
-    Write-Host "Using Service Root: $ServiceRoot"
-}
-
-if(!$ServiceRoot) {
-    throw "Service Root was not specified or could not be located"
-}
 
 $tcFailed = [regex]"##teamcity\[testFailed name='(?<name>[^']*)' details='(?<detail>[^']*)'.*\]";
 $tcComplete = [regex]"##teamcity\[testFinished name='(?<name>[^']*)' duration='(?<duration>\d+)'.*\]";
@@ -91,13 +49,6 @@ if(!$SkipBuild) {
     } catch {
         throw "Build Failed"
     }
-}
-
-# Define Environment Variables
-$oldVal = $null;
-if ($ServiceRoot) {
-    $oldVal = $env:NUGET_TEST_SERVICEROOT
-    $env:NUGET_TEST_SERVICEROOT=$ServiceRoot
 }
 
 # Run Tests

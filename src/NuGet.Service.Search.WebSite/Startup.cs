@@ -102,6 +102,7 @@ namespace NuGet.Services.Search
                     resources.Add("segments", MakeUri(context, "/segments"));
                     resources.Add("query", MakeUri(context, "/query"));
                     context.Response.StatusCode = (int)HttpStatusCode.OK;
+                    context.Response.ContentType = "application/json";
                     await context.Response.WriteAsync(response.ToString());
                     break;
                 case "/search/query":
