@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using System.Web.Hosting;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -72,28 +73,25 @@ namespace NuGet.Services.Search
 
         private static void TrackTelemetryOnIndexReopened(object sender, SegmentInfoEventArgs e)
         {
-            Task.Run(() =>
+            var telemetryClient = new TelemetryClient();
+
+            // track the index reopened event
+            var eventTelemetry = new EventTelemetry("Index Reopened");
+            eventTelemetry.Metrics.Add("SegmentCount", e.Segments.Count());
+            eventTelemetry.Metrics.Add("TotalSegmentSize", e.Segments.Sum(s => s.NumDocs));
+
+            telemetryClient.TrackEvent(eventTelemetry);
+
+
+            foreach (var segment in e.Segments)
             {
-                var telemetryClient = new TelemetryClient();
+                var metricTelemetry = new MetricTelemetry("SegmentSize", segment.NumDocs);
+                metricTelemetry.Properties.Add("SegmentName", segment.Name);
 
-                // track the index reopened event
-                var eventTelemetry = new EventTelemetry("Index Reopened");
-                eventTelemetry.Metrics.Add("SegmentCount", e.Segments.Count());
-                eventTelemetry.Metrics.Add("TotalSegmentSize", e.Segments.Sum(s => s.NumDocs));
+                telemetryClient.TrackMetric(metricTelemetry);
+            }
 
-                telemetryClient.TrackEvent(eventTelemetry);
-
-
-                foreach (var segment in e.Segments)
-                {
-                    var metricTelemetry = new MetricTelemetry("SegmentSize", segment.NumDocs);
-                    metricTelemetry.Properties.Add("SegmentName", segment.Name);
-
-                    telemetryClient.TrackMetric(metricTelemetry);
-                }
-
-                telemetryClient.Flush();
-            });
+            telemetryClient.Flush();
         }
 
         public async Task Invoke(IOwinContext context)
