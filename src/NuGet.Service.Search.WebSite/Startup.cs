@@ -41,11 +41,6 @@ namespace NuGet.Services.Search
 
             _searcherManager = CreateSearcherManager();
 
-            if (!string.IsNullOrEmpty(instrumentationKey) && _searcherManager != null)
-            {
-                _searcherManager.IndexReopened += TrackTelemetryOnIndexReopened;
-            }
-
             //test console
             app.Use(async (context, next) =>
             {
@@ -65,7 +60,7 @@ namespace NuGet.Services.Search
             app.UseStaticFiles(new StaticFileOptions(new SharedOptions
             {
                 RequestPath = new PathString("/console"),
-                FileSystem = new EmbeddedResourceFileSystem(typeof(Startup).Assembly, "NuGet.Services.Search.Console")
+                FileSystem = new EmbeddedResourceFileSystem(typeof(QueryMiddleware).Assembly, "NuGet.Services.Search.Console")
             }));
 
             app.Run(Invoke);
@@ -77,16 +72,16 @@ namespace NuGet.Services.Search
 
             // track the index reopened event
             var eventTelemetry = new EventTelemetry("Index Reopened");
-            eventTelemetry.Metrics.Add("SegmentCount", e.Segments.Count());
-            eventTelemetry.Metrics.Add("TotalSegmentSize", e.Segments.Sum(s => s.NumDocs));
+            eventTelemetry.Metrics.Add("Segment Count", e.Segments.Count());
+            eventTelemetry.Metrics.Add("Segment Size (Sum)", e.Segments.Sum(s => s.NumDocs));
 
             telemetryClient.TrackEvent(eventTelemetry);
 
 
             foreach (var segment in e.Segments)
             {
-                var metricTelemetry = new MetricTelemetry("SegmentSize", segment.NumDocs);
-                metricTelemetry.Properties.Add("SegmentName", segment.Name);
+                var metricTelemetry = new MetricTelemetry("Segment Size", segment.NumDocs);
+                metricTelemetry.Properties.Add("Segment Name", segment.Name);
 
                 telemetryClient.TrackMetric(metricTelemetry);
             }
@@ -96,61 +91,87 @@ namespace NuGet.Services.Search
 
         public async Task Invoke(IOwinContext context)
         {
-            switch (context.Request.Path.Value)
+            var stopwatch = Stopwatch.StartNew();
+            bool success = false;
+
+            try
             {
-                case "/":
-                    JObject response = new JObject();
-                    response.Add("name", ServiceName);
-                    JObject resources = new JObject();
-                    response.Add("resources", resources);
-                    resources.Add("range", MakeUri(context, "/range"));
-                    resources.Add("fields", MakeUri(context, "/fields"));
-                    resources.Add("console", MakeUri(context, "/console"));
-                    resources.Add("diagnostics", MakeUri(context, "/diag"));
-                    resources.Add("segments", MakeUri(context, "/segments"));
-                    resources.Add("query", MakeUri(context, "/query"));
-                    context.Response.StatusCode = (int)HttpStatusCode.OK;
-                    context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsync(response.ToString());
-                    break;
-                case "/search/query":
-                    await QueryMiddleware.Execute(context, _searcherManager);
-                    break;
-                case "/search/range":
-                    await RangeMiddleware.Execute(context, _searcherManager);
-                    break;
-                case "/search/diag":
-                    await DiagMiddleware.Execute(context, _searcherManager);
-                    break;
-                case "/search/segments":
-                    await SegmentsMiddleware.Execute(context, _searcherManager);
-                    break;
-                case "/search/fields":
-                    await FieldsMiddleware.Execute(context, _searcherManager);
-                    break;
-                default:
-                    await context.Response.WriteAsync("unrecognized");
-                    context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-                    break;
+                switch (context.Request.Path.Value.ToLowerInvariant())
+                {
+                    case "/":
+                        JObject response = new JObject();
+                        response.Add("name", ServiceName);
+                        JObject resources = new JObject();
+                        response.Add("resources", resources);
+                        resources.Add("range", MakeUri(context, "/search/range"));
+                        resources.Add("fields", MakeUri(context, "/search/fields"));
+                        resources.Add("console", MakeUri(context, "/console"));
+                        resources.Add("diagnostics", MakeUri(context, "/search/diag"));
+                        resources.Add("segments", MakeUri(context, "/search/segments"));
+                        resources.Add("query", MakeUri(context, "/search/query"));
+                        context.Response.StatusCode = (int) HttpStatusCode.OK;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsync(response.ToString());
+                        break;
+                    case "/search/query":
+                        await QueryMiddleware.Execute(context, _searcherManager);
+                        break;
+                    case "/search/range":
+                        await RangeMiddleware.Execute(context, _searcherManager);
+                        break;
+                    case "/search/diag":
+                        await DiagMiddleware.Execute(context, _searcherManager);
+                        break;
+                    case "/search/segments":
+                        await SegmentsMiddleware.Execute(context, _searcherManager);
+                        break;
+                    case "/search/fields":
+                        await FieldsMiddleware.Execute(context, _searcherManager);
+                        break;
+                    default:
+                        await context.Response.WriteAsync("unrecognized");
+                        context.Response.StatusCode = (int) HttpStatusCode.NotFound;
+                        break;
+                }
+
+                success = true;
+            }
+            catch
+            {
+                success = false;
+            }
+            finally
+            {
+                stopwatch.Stop();
+                var telemetryClient = new TelemetryClient();
+                var requestTelemetry = new RequestTelemetry(context.Request.Path.Value, DateTimeOffset.UtcNow, stopwatch.Elapsed, context.Response.StatusCode.ToString(CultureInfo.InvariantCulture), success: success);
+                telemetryClient.TrackRequest(requestTelemetry);
             }
         }
-        
-        private PackageSearcherManager CreateSearcherManager()
+
+        private static PackageSearcherManager CreateSearcherManager()
         {
             Trace.TraceInformation("InitializeSearcherManager: new PackageSearcherManager");
 
             var searcher = GetSearcherManager();
+            
+            if (!string.IsNullOrEmpty(TelemetryConfiguration.Active.InstrumentationKey))
+            {
+                searcher.IndexReopened += TrackTelemetryOnIndexReopened;
+            }
+
             // Ensure the index is initially opened.
             searcher.Open();
             IndexingEventSource.Log.LoadedSearcherManager();
             return searcher;
         }
 
-        private PackageSearcherManager GetSearcherManager()
+        private static PackageSearcherManager GetSearcherManager()
         {
-            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexPath")))
+            var searchIndexPath = System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexPath");
+            if (!string.IsNullOrEmpty(searchIndexPath))
             {
-                return PackageSearcherManager.CreateLocal(System.Configuration.ConfigurationManager.AppSettings.Get("Search.IndexPath"));
+                return PackageSearcherManager.CreateLocal(searchIndexPath);
             }
             else
             {
@@ -161,7 +182,7 @@ namespace NuGet.Services.Search
             }
         }
 
-        private string MakeUri(IOwinContext context, string path)
+        private static string MakeUri(IOwinContext context, string path)
         {
             return new UriBuilder(context.Request.Uri)
             {
