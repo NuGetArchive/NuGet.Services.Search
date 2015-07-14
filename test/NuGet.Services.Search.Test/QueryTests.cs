@@ -241,5 +241,19 @@ namespace NuGet.Services.Search.Test
             Assert.True(result.Value<JArray>("data").Select(j => j.Value<JObject>()).All(j =>
                 String.Equals("jquery", (string)j["PackageRegistration"]["Id"], StringComparison.OrdinalIgnoreCase)));
         }
+
+        [Fact]
+        public async Task GivenIgnoreFilterAndSpecificVersion_ItReturnsSpecificVersionOfThePackage()
+        {
+            var result = await Context.GetJson<JObject>("/search/query?q=id:nuget.core+AND+version:2.0.1&ignoreFilter=true");
+
+            Assert.Equals(result.Value<int>("totalHits"), 1);
+
+            Assert.True(result.Value<JArray>("data").Select(j => j.Value<JObject>()).All(j =>
+                String.Equals("nuget.core", (string)j["PackageRegistration"]["Id"], StringComparison.OrdinalIgnoreCase)));
+            Assert.True(result.Value<JArray>("data").Select(j => j.Value<JObject>()).All(j =>
+                String.Equals("2.0.1", (string)j["PackageRegistration"]["Version"], StringComparison.OrdinalIgnoreCase)));
+
+        }
     }
 }
