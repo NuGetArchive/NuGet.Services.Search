@@ -82,6 +82,7 @@ namespace NuGet.Services.Search
 
             Query query;
             string content;
+            int maxAgeSeconds = 0;
 
             try
             {
@@ -90,6 +91,7 @@ namespace NuGet.Services.Search
                 if (query == null)
                 {
                     query = new MatchAllDocsQuery();
+                    maxAgeSeconds = 3600;
                 }
                 if (!ignoreFilter && !luceneQuery)
                 {
@@ -129,9 +131,7 @@ namespace NuGet.Services.Search
             }
             finally
             {
-                context.Response.Headers.Add("Pragma", new[] { "no-cache" });
-                context.Response.Headers.Add("Cache-Control", new[] { "no-cache" });
-                context.Response.Headers.Add("Expires", new[] { "0" });
+                context.Response.Headers.Add("Cache-Control", new[] { string.Format("private, max-age={0}", maxAgeSeconds) });
                 context.Response.ContentType = "application/json";
             }
             await context.Response.WriteAsync(content);
