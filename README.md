@@ -1,6 +1,6 @@
 # NuGet.Services.Search
 
-This repo contains NuGet's [Lucene.Net](https://lucenenet.apache.org)-powered Search Service and uses Azure Storage as a backing store.
+This repo contains NuGet's V2 [Lucene.Net](https://lucenenet.apache.org)-powered Search Service and uses Azure Storage as a backing store. It has been replaced by NuGet's V3 search available at [NuGet/NuGet.Services.Metadata](https://github.com/nuget/nuget.services.metadata).
 
 ## Feedback
 
